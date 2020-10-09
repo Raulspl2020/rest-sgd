@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <title>Recuperar contraseña en sigedin</title>
+</head>
+
+<body class="bg-light">
+
+
+    <div class="container">
+        <br><br>
+
+        <div class="row">
+            <div class="col-md-4 offset-md-4 offset-lg-4">
+
+
+                <div class="card">
+                    <div class="card-body">
+                        <img style="height:50px;" src="https://sibcolombia.net/wp-content/uploads/2017/08/logo-itp.png"
+                            class="img-fluid mx-auto d-block">
+                        <h5 class="card-title text-center">
+
+                            <i class="fa fa-unlock"></i> Recuperación de contraseña <a
+                                href="{{url_sigedin}}">sigedin</a> </h5>
+                        <h6 class="card-subtitle mb-2 text-info">{{email}} - {{login}}</h6>
+
+                        <form id="formNewPass" method="POST">
+                            <input type="hidden" id="token" value="{{token}}">
+                            <div class="form-group">
+                                <label for="pass1">Nueva contraseña</label>
+                                <input type="password" class="form-control" min="4" required id="pass1"
+                                    aria-describedby="emailHelp">
+                            </div>
+                            <div class="form-group">
+                                <label for="pass2">Repetir contraseña</label>
+                                <input type="password" required min="4" class="form-control" id="pass2">
+                            </div>
+
+                            <div class="" role="alert" id="alerta">
+                            </div>
+
+                            <button type="submit" id="btnEnviar" class="btn btn-success btn-block"> <i
+                                    class="fa fa-save"></i>
+                                Guardar</button>
+                        </form>
+
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Creado por Duvan Rosero -->
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.0.min.js"
+        integrity="sha256-xNzN2a4ltkB44Mc/Jz3pT4iU1cmeR0FkXs4pru/JxaQ=" crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Handler for .ready() called.
+            $("#formNewPass").submit(function (event) {
+                event.preventDefault();
+
+                if ($("#pass1").val().length < 4) {
+                    $("#alerta").attr("class", 'alert alert-warning');
+                    $("#alerta").html("<i id='icon'></i> Contraseña muy corta");
+                    $("#icon").attr("class", 'fa fa-exclamation-triangle');
+                    return false;
+                }
+
+                var data = {
+                    'pass': $('#pass1').val(),
+                    'token': $('#token').val()
+                };
+
+                if ($('#pass1').val() == $('#pass2').val()) {
+                    $.ajax({
+                        url: "{{BASE_URL}}savenewpass",
+                        method: "POST",
+                        data: data,
+                        dataType: "json",
+                        error: function () {
+                            $('#btnEnviar').removeAttr('disabled');
+                            $("#alerta").attr("class", 'alert alert-danger');
+                            $("#alerta").html("<i id='icon'></i> Servicio no disponible");
+                            $("#icon").attr("class", 'fa fa-exclamation-triangle');
+                        },
+                        beforeSend: function (xhr) {
+                            $('#btnEnviar').attr('disabled', 'disabled');
+                            $("#alerta").attr("class", 'alert alert-info');
+                            $("#alerta").html("<i id='icon'></i> Guardando... ");
+                            $("#icon").attr("class", 'fa fa-refresh fa-spin');
+                        }
+                    }).done(function (data) {
+                        if (data.error) {
+                            $("#alerta").attr("class", 'alert alert-danger');
+                            $("#alerta").html("<i id='icon'></i> " + data.message + " ");
+                            $("#icon").attr("class", 'fa fa-exclamation-triangle');
+                            $('#btnEnviar').removeAttr('disabled');
+                        } else {
+                            $("#alerta").attr("class", 'alert alert-success');
+                            $("#alerta").html("<i id='icon'></i> " + data.message + " ");
+                            $("#icon").attr("class", 'fa fa-check');
+                        }
+                    });
+                } else {
+                    $("#alerta").attr("class", 'alert alert-warning');
+                    $("#alerta").html("<i id='icon'></i> Las contraseñas no coinciden ");
+                    $("#icon").attr("class", 'fa fa-exclamation-triangle');
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>
