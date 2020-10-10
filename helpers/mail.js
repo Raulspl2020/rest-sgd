@@ -1,35 +1,33 @@
 var nodemailer = require('nodemailer');
 
-let enviaMail = async function(mailOptions) {
-    const gmail = {
-        user: 'sigedin@itp.edu.co',
-        pass: '1041179Mn*'
-    };
-
-    var transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: gmail
-    });
-
-    // const mailOptions = {
-    //     'from': `Sigedin-ITP <${gmail.user}>`,
-    //     'to': dataMail.enviar_a,
-    //     'subject': dataMail.asunto,
-    //     // 'html': dataMail.mensaje
-    //     'text': dataMail.mensaje,
-    // };
-    mailOptions.from = `Sigedin-ITP <${gmail.user}>`;
+let enviaMail = async function(dataMail, mailAuth) {
 
     return new Promise((resolve, reject) => {
+        const gmail = mailAuth;
+
+        let transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: gmail
+        });
+
+        let mailOptions = {
+            'from': `Sigedin-ITP <${gmail.user}>`,
+            'to': dataMail.enviar_a,
+            'subject': dataMail.asunto,
+            // 'html': dataMail.mensaje
+            'text': dataMail.mensaje,
+        };
+        //mailOptions.from = `Sigedin-ITP <${gmail.user}>`;
         transporter.sendMail(mailOptions, function(err, info) {
             console.log("enviando email...");
             console.log(mailOptions);
             if (err) {
-                resolve(false);
+                console.log(err);
+                reject(err);
                 console.log("Error al enviar el email");
                 //console.error(err);
             } else {
-                console.log(info);
+                //    console.log(info);
                 resolve(true);
             }
         });

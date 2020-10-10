@@ -1,14 +1,14 @@
-const { Router } =  require('express');
+const { Router } = require('express');
 const router = Router();
 var mail = require('../helpers/mail');
 
 
 
 
-const { login } = require('../controllers/auth');
+const { login } = require('../controllers/login');
 
 
-router.post('/login',[],login);
+router.post('/login', [], login);
 
 
 
