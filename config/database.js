@@ -22,7 +22,7 @@ const db = {
 const auth = {
 
     "desarrollo": {
-        host: '190.217.113.102',
+        host: 'localhost',
         user: 'dvn',
         password: 'Duvan07*',
         database: 'sigedin_seguridad'

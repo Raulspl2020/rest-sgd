@@ -3,7 +3,7 @@ require('./config/config');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-
+const path = require('path');
 const cors = require('cors');
 
 
@@ -20,11 +20,11 @@ app.use(bodyParser.json());
 //exponemos el contenido
 app.use(express.static('public'));
 
-
+//handlebars
+app.set('views',path.join(__dirname,'views'));
 app.set('view engine', 'hbs');
-app.set('views', __dirname, '/frontend/views');
 
-
+console.log(path.join(__dirname,'frontend/views'));
 
 //RUTAS
 app.use('/api', require('./routes/index'));

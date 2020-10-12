@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 
-const generarJWT = (payload) => {
+const generarJWT = (payload, caducidad=process.env.CADUCIDAD_TOKEN) => {
   return new Promise((resolve, reject) => {
     console.log(payload);
     
-    jwt.sign({usuario: payload},process.env.SECRET_KEY,{expiresIn: "24h",},(err, token) => {
+    jwt.sign({usuario: payload},process.env.SECRET_KEY,{expiresIn: caducidad,},(err, token) => {
         if (err) {
           //no se pudo crear el token
           reject("No se pudo crear el token");
@@ -25,44 +25,10 @@ let crearTokenAux = async function(data, ex) {
 };
 
 
-var verificaToken = function(token) {
-  var tk = token;
-  var info = {};
-
-  try {
-      jwt.verify(tk, process.env.SECRET_KEY, (err, decoded) => {
-
-          if (err) {
-              console.log('tokensdsdxd: ' + err);
-              info = {
-                  'error': true,
-                  'message': "Token invalido",
-                  'log': err
-              };
-
-          } else {
-
-              info = {
-                  'error': false,
-                  'message': "Token correcto",
-                  'data': decoded,
-                  'token': token
-              };
-          }
-
-      });
-  } catch (err) {
-      console.log(err);
-  }
-
-  return info;
-};
-
-//un no se usa
 const comprobarJWT = (token = "") => {
   try {
-    const { uid } = jwt.verify(token, process.env.SECRET_KEY);
-    return [true, uid];
+    const data = jwt.verify(token, process.env.SECRET_KEY);
+    return [true, data];
   } catch (error) {
     return [false,null];
   }
@@ -71,6 +37,5 @@ const comprobarJWT = (token = "") => {
 module.exports = {
   generarJWT,
   comprobarJWT,
-  crearTokenAux,
-  verificaToken
+  crearTokenAux
 };

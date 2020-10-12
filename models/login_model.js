@@ -20,11 +20,15 @@ var validar = async(user, pass) => {
 };
 
 let getUser = async(user) => {
-    return conAuth
-        .where({ 'login': user })
-        .select('login', 'name', 'email', 'active', 'activation_code')
-        .from("sec_users").first();
-
+    console.log("el usuario es: "+user);
+    let query = conAuth
+    .where({ 'login': user })
+     .orWhere({'email': user})
+    .select('login', 'name', 'email', 'active', 'activation_code')
+    .from("sec_users").first();
+    console.log(query.toSQL().toNative());
+    return query;
+     
 };
 
 let updatePass = (user, pass) => {

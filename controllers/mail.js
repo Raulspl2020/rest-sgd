@@ -1,4 +1,5 @@
 const { enviaMail } = require('../helpers/mail');
+
 const enviaEMail = async(req, res) => {
     let body = req.body;
     //validamos objeto vacio
@@ -9,10 +10,6 @@ const enviaEMail = async(req, res) => {
         });
         return;
     }
-
-
-    console.log("Recibiendo datos...");
-    console.log(body);
 
     const mailAuth = {
         user: process.env.EMAIL,
