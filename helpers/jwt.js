@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken");
 
 const generarJWT = (payload, caducidad=process.env.CADUCIDAD_TOKEN) => {
   return new Promise((resolve, reject) => {
-    console.log(payload);
     
     jwt.sign({usuario: payload},process.env.SECRET_KEY,{expiresIn: caducidad,},(err, token) => {
         if (err) {

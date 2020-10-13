@@ -1,19 +1,22 @@
 class Usuario {
   constructor({
-    id = "",
+    id = null,
     nombre = "",
     picture = null,
     email = "",
-    activate = false,
-    google = false
+    active = false,
+    google = false,
+    rol = []
   }) {
     this.id = id;
     this.nombre = nombre;
     this.picture = picture;
     this.email = email;
-    this.activate = activate;
+    this.active = active;
     this.google = google;
+    this.rol = rol;
   }
+
 
   getId() {
     return this.id;
@@ -27,8 +30,8 @@ class Usuario {
   getEmail() {
     return this.email;
   }
-  getActivate() {
-    return this.activate;
+  getActive() {
+    return this.active;
   }
   getGoogle() {
     return this.google;
@@ -46,8 +49,8 @@ class Usuario {
   setEmail(email) {
     this.email = email;
   }
-  setActivate(activate) {
-    this.activate = activate;
+  setActive(active) {
+    this.active = active;
   }
   setGoogle(google) {
     this.google = google;

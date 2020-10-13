@@ -8,15 +8,16 @@ var validar = async(user, pass) => {
     ,sec_users.email
     ,sec_users_groups.group_id
     ,sec_groups.description
+    ,IF(sec_users.active='Y','true','false') AS active
     FROM
         sec_users_groups
     INNER JOIN
     sec_users ON (sec_users_groups.login = sec_users.login)
     INNER JOIN 
     sec_groups ON(sec_users_groups.group_id = sec_groups.group_id)
-    WHERE sec_users.login = ?
+    WHERE (sec_users.login = ? OR sec_users.email=?)
     AND sec_users.pswd =  MD5(?)`;
-    return conAuth.raw(sql, [user, pass]);
+    return conAuth.raw(sql, [user,user, pass]);
 };
 
 let getUser = async(user) => {
@@ -26,9 +27,27 @@ let getUser = async(user) => {
      .orWhere({'email': user})
     .select('login', 'name', 'email', 'active', 'activation_code')
     .from("sec_users").first();
-    console.log(query.toSQL().toNative());
     return query;
      
+};
+
+let getUserGoogle = async(user) => {
+    console.log("el usuario es: "+user);
+    let sql = `SELECT
+    sec_users.login
+    ,sec_users.name
+    ,sec_users.email
+    ,sec_users_groups.group_id
+    ,sec_groups.description
+    ,IF(sec_users.active='Y','true','false') AS active
+    FROM
+        sec_users_groups
+    INNER JOIN
+    sec_users ON (sec_users_groups.login = sec_users.login)
+    INNER JOIN 
+    sec_groups ON(sec_users_groups.group_id = sec_groups.group_id)
+    WHERE (sec_users.login = ? OR sec_users.email=?)`;
+    return conAuth.raw(sql, [user,user]);     
 };
 
 let updatePass = (user, pass) => {
@@ -41,5 +60,6 @@ let updatePass = (user, pass) => {
 module.exports = {
     validar,
     getUser,
-    updatePass
+    updatePass,
+    getUserGoogle
 };

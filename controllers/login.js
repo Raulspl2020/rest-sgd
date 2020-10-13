@@ -27,18 +27,28 @@ const googleAuth = async (req, res) => {
   //verificar si existe usuario
 
   try {
-    const userDb = await login_model.getUser(googleUser.email);
-    console.log("Se va a imprimir algo");
+    //const userDb = await login_model.getUser(googleUser.email);
+    const userDb = await login_model.getUserGoogle(googleUser.email);
+    
 
-    if (userDb) {
-      let usuario = new Usuario({
-        'id': userDb.login,
-        'nombre': googleUser.name,
-        'picture' : googleUser.picture,
-        'email' : googleUser.email,
-        'activate': userDb.activate,
-        'google' : true
+    if (userDb[0].length > 0) {
+      let roles = userDb[0];
+      let tipo_user = [];
+
+      roles.forEach(element => {
+        tipo_user.push(element['description']);
       });
+  
+     let usuario = new Usuario({
+      'id': roles[0].login,
+      'nombre': googleUser.name,
+      'picture' : googleUser.picture,
+      'email' : googleUser.email,
+      'active': roles[0].active,
+      'google' : true,
+      rol : tipo_user
+    });
+
       let newJWT = await generarJWT(usuario);
       res.json({
         error: false,
@@ -46,15 +56,16 @@ const googleAuth = async (req, res) => {
         token: newJWT,
       });
     } else {
+      console.log(userDb);
       res.status(401).json({
         error: true,
-        mensaje: "Usuario no encontrado",
+        message: "Usuario no encontrado",
       });
     }
   } catch (error) {
     res.json({
       error: true,
-      mensaje: error.message,
+      message: error.message,
     });
   }
 };
@@ -68,17 +79,33 @@ const login = async (req, res = response) => {
   let data = {};
   let codeStatus = 200;
 
-  console.log(req.body);
+  //console.log(req.body);
 
   try {
     let row = await login_model.validar(user, pass);
+    let roles = row[0];
+    let tipo_user = [];
+    roles.forEach(element => {
+      tipo_user.push(element['description']);
+    });
+
+   let usuario = new Usuario({
+    'id': roles[0].login,
+    'nombre': roles[0].name,
+    'email' : roles[0].email,
+    'active': roles[0].active,
+    'google' : false,
+    rol : tipo_user
+  });
+
+  console.log(usuario);
 
     if (row[0].length > 0) {
       let saludo = "Bienvenido";
       let token = await generarJWT(row[0]);
 
       data = {
-        data: row[0],
+        usuario,
         message: `${saludo} ${row[0][0].name}`,
         error: false,
         token: token,
@@ -100,6 +127,9 @@ const login = async (req, res = response) => {
     });
   }
 };
+
+
+
 
 //corregir esto
 const renewToken = async (req, res = response) => {
