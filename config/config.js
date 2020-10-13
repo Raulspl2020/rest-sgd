@@ -1,17 +1,4 @@
 //=========================
-//   VENCIMIENTO DEL TOKEN
-//=========================
-process.env.CADUCIDAD_TOKEN = 60 * 60 * 60 * 60;
-
-
-//=========================
-//   SECRET_KEY
-//=========================
-process.env.SECRET_KEY = 'EA8KnX1qGNsqZz3ExyNEVfD6Mf1KktlpW3SkhXdyW8';
-
-
-
-//=========================
 //   ENTORNO
 //=========================
 process.env.NODE_ENV = process.env.NODE_ENV || 'dev';

@@ -15,24 +15,24 @@ var validar = async(user, pass) => {
     sec_users ON (sec_users_groups.login = sec_users.login)
     INNER JOIN 
     sec_groups ON(sec_users_groups.group_id = sec_groups.group_id)
-    WHERE (sec_users.login = ? OR sec_users.email=?)
+    WHERE (sec_users.login = ? OR sec_users.email=? OR sec_users.email_institucion=? )
     AND sec_users.pswd =  MD5(?)`;
-    return conAuth.raw(sql, [user,user, pass]);
+    return await conAuth.raw(sql, [user, user, user, pass]);
 };
 
 let getUser = async(user) => {
-    console.log("el usuario es: "+user);
+    console.log("el usuario es: " + user);
     let query = conAuth
-    .where({ 'login': user })
-     .orWhere({'email': user})
-    .select('login', 'name', 'email', 'active', 'activation_code')
-    .from("sec_users").first();
+        .where({ 'login': user })
+        .orWhere({ 'email': user })
+        .select('login', 'name', 'email', 'active', 'activation_code')
+        .from("sec_users").first();
     return query;
-     
+
 };
 
 let getUserGoogle = async(user) => {
-    console.log("el usuario es: "+user);
+    console.log("el usuario es: " + user);
     let sql = `SELECT
     sec_users.login
     ,sec_users.name
@@ -47,7 +47,7 @@ let getUserGoogle = async(user) => {
     INNER JOIN 
     sec_groups ON(sec_users_groups.group_id = sec_groups.group_id)
     WHERE (sec_users.login = ? OR sec_users.email=?)`;
-    return conAuth.raw(sql, [user,user]);     
+    return conAuth.raw(sql, [user, user]);
 };
 
 let updatePass = (user, pass) => {
