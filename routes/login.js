@@ -4,12 +4,12 @@ const { correoRecuperacion,resetPass,auth, saveNewPass,googleView,googleAuth } =
 const {login_model} = require('../models/login_model');
 
 //====================
-//   /usuario 
+//   /login 
 //=====================
 
-router.post('/login', auth);
+router.post('/auth', auth);
 
-router.get('/googleview', googleView);
+router.get('/auth', googleView);
 
 router.post('/googleauth', googleAuth);
 

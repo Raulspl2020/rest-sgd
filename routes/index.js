@@ -1,14 +1,15 @@
 const express = require('express');
+const { response } = require('express');
 const app = express();
 
 
 //====================
-//   ROUTES: 
+//   ROUTES: /api
 //=====================
 
 
-app.get('/', (req, res) => {
-    //   res.send(`Servidor escuchando en el puerto ${process.env.PORT }`);
+app.get('/', (req, res=response) => {
+
     res.json({
         'message': 'Hola mundo',
         'developer': 'Duvan Rosero',
@@ -20,10 +21,10 @@ app.get('/', (req, res) => {
 
 
 app.use('/login',require('./login'));
+app.use('/mail',require('./mail'));
 
 app.use(require('./usuario'));
 app.use(require('./inicio'));
 app.use(require('./estudiante'));
-app.use(require('./mail'));
 
 module.exports = app;

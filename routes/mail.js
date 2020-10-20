@@ -4,6 +4,6 @@ const router = Router();
 const { enviaEMail } = require('../controllers/mail');
 
 
-router.post('/mail', [], enviaEMail);
+router.post('/enviacorreo', [], enviaEMail);
 
 module.exports = router;

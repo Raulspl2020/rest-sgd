@@ -1,6 +1,10 @@
 const { enviaMail } = require('../helpers/mail');
+const { response } = require('express');
 
-const enviaEMail = async(req, res) => {
+//====================
+//   /mail/enviacorreo 
+//=====================
+const enviaEMail = async(req, res=response) => {
     let body = req.body;
     //validamos objeto vacio
     if (Object.entries(body).length < 3) {

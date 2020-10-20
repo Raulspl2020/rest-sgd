@@ -7,7 +7,7 @@ const { generarJWT, comprobarJWT } = require("../helpers/jwt");
 let { Usuario } = require("../models/Usuario");
 
 //====================
-//   /login/googleauth 
+//   /login/auth 
 //=====================
 const googleAuth = async(req, res) => {
     let token = req.body.token;
