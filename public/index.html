@@ -1,131 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-signin-client_id"
-        content="1041755454327-vvkao4dk7aacr1eeamfqln1j05nc5q1j.apps.googleusercontent.com">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="google-signin-client_id"
+      content="1041755454327-vvkao4dk7aacr1eeamfqln1j05nc5q1j.apps.googleusercontent.com"
+    />
     <script src="https://apis.google.com/js/platform.js" async defer></script>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
-        integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
-        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;1,200;1,400&display=swap" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+      integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;1,200;1,400&display=swap"
+      rel="stylesheet"
+    />
     <title>Iniciar sesión</title>
-</head>
+  </head>
 
-<body style="font-family: 'Source Sans Pro', sans-serif;">
-
-
-
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                
+  <body style="font-family: 'Source Sans Pro', sans-serif" class="bg-light">
+    <div class="container mt-5">
+      <div class="row">
+        <div
+          class="col-md-8 offset-md-2 col-sm-10 offset-sm-1 col-lg-4 offset-lg-4"
+        >
+          <div class="card">
+            <div class="card-header bg-dark text-white text-center">
+              <svg
+                width="1em"
+                height="1em"
+                viewBox="0 0 16 16"
+                class="bi bi-box-seam"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"
+                />
+              </svg>
+              Sigedin academico
             </div>
-        </div>
-        
-        <!-- {{!-- <div class="g-signin2" data-onsuccess="onSignIn"></div> --}} -->
-        <br>
-        <a href="javascript:void(0);" onclick="signOut();">Sign out</a>
 
-        <br>
-        <br>
+            <div class="card-body">
 
+              <h5 class="card-title text-center">
+                Inicia sesión para continuar
+              </h5>
+           
 
-        <button type="button" class="btn btn-outline-primary" id="googleSignIn">
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 48 48"
-                class="abcRioButtonSvg">
-                <g>
-                    <path fill="#EA4335"
-                        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z">
-                    </path>
-                    <path fill="#4285F4"
-                        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z">
-                    </path>
-                    <path fill="#FBBC05"
-                        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z">
-                    </path>
-                    <path fill="#34A853"
-                        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z">
-                    </path>
+              <div class="form-group">
+                <!-- <label for="exampleInputEmail1">Usuario</label> -->
+                <input
+                  type="text"
+                  class="form-control"
+                  id="user"
+                  aria-describedby="emailHelp"
+                  placeholder="Ingrese número de documento o email"
+                />
+
+              </div>
+
+              <div class="form-group">
+                <!-- <label for="exampleInputEmail1">Contraseña</label> -->
+                <input
+                  type="password"
+                  class="form-control"
+                  id="pass"
+                  aria-describedby="emailHelp"
+                  placeholder="Ingresar contraseña"
+                />
+
+              </div>
+
+              <div class="row">
+                <div class="col-6">
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" checked value="" id="defaultCheck1">
+                        <label class="form-check-label" for="defaultCheck1">
+                          Recordar
+                        </label>
+                      </div>
+                </div>
+
+                <dic class="col-6">
+                    <a href="javascript:void(0)" class="text-small font-weight-light "><p class="text-right">Olvidé mi contraseña</p></a>
+                </dic>
+            </div>
+
+            <button type="button" class="btn btn-info btn-block">Ingresar</button>
+
+               <p class="card-text mt-2 text-center">
+            O puedes usar tu correo institucional
+              </p>
+            
+            
+              <button type="button" class="btn  btn-block btn-outline-primary " id="googleSignIn">
+                <svg
+                  version="1.1"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18px"
+                  height="18px"
+                  viewBox="0 0 48 48"
+                  class="abcRioButtonSvg"
+                >
+                  <g>
+                    <path
+                      fill="#EA4335"
+                      d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                    ></path>
+                    <path
+                      fill="#4285F4"
+                      d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                    ></path>
+                    <path
+                      fill="#FBBC05"
+                      d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                    ></path>
+                    <path
+                      fill="#34A853"
+                      d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                    ></path>
                     <path fill="none" d="M0 0h48v48H0z"></path>
-                </g>
-            </svg>
+                  </g>
+                </svg>
+        
+                Iniciar sesion con google
+              </button>
 
-            Iniciar sesion con google</button>
+         
+
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- {{!-- <div class="g-signin2" data-onsuccess="onSignIn"></div> --}} -->
+      <br />
+      <!-- <a href="javascript:void(0);" onclick="signOut();">Sign out</a> -->
+
+      <br />
+      <br />
+
+
     </div>
 
     <script type="text/javascript">
+      function signOut() {
+        var auth2 = gapi.auth2.getAuthInstance();
+        auth2.signOut().then(function () {
+          console.log("User signed out.");
+        });
+      }
 
+      function onSignIn(googleUser) {
+        var profile = googleUser.getBasicProfile();
+        console.log("ID: " + profile.getId()); // Do not send to your backend! Use an ID token instead.
+        console.log("Name: " + profile.getName());
+        console.log("Image URL: " + profile.getImageUrl());
+        console.log("Email: " + profile.getEmail()); // This is null if the 'email' scope is not present.
+        let id_token = googleUser.getAuthResponse().id_token;
+        console.log(id_token);
+      }
+
+      window.onload = function () {
+        gapi.load("auth2", function () {
+          var auth2 = gapi.auth2.init({
+            client_id:
+              "1041755454327-vvkao4dk7aacr1eeamfqln1j05nc5q1j.apps.googleusercontent.com",
+            cookiepolicy: "single_host_origin",
+            scope: "profile email",
+          });
+
+          var profile = auth2.currentUser.get().getBasicProfile();
+          console.log(profile);
+
+          document
+            .getElementById("googleSignIn")
+            .addEventListener("click", function () {
+              auth2
+                .signIn()
+                .then((googleUser) => {
+                  var profile = auth2.currentUser.get().getBasicProfile();
+                  console.log("ID: " + profile.getId()); // Do not send to your backend! Use an ID token instead.
+                  console.log("Name: " + profile.getName());
+                  console.log("Image URL: " + profile.getImageUrl());
+                  console.log("Email: " + profile.getEmail()); // This is null if the 'email' scope is not present.
+                  let id_token = googleUser.getAuthResponse().id_token;
+                  console.log(id_token);
+                })
+                .catch((error) => {
+                  console.error("Google Sign Up or Login Error: ", error);
+                });
+            });
+        });
 
         function signOut() {
-            var auth2 = gapi.auth2.getAuthInstance();
-            auth2.signOut().then(function () {
-                console.log('User signed out.');
-            });
+          auth2.signOut().then(function () {
+            console.log("User signed out.");
+          });
         }
-
-        function onSignIn(googleUser) {
-            var profile = googleUser.getBasicProfile();
-            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
-            console.log('Name: ' + profile.getName());
-            console.log('Image URL: ' + profile.getImageUrl());
-            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
-            let id_token = googleUser.getAuthResponse().id_token;
-            console.log(id_token);
-        }
-
-
-
-
-        window.onload = function () {
-
-            gapi.load('auth2', function () {
-
-                var auth2 = gapi.auth2.init({
-                    client_id: '1041755454327-vvkao4dk7aacr1eeamfqln1j05nc5q1j.apps.googleusercontent.com',
-                    cookiepolicy: 'single_host_origin',
-                    scope: 'profile email'
-                });
-
-                var profile = auth2.currentUser.get().getBasicProfile();
-                console.log(profile);
-
-
-
-                document.getElementById('googleSignIn').addEventListener('click', function () {
-                    auth2.signIn().then((googleUser) => {
-                        var profile = auth2.currentUser.get().getBasicProfile();
-                        console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
-                        console.log('Name: ' + profile.getName());
-                        console.log('Image URL: ' + profile.getImageUrl());
-                        console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
-                        let id_token = googleUser.getAuthResponse().id_token;
-                        console.log(id_token);
-
-                    }).catch((error) => {
-                        console.error('Google Sign Up or Login Error: ', error)
-                    });
-
-                });;
-
-
-
-
-
-            });
-
-            function signOut() {
-                auth2.signOut().then(function () {
-                    console.log('User signed out.');
-                });
-            }
-
-
-        }
+      };
     </script>
-
-</body>
-
+  </body>
 </html>
