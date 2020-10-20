@@ -135,7 +135,8 @@
             console.log(id_token);
         }
 
-        window.onload = function () {
+        window.onload = function () {   
+
             gapi.load("auth2", function () {
                 var auth2 = gapi.auth2.init({
                     client_id:
@@ -143,9 +144,6 @@
                     cookiepolicy: "single_host_origin",
                     scope: "profile email",
                 });
-
-                var profile = auth2.currentUser.get().getBasicProfile();
-                console.log(profile);
 
                 document
                     .getElementById("googleSignIn")

@@ -170,7 +170,7 @@ const correoRecuperacion = async(req, res) => {
         let tokenMail = await generarJWT(user, "900000");
         console.log("listo para enviar: " + process.env.BASE_URL.toString());
         var baseurl =
-            process.env.BASE_URL.toString() + "/viewresetpass/" + tokenMail;
+            process.env.BASE_URL.toString() + "/login/viewresetpass/" + tokenMail;
         console.log(baseurl);
 
         const mailAuth = {
