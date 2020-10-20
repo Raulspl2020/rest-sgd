@@ -19,7 +19,8 @@ app.get('/', (req, res) => {
 });
 
 
-app.use(require('./login'));
+app.use('/login',require('./login'));
+
 app.use(require('./usuario'));
 app.use(require('./inicio'));
 app.use(require('./estudiante'));

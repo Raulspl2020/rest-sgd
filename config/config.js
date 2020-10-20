@@ -13,5 +13,6 @@ process.env.PORT = process.env.PORT || 3000;
 //=========================
 //   base_url
 //=========================
-
-process.env.BASE_URL = process.env.BASE_URL || 'http://localhost:3000/api/';
+if(process.env.NODE_ENV==='dev'){
+    process.env.BASE_URL = `http://localhost:${process.env.PORT}/api`;
+}

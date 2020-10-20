@@ -6,6 +6,9 @@ const path = require("path");
 const { generarJWT, comprobarJWT } = require("../helpers/jwt");
 let { Usuario } = require("../models/Usuario");
 
+//====================
+//   /login/googleauth 
+//=====================
 const googleAuth = async(req, res) => {
     let token = req.body.token;
 
@@ -69,11 +72,15 @@ const googleAuth = async(req, res) => {
     }
 };
 
+
 const googleView = async(req, res) => {
     res.render("login_google");
 };
 
-const login = async(req, res = response) => {
+//====================
+//   /login/auth 
+//=====================
+const auth = async(req, res = response) => {
     const { user, pass } = req.body;
     let data = {};
     let codeStatus = 200;
@@ -144,6 +151,9 @@ const renewToken = async(req, res = response) => {
     });
 };
 
+//====================
+//   /login/recuperacion 
+//=====================
 const correoRecuperacion = async(req, res) => {
     let body = req.body;
     let user = {};
@@ -160,7 +170,7 @@ const correoRecuperacion = async(req, res) => {
         let tokenMail = await generarJWT(user, "900000");
         console.log("listo para enviar: " + process.env.BASE_URL.toString());
         var baseurl =
-            process.env.BASE_URL.toString() + "viewresetpass/" + tokenMail;
+            process.env.BASE_URL.toString() + "/viewresetpass/" + tokenMail;
         console.log(baseurl);
 
         const mailAuth = {
@@ -208,6 +218,9 @@ const correoRecuperacion = async(req, res) => {
     }
 };
 
+//====================
+//   /login/savenewpass 
+//=====================
 const saveNewPass = async(req, res) => {
     let body = req.body;
     let tokenMail = req.body.token;
@@ -242,6 +255,10 @@ const saveNewPass = async(req, res) => {
 // VISTAS
 //======================================
 
+
+//====================
+//   /login/viewresetpass/:token 
+//=====================
 const resetPass = async(req, res) => {
     let tokenMail = req.params.token;
 
@@ -261,7 +278,7 @@ const resetPass = async(req, res) => {
 
 module.exports = {
     googleAuth,
-    login,
+    auth,
     renewToken,
     correoRecuperacion,
     resetPass,

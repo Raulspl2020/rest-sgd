@@ -57,7 +57,6 @@ const enviaEMail = async(req, res) => {
         });
     }
 
-
 };
 
 module.exports = {

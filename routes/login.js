@@ -1,10 +1,13 @@
 const { Router } = require('express');
 const router = Router();
-const { correoRecuperacion,resetPass,login, saveNewPass,googleView,googleAuth } = require('../controllers/login');
+const { correoRecuperacion,resetPass,auth, saveNewPass,googleView,googleAuth } = require('../controllers/login');
 const {login_model} = require('../models/login_model');
 
+//====================
+//   /usuario 
+//=====================
 
-router.post('/login', login);
+router.post('/login', auth);
 
 router.get('/googleview', googleView);
 
