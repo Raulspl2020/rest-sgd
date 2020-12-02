@@ -4,7 +4,7 @@ const db = {
         host: '190.217.113.102',
         user: 'dvn',
         password: 'duvan07+',
-        database: 'sgd'
+        database: 'sigedin_ies'
     },
 
     "produccion": {

@@ -8,7 +8,7 @@ const app = express();
 //=====================
 
 
-app.get('/', (req, res=response) => {
+app.get('/', (req, res = response) => {
 
     res.json({
         'message': 'Hola mundo',
@@ -20,11 +20,11 @@ app.get('/', (req, res=response) => {
 });
 
 
-app.use('/login',require('./login'));
-app.use('/mail',require('./mail'));
+app.use('/login', require('./login'));
+app.use('/mail', require('./mail'));
 
 app.use(require('./usuario'));
 app.use(require('./inicio'));
-app.use(require('./estudiante'));
+app.use('/estudiante', require('./estudiante'));
 
 module.exports = app;
