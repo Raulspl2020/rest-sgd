@@ -7,7 +7,7 @@ const estudianteProvider = require('../provider/estudiante_provider');
 //=====================
 
 const getProgramaEstudainte = async(req, res) => {
-    let body = req.body;
+    let body = req.query;
     console.log(body);
 
     try {
@@ -18,7 +18,7 @@ const getProgramaEstudainte = async(req, res) => {
 
             return res.status(200).json({
                 error: false,
-                date: programas,
+                data: programas,
             });
 
         } else {
@@ -42,8 +42,8 @@ const getProgramaEstudainte = async(req, res) => {
 //=====================
 
 const getMatriculaEstudainte = async(req, res) => {
-    let body = req.body;
-
+    let body = req.query;
+    console.log(body);
     try {
         let row = await estudianteProvider.getMatricula(body.ide_estudiante, body.ide_programa);
         let matriculas = row[0];
@@ -54,7 +54,7 @@ const getMatriculaEstudainte = async(req, res) => {
 
             return res.status(200).json({
                 error: false,
-                date: matriculas,
+                data: matriculas,
             });
 
         } else {
