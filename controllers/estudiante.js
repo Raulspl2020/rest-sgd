@@ -8,6 +8,7 @@ const estudianteProvider = require('../provider/estudiante_provider');
 
 const getProgramaEstudainte = async(req, res) => {
     let body = req.body;
+    console.log(body);
 
     try {
         let row = await estudianteProvider.getPrograma(body.ide_estudiante);

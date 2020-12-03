@@ -3,25 +3,31 @@ const { conDB } = require('../config/database');
 
 let getPrograma = async(ide) => {
     let sql = `SELECT
-    tec_institucion_programa.cod_colegio_programa
+    col_persona.ide_persona
+    , col_persona.ape1_persona
+    , col_persona.ape2_persona
+    , col_persona.nom1_persona
+    , col_persona.nom2_persona
+    , tec_programa_persona.id_programa_persona
+    , tec_estadoinscripcion.nom_estadoinscripcion
     , col_colegio.siglas_colegio
-    , col_colegio.nom_colegio
-    , col_colegio.cod_institucion
-    , col_nivel_educacion.codigo_snies
-    , col_nivel_educacion.abrev_programa
-    , col_nivel_educacion.nom_nivel_educativo,
-    tec_programa_persona.id_programa_persona
-    FROM
-    tec_institucion_programa
+    , tec_programa_persona.id_programa_persona
+    , col_nivel_educacion.nom_nivel_educativo
+    , tec_institucion_programa.cod_snies
+    , tec_programa_persona.fecha_inicio
+FROM
+    tec_programa_persona
+    INNER JOIN col_persona 
+        ON (tec_programa_persona.ide_persona = col_persona.ide_persona)
+    INNER JOIN tec_estadoinscripcion 
+        ON (tec_programa_persona.cod_estadoinscripcion = tec_estadoinscripcion.cod_estadoinscripcion)
+    INNER JOIN tec_institucion_programa 
+        ON (tec_programa_persona.cod_colegio_programa = tec_institucion_programa.cod_colegio_programa)
     INNER JOIN col_colegio 
         ON (tec_institucion_programa.cod_colegio = col_colegio.cod_colegio)
     INNER JOIN col_nivel_educacion 
         ON (tec_institucion_programa.cod_nivel_educativo = col_nivel_educacion.cod_nivel_educativo)
-    INNER JOIN tec_programa_persona 
-        ON (tec_programa_persona.cod_colegio_programa = tec_institucion_programa.cod_colegio_programa)
-    INNER JOIN col_matricula 
-        ON (col_matricula.id_programa_persona = tec_programa_persona.id_programa_persona)
-        WHERE col_matricula.ide_estudiante=? GROUP BY tec_programa_persona.id_programa_persona`;
+        WHERE col_persona.ide_persona=?`;
 
     return await conDB.raw(sql, [ide]);
 
