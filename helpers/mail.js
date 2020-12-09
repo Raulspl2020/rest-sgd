@@ -10,13 +10,7 @@ let enviaMail = async function(dataMail, mailAuth) {
             auth: gmail
         });
 
-        let mailOptions = {
-            'from': `Sigedin-ITP <${gmail.user}>`,
-            'to': dataMail.enviar_a,
-            'subject': dataMail.asunto,
-            // 'html': dataMail.mensaje
-            'text': dataMail.mensaje,
-        };
+        let mailOptions = dataMail;
         //mailOptions.from = `Sigedin-ITP <${gmail.user}>`;
         transporter.sendMail(mailOptions, function(err, info) {
             console.log("enviando email...");

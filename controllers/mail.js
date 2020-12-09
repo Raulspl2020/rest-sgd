@@ -4,16 +4,27 @@ const { response } = require('express');
 //====================
 //   /mail/enviacorreo 
 //=====================
-const enviaEMail = async(req, res=response) => {
+const enviaEMail = async(req, res = response) => {
     let body = req.body;
-    //validamos objeto vacio
-    if (Object.entries(body).length < 3) {
-        res.status(401).json({
-            'message': "No se registan parametros completos - x-www-form-urlencoded",
-            "error": true
+
+    let fileBuffer = [];
+
+    //validamos si hay archivo adjunto
+    if (!req.files) {
+
+        fileBuffer = null;
+
+    } else {
+        let files = req.files.archivo;
+        files.forEach((element, index) => {
+            fileBuffer[index] = {
+                'filename': element.name,
+                'content': element.data
+            };
         });
-        return;
     }
+
+
 
     const mailAuth = {
         user: process.env.EMAIL,
@@ -21,7 +32,7 @@ const enviaEMail = async(req, res=response) => {
     };
     console.log(mailAuth);
 
-    var dataMail = {
+    let dataMail = {
         'from_name': body.from_name,
         'enviar_a': body.enviar_a,
         'asunto': body.asunto,
@@ -37,8 +48,18 @@ const enviaEMail = async(req, res=response) => {
         return;
     }
 
+
+    let mailOptions = {
+        'from': `Sigedin-ITP <${mailAuth.user}>`,
+        'to': dataMail.enviar_a,
+        'subject': dataMail.asunto,
+        // 'html': dataMail.mensaje
+        'text': dataMail.mensaje,
+        attachments: fileBuffer
+    };
+
     try {
-        let response = await enviaMail(dataMail, mailAuth);
+        let response = await enviaMail(mailOptions, mailAuth);
         console.log("imprimendo respuiesta");
         console.log(response);
         if (!response) {
@@ -62,6 +83,9 @@ const enviaEMail = async(req, res=response) => {
     }
 
 };
+
+
+
 
 module.exports = {
     enviaEMail

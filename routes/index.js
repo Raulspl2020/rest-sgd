@@ -22,9 +22,9 @@ app.get('/', (req, res = response) => {
 
 app.use('/login', require('./login'));
 app.use('/mail', require('./mail'));
-
+app.use('/estudiante', require('./estudiante'));
 app.use(require('./usuario'));
 app.use(require('./inicio'));
-app.use('/estudiante', require('./estudiante'));
+
 
 module.exports = app;
