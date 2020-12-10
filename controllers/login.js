@@ -157,7 +157,6 @@ const renewToken = async(req, res = response) => {
 const correoRecuperacion = async(req, res) => {
     let body = req.body;
     let user = {};
-
     console.log(body);
     try {
         if (Object.entries(body).length > 2) {
@@ -186,6 +185,16 @@ const correoRecuperacion = async(req, res) => {
             key: body.key,
         };
 
+
+        let mailOptions = {
+            'from': `Sigedin-ITP <${mailAuth.user}>`,
+            'to': dataMail.enviar_a,
+            'subject': dataMail.asunto,
+            // 'html': dataMail.mensaje
+            'text': dataMail.mensaje
+        };
+
+
         if (process.env.EMAIL_KEY != dataMail.key) {
             res.status(401).json({
                 message: "Usuario no autorizado",
@@ -194,7 +203,7 @@ const correoRecuperacion = async(req, res) => {
             return;
         }
 
-        let response = await enviaMail(dataMail, mailAuth);
+        let response = await enviaMail(mailOptions, mailAuth);
         console.log("imprimendo respuesta");
         console.log(response);
         if (!response) {

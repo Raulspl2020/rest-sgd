@@ -60,7 +60,7 @@ const enviaEMail = async(req, res = response) => {
 
     try {
         let response = await enviaMail(mailOptions, mailAuth);
-        console.log("imprimendo respuiesta");
+        console.log("imprimendo respuesta");
         console.log(response);
         if (!response) {
             res.status(401).json({
