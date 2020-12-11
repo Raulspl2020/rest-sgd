@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const router = Router();
-const { correoRecuperacion,resetPass,auth, saveNewPass,googleView,googleAuth } = require('../controllers/login');
-const {login_model} = require('../models/login_model');
+const { correoRecuperacion, resetPass, auth, saveNewPass, googleView, googleAuth, renewToken } = require('../controllers/login');
+const { login_model } = require('../models/login_model');
 
 //====================
 //   /login 
@@ -13,11 +13,13 @@ router.get('/auth', googleView);
 
 router.post('/googleauth', googleAuth);
 
+router.post('/renewtoken', renewToken);
+
 router.post('/recuperacion', correoRecuperacion);
 
 router.get('/viewresetpass/:token', resetPass);
 
-router.post('/savenewpass',saveNewPass );
+router.post('/savenewpass', saveNewPass);
 
 
 

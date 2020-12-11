@@ -1,9 +1,10 @@
 const { response } = require("express");
 const { validarGoogleIdToken } = require("../helpers/google-verify-token");
 const login_model = require("../models/login_model");
+const { getUserRol } = require('../provider/usuario_provider');
 const { enviaMail } = require("../helpers/mail");
 const path = require("path");
-const { generarJWT, comprobarJWT } = require("../helpers/jwt");
+const { generarJWT, comprobarJWT, decodingJWT } = require("../helpers/jwt");
 let { Usuario } = require("../models/Usuario");
 
 //====================
@@ -137,18 +138,65 @@ const auth = async(req, res = response) => {
 
 
 
-
-//corregir esto
+//====================
+//   /login/renewtoken 
+//=====================
 const renewToken = async(req, res = response) => {
-    const uid = req.uid;
-    const token = await generarJWT(uid);
-    const usuario = await Usuario.findById(uid);
+    let tokenOld = req.body.token;
+    let data = {};
+    try {
+        const dataToken = await decodingJWT(tokenOld);
+        let refrehsToken = null;
 
-    res.json({
-        ok: true,
-        token,
-        usuario,
-    });
+        let row = await getUserRol(dataToken.usuario.id);
+        let roles = row[0];
+        console.log(roles);
+        let tipo_user = [];
+
+
+
+        if (row[0].length > 0) {
+            roles.forEach(element => {
+                tipo_user.push(element['description']);
+            });
+
+            let usuario = new Usuario({
+                'id': roles[0].login,
+                'nombre': roles[0].name,
+                'email': roles[0].email,
+                'active': roles[0].active,
+                'google': false,
+                rol: tipo_user
+            });
+
+            refrehsToken = await generarJWT(usuario);
+            codeStatus = 202;
+            data = {
+                error: false,
+                usuario,
+                refrehsToken
+
+            }
+        } else {
+            data = {
+                message: "Usuario no encontrado",
+                error: true,
+            };
+            codeStatus = 401;
+        }
+
+
+        return res.status(codeStatus).json(data);
+
+    } catch (dataErr) {
+        return res.status(500).json({
+            error: true,
+            message: "No se ha podido renovar el token",
+            dataErr
+        });
+    }
+
+    //  const usuario = await Usuario.findById(uid);
 };
 
 //====================
