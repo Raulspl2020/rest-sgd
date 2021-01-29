@@ -23,6 +23,7 @@ app.get('/', (req, res = response) => {
 app.use('/login', require('./login'));
 app.use('/mail', require('./mail'));
 app.use('/estudiante', require('./estudiante'));
+app.use('/transaccion', require('./transaccion'));
 app.use(require('./usuario'));
 app.use(require('./inicio'));
 

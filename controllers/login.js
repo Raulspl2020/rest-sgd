@@ -8,11 +8,10 @@ const { generarJWT, comprobarJWT, decodingJWT } = require("../helpers/jwt");
 let { Usuario } = require("../models/Usuario");
 
 //====================
-//   /login/auth 
+//   /login/googleauth 
 //=====================
 const googleAuth = async(req, res) => {
     let token = req.body.token;
-
     if (!token) {
         return res.json({
             error: true,
@@ -85,6 +84,8 @@ const auth = async(req, res = response) => {
     const { user, pass } = req.body;
     let data = {};
     let codeStatus = 200;
+    console.log(req.headers);
+
 
     //console.log(req.body);
 
