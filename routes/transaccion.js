@@ -17,7 +17,11 @@ const corsOptions = {
     if (whitelist.indexOf(origin) !== -1) {
       callback(null, true)
     } else {
-      callback(new Error('Not allowed by CORS'));
+      return res.status(300).json({
+        error: false,
+        data: "No permitida por CORS",
+    });
+     // callback(new Error('Not allowed by CORS'));
     }
   }
 }

@@ -66,7 +66,17 @@ FROM
     return await conDB.raw(sql, [idEstudiante, idPrograma]);
 }
 
+let getCorreoEstudiante = async(idEstudiate)=>{
+
+    let query = await conDB
+        .where({ 'ide_persona': idEstudiate })
+        .select('ide_persona', 'email_institucion', 'email_persona')
+        .from("col_persona").first();
+    return query;
+}
+
 module.exports = {
     getPrograma,
-    getMatricula
+    getMatricula,
+    getCorreoEstudiante
 };
