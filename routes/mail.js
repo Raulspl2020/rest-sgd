@@ -17,6 +17,6 @@ const corsOptions = {
 
 router.post('/enviacorreo', [], enviaEMail);
 
-router.get('/consulta_correo',consultaCorreo);
+router.get('/consulta_correo/:ide_estudiante',consultaCorreo);
 
 module.exports = router;

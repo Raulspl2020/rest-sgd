@@ -82,22 +82,15 @@ const enviaEMail = async (req, res = response) => {
 //   /mail/consulta_correo
 //=====================
 const consultaCorreo = async (req, res = response) => {
-  let body = req.body;
-
-  console.log(body);
+  let ide_estudiante = req.params.ide_estudiante;
 
   try {
-    let row = await estudianteProvider.getCorreoEstudiante(body.ide_estudiante);
-    let programas = row[0];
+    let result = await estudianteProvider.getCorreoEstudiante(ide_estudiante);
 
-    res.json({
-      error: true,
-      message: " error.message",
-    });
-    if (row[0].length > 0) {
+    if (result != undefined) {
       return res.status(200).json({
         error: false,
-        data: programas,
+        data: result,
       });
     } else {
       data = {
