@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const router = Router();
-const { correoRecuperacion, resetPass, auth, saveNewPass, googleView, googleAuth, renewToken } = require('../controllers/login');
+const { correoRecuperacion, resetPass, auth, saveNewPass, googleView, googleAuth, renewToken, googleAuth2 } = require('../controllers/login');
 const { login_model } = require('../models/login_model');
 
 //====================
