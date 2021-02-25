@@ -13,7 +13,7 @@ let { Usuario } = require("../models/Usuario");
 //   /login/googleauth 
 //=====================
 const googleAuth2 = async(req, res) => {
-    let token = req.params.token;
+    let token = req.query.token;
     if (!token) {
         return res.json({
             error: true,
