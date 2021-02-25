@@ -7,6 +7,75 @@ const path = require("path");
 const { generarJWT, comprobarJWT, decodingJWT } = require("../helpers/jwt");
 let { Usuario } = require("../models/Usuario");
 
+
+
+//====================
+//   /login/googleauth 
+//=====================
+const googleAuth2 = async(req, res) => {
+    let token = req.params.token;
+    if (!token) {
+        return res.json({
+            error: true,
+            message: "Token requerido",
+        });
+    }
+
+    const googleUser = await validarGoogleIdToken(token);
+
+    if (!googleUser) {
+        return res.status(401).json({
+            error: true,
+            message: "Token no válido",
+        });
+    }
+    //verificar si existe usuario
+
+    try {
+        //const userDb = await login_model.getUser(googleUser.email);
+        const userDb = await login_model.getUserGoogle(googleUser.email);
+
+        if (userDb[0].length > 0) {
+            let roles = userDb[0];
+            let tipo_user = [];
+
+            roles.forEach(element => {
+                tipo_user.push(element['description']);
+            });
+
+            let usuario = new Usuario({
+                'id': roles[0].login,
+                'nombre': googleUser.name,
+                'picture': googleUser.picture,
+                'email': googleUser.email,
+                'active': roles[0].active,
+                'google': true,
+                rol: tipo_user
+            });
+
+            let newJWT = await generarJWT(usuario);
+            res.json({
+                error: false,
+                usuario: usuario,
+                token: newJWT,
+            });
+        } else {
+            console.log(userDb);
+            res.status(401).json({
+                error: true,
+                message: "Usuario no encontrado",
+            });
+        }
+    } catch (error) {
+        res.json({
+            error: true,
+            message: error.message,
+        });
+    }
+};
+
+
+
 //====================
 //   /login/googleauth 
 //=====================
@@ -342,4 +411,5 @@ module.exports = {
     resetPass,
     saveNewPass,
     googleView,
+    googleAuth2
 };

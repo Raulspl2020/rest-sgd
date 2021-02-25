@@ -13,6 +13,8 @@ router.get('/auth', googleView);
 
 router.post('/googleauth', googleAuth);
 
+router.get('/googleauth', googleAuth2);
+
 router.post('/renewtoken', renewToken);
 
 router.post('/recuperacion', correoRecuperacion);
