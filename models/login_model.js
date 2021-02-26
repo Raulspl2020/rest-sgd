@@ -46,7 +46,7 @@ let getUserGoogle = async(user) => {
     sec_users ON (sec_users_groups.login = sec_users.login)
     INNER JOIN 
     sec_groups ON(sec_users_groups.group_id = sec_groups.group_id)
-    WHERE (sec_users.login = ? OR sec_users.email=? sec_users.email_institucion=?, )`;
+    WHERE (sec_users.login = ? OR sec_users.email=? OR sec_users.email_institucion=? )`;
     return conAuth.raw(sql, [user, user, user]);
 };
 
