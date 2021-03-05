@@ -44,12 +44,12 @@ export const validatorCampos = (req: any, res: any, next: any) => {
     str_tipo_id: "present|string",
     str_nombre_cliente: "required|string",
     str_apellido_cliente: "required|string",
-    str_telefono_cliente: "required|string",
-    str_opcional1: "present|string",
-    str_opcional2: "present|string",
-    str_opcional3: "present|string",
-    str_opcional4: "present|string",
-    str_opcional5: "present|string",
+    str_telefono_cliente: "required|string"
+    // str_opcional1: "present|string",
+    // str_opcional2: "present|string",
+    // str_opcional3: "present|string",
+    // str_opcional4: "present|string",
+    // str_opcional5: "present|string",
   };
 
 

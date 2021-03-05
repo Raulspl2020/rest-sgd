@@ -2,6 +2,7 @@ import { response } from "express";
 const cryptoRandomString = require('crypto-random-string');
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
+import {decodeResPago} from "../helpers/pago";
 
 //====================
 //   /transaccion/estado
@@ -26,7 +27,7 @@ export const verificaPago = async (req: any, res = response) => {
     "int_id_comercio": process.env.ZONAPAGOS_ID,
     "str_usr_comercio": process.env.ZONAPAGOS_USER,
     "str_pwd_comercio": process.env.ZONAPAGOS_PASS,
-    "int_no_pago": 1,
+    "int_no_pago": -1,
     "str_id_pago": body.str_id_pago
   };
 
@@ -37,19 +38,24 @@ export const verificaPago = async (req: any, res = response) => {
   })
     .then((res) => res.json())
     .then((response) => {
-      if (response.int_codigo == 1) {
+
+      if (response.int_error == 0) {
+      
+        let pagoDecoded = decodeResPago(response.str_res_pago);
         res.status(200).json({
           message: response.str_detalle,
           error: false,
-          data: response,
+          data: pagoDecoded,
+          data_server : response.str_res_pago
         });
       } else {
         res.status(200).json({
           message: response.str_detalle,
           error: true,
-          data: response,
+          data: response
         });
       }
+
     })
     .catch((error) => {
       res.status(500).json({
@@ -68,8 +74,8 @@ export const verificaPago = async (req: any, res = response) => {
 export const inicioPago = async (req: any, res = response) => {
   let dataBody: any = req.body;
 
-  let infoPago: Pago = dataBody;
-
+  let infoPago: Pago = new Pago(dataBody);
+  console.log(infoPago);
   let data: any = {
     InformacionSeguridad: {
       int_id_comercio: process.env.ZONAPAGOS_ID,
