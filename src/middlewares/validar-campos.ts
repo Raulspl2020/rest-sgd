@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 let Validator = require("validatorjs");
+Validator.useLang("es");
 //import * as Validator from 'validatorjs';
 
 export const validarCampos = (req: any, res: any, next: any) => {
@@ -12,6 +13,24 @@ export const validarCampos = (req: any, res: any, next: any) => {
     });
   }
   next();
+};
+
+export const validarIdPago = (req: any, res: any, next: any) => {
+  const validationRule = {
+    str_id_pago: "required",
+  };
+
+  let validation = new Validator(req.body, validationRule);
+
+  if (validation.passes()) {
+    next();
+  } else {
+    res.status(412).send({
+      error: true,
+      message: "Validacion fallida",
+      errors: validation.errors.all(),
+    });
+  }
 };
 
 export const validatorCampos = (req: any, res: any, next: any) => {
@@ -32,7 +51,7 @@ export const validatorCampos = (req: any, res: any, next: any) => {
     str_opcional4: "present|string",
     str_opcional5: "present|string",
   };
-  Validator.useLang("es");
+
 
   let validation = new Validator(req.body, validationRule);
 

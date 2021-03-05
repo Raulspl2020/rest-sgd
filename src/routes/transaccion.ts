@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import cors from 'cors';
 const router = Router();
-import { actualizarTransaccion, inicioPago } from '../controllers/transaccion';
+import { actualizarTransaccion, inicioPago,verificaPago, } from '../controllers/transaccion';
 import { check } from 'express-validator';
-import { validarCampos, validatorCampos } from '../middlewares/validar-campos';
+import { validarCampos, validatorCampos,validarIdPago } from '../middlewares/validar-campos';
 
 
 
@@ -33,9 +33,7 @@ const corsOptions = {
 //router.put('/estado', verificaToken, cors(corsOptions), actualizarTransaccion);
 router.put('/estado', actualizarTransaccion);
 
-router.post('/InicioPago', [
-
-  validatorCampos
-] , inicioPago);
+router.post('/InicioPago', [validatorCampos], inicioPago);
+router.post('/VerificacionPago',[validarIdPago], verificaPago);
 
 export default router;
