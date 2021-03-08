@@ -1,21 +1,39 @@
 import { ResponsePago } from "../models/ResponsePago";
+import path from 'path';
 
 export const decodeResPago = (cadena: string) => {
+
+
     let datos = cadena.split("|");
+   // console.log(datos);
     let row: any = [];
     let matriz:Array<any> = [];
-    let cont = 0;
     datos.forEach(element => {
 
-        if (element.trim() == ';') {
+        if ((element.trim().indexOf(';') != -1) && (element.trim().length<=3)) {
             matriz.push(row);
-            cont = 0;
+            row=[];
+            let aux = element.trim().split(' ');
+
+            if(aux.length>1){
+                row.push(aux[1]);
+            }else{
+                row.push("");
+            }
+            console.log(row);
+            
+          
         } else {
-            row[cont] = element.trim();
-            cont++;
+            row.push(element.trim());
+            console.log("________________");
+          //  console.log(row);
         }
 
+      
+
     });
+
+  // console.log(matriz);
 
     let listapagos:Array<ResponsePago> = [];
 
@@ -57,7 +75,7 @@ export const decodeResPago = (cadena: string) => {
     });
     return listapagos;
 
-    console.log(listapagos);
+
 
 };
 
