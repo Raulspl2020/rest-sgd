@@ -2,7 +2,7 @@ import Knex from 'knex';
 
 const db: any = {
   desarrollo: {
-    host: "190.217.113.102",
+    host: "10.10.13.13",
     user: "dvn",
     password: "duvan07+",
     database: "sigedin_ies",
@@ -20,7 +20,7 @@ const db: any = {
 
 const auth: any = {
   desarrollo: {
-    host: "190.217.113.102",
+    host: "10.10.13.13",
     user: "dvn",
     password: "duvan07+",
     database: "sigedin_seguridad",

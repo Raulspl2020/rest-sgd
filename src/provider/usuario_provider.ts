@@ -1,4 +1,4 @@
-import { conAuth } from '../config/database';
+import { conAuth, conDB  } from '../config/database';
 
 export const getUserRol = async(idUsuario:string) => {
     let sql = `SELECT
@@ -24,3 +24,23 @@ export const auditoria = async(id:string) => {
         .select('id', 'inserted_date', 'username','ip_user')
         .from('sc_log_accesosistema');
 };
+
+export const contactoUsuatio = async (idUsuario:string) => {
+    let  sql = `
+    (SELECT col_persona.ide_persona, col_persona.tipo_doc, CONCAT_WS(' ',col_persona.nom1_persona,col_persona.nom2_persona) AS nombres,
+    CONCAT_WS(' ',col_persona.ape1_persona,col_persona.ape2_persona) AS apellidos, col_persona.email_persona, col_persona.cel_persona
+    FROM col_persona
+    WHERE col_persona.ide_persona = ?) UNION (
+    SELECT col_persona.acud_identificacion AS ide_persona, COALESCE(col_persona.acud_tipo_doc,0 ) AS  tipo_doc,
+     SUBSTRING_INDEX(SUBSTRING_INDEX( col_persona.acud_apellnombres, ' ', 1), ' ', -1) AS nombres,
+      SUBSTRING_INDEX(SUBSTRING_INDEX( col_persona.acud_apellnombres, ' ', 3), ' ', -1) AS apellidos,
+    col_persona.email_persona, col_persona.acud_movil AS cel_persona
+    FROM col_persona
+    WHERE col_persona.acud_identificacion =?
+    )
+    LIMIT 1
+    `;
+
+    return await conDB.raw(sql, [idUsuario, idUsuario]);
+};
+

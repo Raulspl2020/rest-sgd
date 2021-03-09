@@ -1,34 +1,31 @@
-import { ResponsePago } from "../models/ResponsePago";
-export const decodeResPago = (cadena: string) => {
-
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.decodeResPago = void 0;
+const ResponsePago_1 = require("../models/ResponsePago");
+exports.decodeResPago = (cadena) => {
     let datos = cadena.split("|");
     // console.log(datos);
-    let row: any = [];
-    let matriz: Array<any> = [];
+    let row = [];
+    let matriz = [];
     datos.forEach(element => {
-
         if ((element.trim().indexOf(';') != -1) && (element.trim().length <= 3)) {
             matriz.push(row);
             row = [];
             let aux = element.trim().split(' ');
-
             if (aux.length > 1) {
                 row.push(aux[1]);
-            } else {
+            }
+            else {
                 row.push("");
             }
-        } else {
+        }
+        else {
             row.push(element.trim());
         }
-
     });
-
-    let listapagos: Array<ResponsePago> = [];
-
+    let listapagos = [];
     matriz.forEach(dato => {
-
-        let responsePago = new ResponsePago({
+        let responsePago = new ResponsePago_1.ResponsePago({
             "int_ped_numero": dato[0],
             "int_n_pago": dato[1],
             "int_pago_parcial": dato[2],
@@ -50,21 +47,15 @@ export const decodeResPago = (cadena: string) => {
             "str_campo5": dato[18],
             "dat_fecha": dato[19],
             "int_id_forma_pago": dato[20],
-            "str_ticketID":  dato[21],
-            "int_codigo_servicio":  dato[22],
-            "int_codigo_banco":  dato[23],
-            "str_nombre_banco":  dato[24],
-            "str_codigo_transacción":  dato[25],
-            "int_ciclo_transacción":  dato[26]
+            "str_ticketID": dato[21],
+            "int_codigo_servicio": dato[22],
+            "int_codigo_banco": dato[23],
+            "str_nombre_banco": dato[24],
+            "str_codigo_transacción": dato[25],
+            "int_ciclo_transacción": dato[26]
         });
-
         listapagos.push(responsePago);
-
-
     });
     return listapagos;
-
-
-
 };
-
+//# sourceMappingURL=pago.js.map
