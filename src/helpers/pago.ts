@@ -1,7 +1,6 @@
 import { ResponsePago } from "../models/ResponsePago";
 export const decodeResPago = (cadena: string) => {
 
-
     let datos = cadena.split("|");
     // console.log(datos);
     let row: any = [];
@@ -63,8 +62,81 @@ export const decodeResPago = (cadena: string) => {
 
     });
     return listapagos;
+};
 
 
+export const dataConfigPago = (infoPago: any) => {
 
+    let data: any = {
+        InformacionPago : infoPago,
+        InformacionSeguridad: {
+          int_id_comercio: process.env.ZONAPAGOS_ID,
+          str_usuario: process.env.ZONAPAGOS_USER,
+          str_clave: process.env.ZONAPAGOS_PASS,
+          int_modalidad: 1,
+        },
+        AdicionalesPago: [
+          {
+            int_codigo: 111,
+            str_valor: "0",
+          },
+          {
+            int_codigo: 112,
+            str_valor: "0",
+          },
+        ],
+        AdicionalesConfiguracion: [
+          {
+            int_codigo: 50,
+            str_valor: "2701",
+          },
+          {
+            int_codigo: 100,
+            str_valor: "1",
+          },
+          {
+            int_codigo: 101,
+            str_valor: "1",
+          },
+          {
+            int_codigo: 102,
+            str_valor: "1",
+          },
+          {
+            int_codigo: 103,
+            str_valor: "0",
+          },
+          {
+            int_codigo: 104,
+            str_valor: "https://www.google.com.co/",
+          },
+          {
+            int_codigo: 105,
+            str_valor: "1",
+          },
+          {
+            int_codigo: 106,
+            str_valor: "3",
+          },
+          {
+            int_codigo: 107,
+            str_valor: "0",
+          },
+          {
+            int_codigo: 108,
+            str_valor: "1",
+          },
+          {
+            int_codigo: 109,
+            str_valor: "1",
+          },
+          {
+            int_codigo: 110,
+            str_valor: "0",
+          },
+        ],
+      };
+
+      return data;
 };
 

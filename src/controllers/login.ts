@@ -208,7 +208,7 @@ export const correoRecuperacion = async (req: any, res: any) => {
             pass: process.env.EMAIL_PASS,
         };
 
-        var dataMail = {
+        let dataMail = {
             from_name: body.from_name,
             enviar_a: user.email,
             asunto: "Recuperacion de contraseña Sigedin",
@@ -316,12 +316,3 @@ export const resetPass = async (req: any, res: any) => {
     }
 };
 
-// export {
-//     googleAuth,
-//     auth,
-//     renewToken,
-//     correoRecuperacion,
-//     resetPass,
-//     saveNewPass,
-//     googleView,
-// };

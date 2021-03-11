@@ -71,7 +71,3 @@ export const getCorreoEstudiante = async (idEstudiate: number) => {
   .from("col_persona").first();
 
 };
-
-export {
-
-};

@@ -34,6 +34,7 @@ export const validarIdPago = (req: any, res: any, next: any) => {
 };
 
 export const validatorCampos = (req: any, res: any, next: any) => {
+
   const validationRule = {
     flt_total_con_iva: "required|numeric",
     flt_valor_iva: "required|numeric",
@@ -41,7 +42,7 @@ export const validatorCampos = (req: any, res: any, next: any) => {
     str_descripcion_pago: "required|string",
     str_email: "required|string|email",
     str_id_cliente: "required|string",
-    str_tipo_id: "present|string",
+    str_tipo_id: "present",
     str_nombre_cliente: "required|string",
     str_apellido_cliente: "required|string",
     str_telefono_cliente: "required|string"
