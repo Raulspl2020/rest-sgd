@@ -19,7 +19,7 @@ export const getConceptos = async (ids: any) => {
 export const getConceptosPaquete = async (id: any) => {
     let result = await conDB('fin_paquete')
     .join('fin_detalle_paquete', 'fin_paquete._id', '=', 'fin_detalle_paquete.paquete_id')
-    .select('fin_paquete._id','fin_paquete.descripcion','fin_paquete.tipo','fin_detalle_paquete._id','fin_detalle_paquete.valor_unidad','fin_detalle_paquete.cantidad','fin_detalle_paquete.descuento','fin_detalle_paquete.aumento')
+    .select('fin_paquete._id','fin_paquete.descripcion','fin_paquete.categoria_id','fin_paquete.tipo','fin_detalle_paquete._id','fin_detalle_paquete.valor_unidad','fin_detalle_paquete.cantidad','fin_detalle_paquete.descuento','fin_detalle_paquete.aumento')
     .where('fin_paquete._id', id);
     return result;
 };

@@ -36,14 +36,13 @@ export const getAuditoriaUsuario = async (req: any, res = response) => {
 //=====================
 export const getUserContacto = async (req: any, res = response) => {
     let body = req.body;
-    console.log(req);
     let ideUsuario = req.params.ideUsuario;
 
     try {
         let result = await usuarioProvider.contactoUsuatio(ideUsuario);
 
         let json:any = {};
-        if (result[0].length) {
+        if (result[0].length> 0) {
 
             res.status(200).json({
                 message: json.msj,
@@ -57,23 +56,12 @@ export const getUserContacto = async (req: any, res = response) => {
             });
         }
 
-        res.status(200).json({
-            message: json.msj,
-            data: result[0][0],
-            error: false,
-        });
-
     } catch (error) {
         res.status(500).json({
             message: "Algo salio mal",
             error: true,
-            det_error: error.sqlMessage,
+            det_error: error,
         });
     }
-   
-  
-
-
-
 
 };
