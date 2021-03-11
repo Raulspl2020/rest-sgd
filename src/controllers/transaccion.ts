@@ -3,7 +3,7 @@ import cryptoRandomString from "crypto-random-string";
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
 import { decodeResPago,dataConfigPago } from "../helpers/pago";
-import { guardarPago } from "../provider/pago_provider";
+import { guardarPago, guardarPagoyDetalle, getConceptosPaquete } from "../provider/pago_provider";
 
 //====================
 //   /transaccion/estado
@@ -84,6 +84,8 @@ export const inicioPago = async (req: any, res = response) => {
     dataBody.str_id_pago = codigo;
   }
 
+
+
   let infoPago = new Pago({
     flt_total_con_iva: dataBody.flt_total_con_iva,
     flt_valor_iva: dataBody.flt_valor_iva,
@@ -102,6 +104,31 @@ export const inicioPago = async (req: any, res = response) => {
     str_opcional5: dataBody.str_opcional5,
   });
 
+  let paquete_id = infoPago.str_opcional3;
+  let tDetallePago : any = [];
+
+  try {
+    let conceptos = await getConceptosPaquete(paquete_id);
+    
+  conceptos.forEach((concepto: any) => {
+    tDetallePago.push({
+      "pago_id": null,
+      "concepto_id": concepto._id,
+      "descuento": concepto.descuento,
+      "aumento": concepto.aumento,
+      "valor_unidad": concepto.valor_unidad,
+      "cantidad": concepto.cantidad
+
+  });
+
+  });
+  } catch (error) {
+    console.log("eror al traer los paquetes");
+    console.warn(error);
+  }
+ 
+
+
   
   try {
 
@@ -113,7 +140,7 @@ export const inicioPago = async (req: any, res = response) => {
     let responseData =  await response.json();
 
     if (responseData.int_codigo == 1) {
-      let insert: any = {
+      let tPago: any = {
         codigo: infoPago.str_id_pago,
         descripcion: infoPago.str_descripcion_pago,
         json_response: JSON.stringify(responseData),
@@ -127,7 +154,13 @@ export const inicioPago = async (req: any, res = response) => {
         tipo_pago_id: infoPago.str_opcional1,
       };
 
-      let resultSavePago = await guardarPago(insert);
+
+      
+
+      let resultSavePago = await guardarPagoyDetalle(tPago,tDetallePago);
+      //guardar el detalle de la factura
+      console.log("El resultado de la tran es :");
+      console.log(resultSavePago);
       
       res.status(200).json({
         message: "Ejecucion correcta",
