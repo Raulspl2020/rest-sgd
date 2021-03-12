@@ -16,6 +16,8 @@ import {
 //=====================
 export const actualizarTransaccion = async (req: any, res = response) => {
   let body = req.body;
+  console.log("peticion de zonapagos entrante...");
+  console.log(body);
 
   let updateData :any= {
     'json_update' : JSON.stringify(body)
@@ -25,10 +27,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     let result = await actualizarEstadoPago(updateData, "EREOA1JOR7");
     res.status(200).json({
       message: "Pago actualizado exitosamente",
-      codigo: cryptoRandomString({
-        length: 10,
-        characters: "1124862618DUVANROSERO",
-      }),
+      codigo: result,
       data: body,
       error: false,
     });
