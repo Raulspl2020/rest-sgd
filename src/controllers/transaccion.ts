@@ -122,6 +122,8 @@ export const inicioPago = async (req: any, res = response) => {
 const savePago = async (infoPago: any) => {
   console.log("ejecutamos la fucnion de save");
 
+  //pendiente validar precios
+
   let ret: any = {};
 
   let paquete_id = infoPago.str_opcional1;

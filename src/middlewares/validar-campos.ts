@@ -61,7 +61,7 @@ export const validatorCampos = (req: any, res: any, next: any) => {
   } else {
     res.status(412).send({
       error: true,
-      message: "Validacion fallida",
+      message: "Hay campos obligatorios sin completar",
       errors: validation.errors.all(),
     });
   }

@@ -23,6 +23,7 @@ class Server {
     middlewares() {
         //Cors
         this.app.use(cors());
+
         // parse application/x-www-form-urlencoded
         this.app.use(bodyParser.urlencoded({ extended: false }));
         //body-parser-json
@@ -30,7 +31,7 @@ class Server {
         //File-upploads
         this.app.use(fileUpload());
         //carpeta publica
-        this.app.use(express.static('public'));
+        this.app.use('/api/static',express.static('public'));
     }
 
     async dbConnection() {
