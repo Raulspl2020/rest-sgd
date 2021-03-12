@@ -18,7 +18,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
   
 
-  let params  = req.params;
+  let params  = req.query;
   let body = req.body;
   console.log("peticion de zonapagos entrante...");
   console.log(body);
@@ -26,7 +26,8 @@ export const actualizarTransaccion = async (req: any, res = response) => {
   console.log(params);
 
   let updateData :any= {
-    'json_update' : JSON.stringify(body)
+    'json_update' : JSON.stringify(body),
+
   } 
 
   try {
@@ -36,7 +37,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       codigo: result,
       body: body,
       params: params,
-      error: false,
+      error: false
     });
 
   } catch (error) {

@@ -40,9 +40,7 @@ if (process.env.NODE_ENV == "dev") {
   db.default = db.desarrollo;
   auth.default = auth.desarrollo;
 } else {
-  console.log(db);
   console.log("El entorno es: " + process.env.NODE_ENV);
-  console.log(process.env.NODE_ENV);
 
   db.default = db.produccion;
   auth.default = auth.produccion;
