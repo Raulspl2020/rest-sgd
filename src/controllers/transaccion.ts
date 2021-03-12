@@ -15,9 +15,15 @@ import {
 //   /transaccion/estado
 //=====================
 export const actualizarTransaccion = async (req: any, res = response) => {
+
+  
+
+  let params  = req.params;
   let body = req.body;
   console.log("peticion de zonapagos entrante...");
   console.log(body);
+  console.log("peticion de zonapagos entrante params");
+  console.log(params);
 
   let updateData :any= {
     'json_update' : JSON.stringify(body)
@@ -28,7 +34,8 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     res.status(200).json({
       message: "Pago actualizado exitosamente",
       codigo: result,
-      data: body,
+      body: body,
+      params: params,
       error: false,
     });
 

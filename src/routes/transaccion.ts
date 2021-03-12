@@ -32,6 +32,7 @@ const corsOptions = {
 
 //router.put('/estado', verificaToken, cors(corsOptions), actualizarTransaccion);
 router.put('/estado', actualizarTransaccion);
+router.get('/estado', actualizarTransaccion);
 
 router.post('/InicioPago', [validatorCampos], inicioPago);
 router.post('/VerificacionPago',[validarIdPago], verificaPago);
