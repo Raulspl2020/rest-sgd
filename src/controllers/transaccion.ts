@@ -8,6 +8,7 @@ import {
   guardarPago,
   guardarPagoyDetalle,
   getConceptosPaquete,
+  actualizarEstadoPago
 } from "../provider/pago_provider";
 
 //====================
@@ -16,14 +17,36 @@ import {
 export const actualizarTransaccion = async (req: any, res = response) => {
   let body = req.body;
 
-  res.status(200).json({
-    message: "funciona la transaccion",
-    codigo: cryptoRandomString({
-      length: 10,
-      characters: "1124862618DUVANROSERO",
-    }),
-    error: false,
-  });
+  let updateData :any= {
+    'json_update' : JSON.stringify(body)
+  } 
+
+  try {
+    let result = await actualizarEstadoPago(updateData, "EREOA1JOR7");
+    res.status(200).json({
+      message: "Pago actualizado exitosamente",
+      codigo: cryptoRandomString({
+        length: 10,
+        characters: "1124862618DUVANROSERO",
+      }),
+      data: body,
+      error: false,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Servicio no disponible temporalmente",
+      error: true,
+      det_error: error
+    });
+  }
+
+
+
+
+
+
+
 };
 
 //====================
@@ -169,10 +192,10 @@ const savePago = async (infoPago: any) => {
         json_response: JSON.stringify(responseData),
         estado_id: 888,
         estudiante_id: infoPago.str_id_cliente,
-        matricula_id: (infoPago.str_opcional3=="") ? null : infoPago.str_opcional3,
+        matricula_id: (infoPago.str_opcional3 == "") ? null : infoPago.str_opcional3,
         valor: infoPago.flt_total_con_iva,
         valor_letras: infoPago.str_opcional2,
-        periodo_id: (infoPago.str_opcional4=="") ? null : infoPago.str_opcional4,
+        periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
         archivo_id: null,
         categoria_pago_id: conceptos[0].categoria_id,
       };
@@ -180,7 +203,7 @@ const savePago = async (infoPago: any) => {
       //guardar el detalle de la factura
       let resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
 
-      if (resultSavePago != false) { 
+      if (resultSavePago != false) {
         ret = {
           statusCode: 200,
           message: "Ejecucion correcta",
@@ -214,7 +237,7 @@ const updatePago = async (infoPago: any) => {
     error: false,
     statusCode: 200,
   };
-  
+
 
   return ret;
 };

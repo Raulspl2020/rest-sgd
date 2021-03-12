@@ -9,6 +9,14 @@ export const guardarPago = async (params: any) => {
 };
 
 
+export const actualizarEstadoPago = async (params: any, codigo:string) => {
+    let result = await conDB('fin_pago')
+    .where('codigo', codigo )
+    .update(params);
+    return result;
+};
+
+
 export const getConceptos = async (ids: any) => {
     let result = await conDB.select('_id','codigo','descripcion','valor').from('fin_concepto')
     .whereIn('_id', ids);
