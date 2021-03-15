@@ -14,6 +14,7 @@ class Pago {
   public str_opcional3?: string;
   public str_opcional4: string;
   public str_opcional5: string;
+  
 
   constructor(param: any) {
     this.flt_total_con_iva = param.flt_total_con_iva;

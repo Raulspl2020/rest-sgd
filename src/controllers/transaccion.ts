@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
 import { decodeResPago, dataConfigPago } from "../helpers/pago";
-import dateFormat  from 'dateformat';
+import dateFormat from 'dateformat';
 import {
   guardarPago,
   guardarPagoyDetalle,
@@ -19,9 +19,7 @@ import {
 //=====================
 export const actualizarTransaccion = async (req: any, res = response) => {
 
-  
-
-  let codigo_pago  = req.query.id_pago;
+  let codigo_pago = req.query.id_pago;
 
   const data = {
     int_id_comercio: process.env.ZONAPAGOS_ID,
@@ -31,18 +29,13 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     str_id_pago: codigo_pago
   };
 
-  let fechaUpdate = new Date() ;
-
-
+  let fechaUpdate = new Date();
 
   try {
 
     let id_pago = await detIdPagoByCodigo(codigo_pago);
 
- 
-
-
-   let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
+    let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
       method: "POST",
       body: JSON.stringify(data),
       headers: { "Content-Type": "application/json" },
@@ -52,85 +45,77 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     if (responseData.int_error == 0) {
       let pagoDecoded = decodeResPago(responseData.str_res_pago);
 
-      let dataBody:any = pagoDecoded[0];
-      
-
-      if(id_pago==false){
+      let dataBody: any = pagoDecoded[0];
+      if (id_pago == false) {
         //insertar el pago en la DB
-  
+
         let infoPago = new Pago({
-          flt_total_con_iva: dataBody.flt_total_con_iva,
-          flt_valor_iva: dataBody.flt_valor_iva,
-          str_id_pago: dataBody.str_id_pago,
-          str_descripcion_pago: dataBody.str_descripcion_pago,
+          flt_total_con_iva: dataBody.dbl_total_pago,
+          flt_valor_iva: dataBody.dbl_valor_iva_pagado,
+          str_id_pago: codigo_pago,
+          str_descripcion_pago: dataBody.str_descripcion,
           str_email: dataBody.str_email,
           str_id_cliente: dataBody.str_id_cliente,
           str_tipo_id: dataBody.str_tipo_id,
           str_nombre_cliente: dataBody.str_nombre_cliente,
           str_apellido_cliente: dataBody.str_apellido_cliente,
           str_telefono_cliente: dataBody.str_telefono_cliente,
-          str_opcional1: dataBody.str_opcional1, //codigo paquete
-          str_opcional2: dataBody.str_opcional2, //valor en letras
-          str_opcional3: dataBody.str_opcional3, //matricula
-          str_opcional4: dataBody.str_opcional4, //periodo
-          str_opcional5: dataBody.str_opcional5,
+          str_opcional1: dataBody.str_campo1, //codigo paquete
+          str_opcional2: dataBody.str_campo2, //valor en letras
+          str_opcional3: dataBody.str_campo3, //matricula
+          str_opcional4: dataBody.str_campo4, //periodo
+          str_opcional5: dataBody.str_campo5,
         });
 
-      let resSavePago =   await savePago(infoPago);
-      id_pago = resSavePago.pago_id;
-  
+        let resSavePago = await savePago(infoPago,null);
+        id_pago = resSavePago.pago_id;
+
       }
 
-
-
-     
-
-      let data:any = {
-        'json_detalle' : responseData.str_res_pago,
+      let data: any = {
+        'json_detalle': responseData.str_res_pago,
         'estado_id': pagoDecoded[0].int_pago_terminado,
-        'fecha_update' : dateFormat(fechaUpdate,'yyyy-mm-dd HH:MM::ss')
+        'fecha_update': dateFormat(fechaUpdate, 'yyyy-mm-dd HH:MM::ss')
       };
 
-      let codigos:any = [];
-      let detPago:any = [];
-      pagoDecoded.forEach((det:any) => {
+      let codigos: any = [];
+      let detPago: any = [];
+      pagoDecoded.forEach((det: any) => {
         codigos.push(det.str_codigo_transacción);
 
         detPago.push({
           '_id': uuidv4(),
-          'pago_id' : id_pago,
-          'valor_pago' : det.dbl_valor_pagado,
-          'total_pago' : det.dbl_total_pago,
-          'valor_iva_pago' : det.dbl_valor_iva_pagado,
+          'pago_id': id_pago,
+          'valor_pago': det.dbl_valor_pagado,
+          'total_pago': det.dbl_total_pago,
+          'valor_iva_pago': det.dbl_valor_iva_pagado,
           'estado_pago_id': det.int_estado_pago,
-          'forma_pago_id' : det.int_id_forma_pago,
+          'forma_pago_id': det.int_id_forma_pago,
           'nombre_banco': det.str_nombre_banco,
           'codigo_transaccion': det.str_codigo_transacción
         });
 
-
-
       });
 
-
+      //actualiza la fecha y el estado de un pago en la DB
       let resDB = await actualizarEstadoPago(data, codigo_pago);
 
-      let resDb2 = await actualizarPagoyDetalle(codigos,detPago);
+      //borra y crea los detalles pago: true-false
+      let resDb2 = await actualizarPagoyDetalle(codigos, detPago);
 
-      console.log("imprimir estado:");
-      console.log(resDb2);
-
-
-      res.status(200).json({
-        message: "Pago actualizado exitosamente",
-        error: false,
-        data: pagoDecoded,
-        data_server: responseData.str_res_pago,
-      });
+      if(resDb2){
+        res.status(200).json({
+          message: "Pago actualizado exitosamente",
+          error: false,
+          data: pagoDecoded,
+          data_server: responseData.str_res_pago,
+        });
+      }else{
+        throw new Error("No se ha podido insertar los detalle de pago");
+      }
     } else {
       throw new Error("Error de comunicacion con zonapagos o código no encontrado");
     }
-
 
 
   } catch (error) {
@@ -140,11 +125,6 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       det_error: error.message
     });
   }
-
-
-
-
-
 
 
 };
@@ -200,52 +180,82 @@ export const verificaPago = async (req: any, res = response) => {
 export const inicioPago = async (req: any, res = response) => {
   let dataBody: any = req.body;
 
-  let infoPago = new Pago({
-    flt_total_con_iva: dataBody.flt_total_con_iva,
-    flt_valor_iva: dataBody.flt_valor_iva,
-    str_id_pago: dataBody.str_id_pago,
-    str_descripcion_pago: dataBody.str_descripcion_pago,
-    str_email: dataBody.str_email,
-    str_id_cliente: dataBody.str_id_cliente,
-    str_tipo_id: dataBody.str_tipo_id,
-    str_nombre_cliente: dataBody.str_nombre_cliente,
-    str_apellido_cliente: dataBody.str_apellido_cliente,
-    str_telefono_cliente: dataBody.str_telefono_cliente,
-    str_opcional1: dataBody.str_opcional1, //codigo paquete
-    str_opcional2: dataBody.str_opcional2, //valor en letras
-    str_opcional3: dataBody.str_opcional3, //matricula
-    str_opcional4: dataBody.str_opcional4, //periodo
-    str_opcional5: dataBody.str_opcional5,
-  });
 
-  //si no se envia el codigo se crea un nuevo pago
-  if (dataBody.str_id_pago == "") {
-    //generamos el codigo
-    let cadena =
-      dataBody.str_nombre_cliente +
-      dataBody.str_apellido_cliente +
-      dataBody.str_id_cliente.trim();
-    let codigo = await cryptoRandomString({
-      length: 10,
-      characters: cadena.replace(/\s+/g, ""),
+  try {
+
+    let infoPago = new Pago({
+      flt_total_con_iva: dataBody.flt_total_con_iva,
+      flt_valor_iva: dataBody.flt_valor_iva,
+      str_id_pago: dataBody.str_id_pago,
+      str_descripcion_pago: dataBody.str_descripcion_pago,
+      str_email: dataBody.str_email,
+      str_id_cliente: dataBody.str_id_cliente,
+      str_tipo_id: dataBody.str_tipo_id,
+      str_nombre_cliente: dataBody.str_nombre_cliente,
+      str_apellido_cliente: dataBody.str_apellido_cliente,
+      str_telefono_cliente: dataBody.str_telefono_cliente,
+      str_opcional1: dataBody.str_opcional1, //codigo paquete
+      str_opcional2: dataBody.str_opcional2, //valor en letras
+      str_opcional3: dataBody.str_opcional3, //matricula
+      str_opcional4: dataBody.str_opcional4, //periodo
+      str_opcional5: dataBody.str_opcional5,
     });
-    infoPago.str_id_pago = codigo;
 
-    let response = await savePago(infoPago);
-    res.status(response.statusCode).json(response);
-  } else {
-    let response = await updatePago(infoPago);
-    res.status(response.statusCode).json(response);
+    //si no se envia el codigo se crea un nuevo pago
+    if (dataBody.str_id_pago == "") {
+      //generamos el codigo
+      let cadena =
+        dataBody.str_nombre_cliente +
+        dataBody.str_apellido_cliente +
+        dataBody.str_id_cliente.trim();
+      let codigo = await cryptoRandomString({
+        length: 10,
+        characters: cadena.replace(/\s+/g, ""),
+      });
+      infoPago.str_id_pago = codigo;
+
+
+
+      let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
+        method: "POST",
+        body: JSON.stringify(dataConfigPago(infoPago)),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      let responseData = await responseZona.json();
+
+      
+      if (responseData.int_codigo == 1) {
+
+        let response = await savePago(infoPago, JSON.stringify(responseData));
+        res.status(response.statusCode).json(response);
+
+      } else {
+        throw new Error("Parámetros enviados de forma incorrecta");
+      }
+
+    } else {
+      let response = await updatePago(infoPago);
+      res.status(response.statusCode).json(response);
+    }
+
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Algo salio mal",
+      error: true,
+      det_error: error,
+    });
   }
 };
 
 //====================
 //   guardarEL pago generado
 //=====================
-const savePago = async (infoPago: any) => {
+const savePago = async (infoPago: any, responseData:any) => {
   console.log("ejecutamos la fucnion de save");
 
-  //pendiente validar precios
+  //pendiente validar precios: si son diferentes mostrar alerta
 
   let ret: any = {};
 
@@ -253,17 +263,6 @@ const savePago = async (infoPago: any) => {
   let tDetallePago: any = [];
 
   try {
-
-
-    let response = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
-      method: "POST",
-      body: JSON.stringify(dataConfigPago(infoPago)),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    let responseData = await response.json();
-
-    if (responseData.int_codigo == 1) {
 
 
       let conceptos = await getConceptosPaquete(paquete_id);
@@ -289,7 +288,7 @@ const savePago = async (infoPago: any) => {
       let tPago: any = {
         codigo: infoPago.str_id_pago,
         descripcion: infoPago.str_descripcion_pago,
-        json_response: JSON.stringify(responseData),
+        json_response: responseData,
         estado_id: 888,
         estudiante_id: infoPago.str_id_cliente,
         matricula_id: (infoPago.str_opcional3 == "") ? null : infoPago.str_opcional3,
@@ -309,16 +308,14 @@ const savePago = async (infoPago: any) => {
           message: "Ejecucion correcta",
           error: false,
           pago_id: resultSavePago,
-          data: responseData,
+          data: JSON.parse(responseData),
         };
 
         return ret;
       } else {
         throw new Error("No se ha podido guardar el pago");
       }
-    } else {
-      throw new Error("Parámetros enviados de forma incorrecta");
-    }
+
   } catch (error) {
     ret = {
       statusCode: 500,
@@ -337,7 +334,5 @@ const updatePago = async (infoPago: any) => {
     error: false,
     statusCode: 200,
   };
-
-
   return ret;
 };

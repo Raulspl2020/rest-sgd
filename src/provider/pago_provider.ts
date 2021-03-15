@@ -78,7 +78,6 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago:any) => {
 
 export const actualizarPagoyDetalle = async (ids: any, dataInsert:any) => {
 
-    let id =0;
     const trx = await conDB.transaction();
     return await trx('fin_detalle_pago')
     .whereIn('codigo_transaccion',ids)
@@ -91,7 +90,7 @@ export const actualizarPagoyDetalle = async (ids: any, dataInsert:any) => {
 
         .then((result:any)=>{
              trx.commit();
-             return id;
+             return true;
         })
         .catch((result:any)=>{
             console.log(result);
