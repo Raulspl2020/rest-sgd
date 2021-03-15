@@ -9,6 +9,23 @@ export const guardarPago = async (params: any) => {
 };
 
 
+
+//Usado por las tareas cron para verificar los pagos cada cierto tiempo
+export const obtenerPagosPendientes = async (minutos:number, forma_pago_ids:any) => {
+    
+    const sql = `SELECT  fin_pago._id, fin_pago.codigo FROM 
+    fin_pago LEFT JOIN fin_detalle_pago ON (fin_pago._id = fin_detalle_pago.pago_id)
+    WHERE (fin_detalle_pago.estado_pago_id = 999 OR fin_pago.estado_id=4001)
+    AND TIMESTAMPDIFF(MINUTE,fin_pago.fecha,NOW()) >= ?
+    AND fin_detalle_pago.forma_pago_id IN (?)`;
+
+    let result = await conDB.raw(sql, [minutos,forma_pago_ids]);
+    return result;
+};
+
+
+
+
 export const detIdPagoByCodigo = async (codigo: any) => {
     let result = await conDB
     .select('_id')
@@ -21,7 +38,6 @@ export const detIdPagoByCodigo = async (codigo: any) => {
     }
    
 };
-
 
 
 export const actualizarEstadoPago = async (params: any, codigo:string) => {

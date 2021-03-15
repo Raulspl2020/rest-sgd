@@ -1,9 +1,15 @@
 import express, { Application } from 'express';
 import Routes from '../routes';
+
+import { verificaPagosPendientes, verificaPagosPendientesEfectivo } from "../helpers/cron_job";
+
+
+
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import fileUpload from 'express-fileupload';
 import path from 'path';
+import cron from 'node-cron';
 
 class Server {
 
@@ -18,6 +24,23 @@ class Server {
         this.middlewares();
         this.routes();
         this.config();
+        this.cronJob();
+    }
+
+
+    async cronJob() {
+
+        cron.schedule('*/15 * * * *', () => {
+            verificaPagosPendientes().then((result) => {
+                console.log(result);
+            });
+        });
+
+        cron.schedule('*/60 * * * *', () => {
+            verificaPagosPendientesEfectivo().then((result) => {
+                console.log(result);
+            });
+        });
     }
 
     middlewares() {
@@ -31,13 +54,13 @@ class Server {
         //File-upploads
         this.app.use(fileUpload());
         //carpeta publica
-        this.app.use('/api/static',express.static('public'));
+        this.app.use('/api/static', express.static('public'));
     }
 
     async dbConnection() {
-       
+
         // try {
-            
+
         //     console.log('Connection has been established successfully.');
         // } catch (error) {
         //     console.error('Unable to connect to the database:', error);
