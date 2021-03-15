@@ -7,7 +7,7 @@ export const decodeResPago = (cadena: string) => {
     let matriz: Array<any> = [];
     datos.forEach(element => {
 
-        if ((element.trim().indexOf(';') != -1) && (element.trim().length <= 3)) {
+        if ((element.trim().indexOf(';') != -1) ) {
             matriz.push(row);
             row = [];
             let aux = element.trim().split(' ');

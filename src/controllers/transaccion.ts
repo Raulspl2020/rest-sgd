@@ -1,14 +1,17 @@
 import { response } from "express";
 import cryptoRandomString from "crypto-random-string";
+import { v4 as uuidv4 } from 'uuid';
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
 import { decodeResPago, dataConfigPago } from "../helpers/pago";
-
+import dateFormat  from 'dateformat';
 import {
   guardarPago,
   guardarPagoyDetalle,
   getConceptosPaquete,
-  actualizarEstadoPago
+  actualizarEstadoPago,
+  actualizarPagoyDetalle,
+  detIdPagoByCodigo
 } from "../provider/pago_provider";
 
 //====================
@@ -18,33 +21,123 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
   
 
-  let params  = req.query;
-  let body = req.body;
-  console.log("peticion de zonapagos entrante...");
-  console.log(body);
-  console.log("peticion de zonapagos entrante params");
-  console.log(params);
+  let codigo_pago  = req.query.id_pago;
 
-  let updateData :any= {
-    'json_update' : JSON.stringify(body),
+  const data = {
+    int_id_comercio: process.env.ZONAPAGOS_ID,
+    str_usr_comercio: process.env.ZONAPAGOS_USER,
+    str_pwd_comercio: process.env.ZONAPAGOS_PASS,
+    int_no_pago: -1,
+    str_id_pago: codigo_pago
+  };
 
-  } 
+  let fechaUpdate = new Date() ;
+
+
 
   try {
-    let result = await actualizarEstadoPago(updateData, "EREOA1JOR7");
-    res.status(200).json({
-      message: "Pago actualizado exitosamente",
-      codigo: result,
-      body: body,
-      params: params,
-      error: false
+
+    let id_pago = await detIdPagoByCodigo(codigo_pago);
+
+ 
+
+
+   let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" },
     });
+    let responseData = await response.json();
+
+    if (responseData.int_error == 0) {
+      let pagoDecoded = decodeResPago(responseData.str_res_pago);
+
+      let dataBody:any = pagoDecoded[0];
+      
+
+      if(id_pago==false){
+        //insertar el pago en la DB
+  
+        let infoPago = new Pago({
+          flt_total_con_iva: dataBody.flt_total_con_iva,
+          flt_valor_iva: dataBody.flt_valor_iva,
+          str_id_pago: dataBody.str_id_pago,
+          str_descripcion_pago: dataBody.str_descripcion_pago,
+          str_email: dataBody.str_email,
+          str_id_cliente: dataBody.str_id_cliente,
+          str_tipo_id: dataBody.str_tipo_id,
+          str_nombre_cliente: dataBody.str_nombre_cliente,
+          str_apellido_cliente: dataBody.str_apellido_cliente,
+          str_telefono_cliente: dataBody.str_telefono_cliente,
+          str_opcional1: dataBody.str_opcional1, //codigo paquete
+          str_opcional2: dataBody.str_opcional2, //valor en letras
+          str_opcional3: dataBody.str_opcional3, //matricula
+          str_opcional4: dataBody.str_opcional4, //periodo
+          str_opcional5: dataBody.str_opcional5,
+        });
+
+      let resSavePago =   await savePago(infoPago);
+      id_pago = resSavePago.pago_id;
+  
+      }
+
+
+
+     
+
+      let data:any = {
+        'json_detalle' : responseData.str_res_pago,
+        'estado_id': pagoDecoded[0].int_pago_terminado,
+        'fecha_update' : dateFormat(fechaUpdate,'yyyy-mm-dd HH:MM::ss')
+      };
+
+      let codigos:any = [];
+      let detPago:any = [];
+      pagoDecoded.forEach((det:any) => {
+        codigos.push(det.str_codigo_transacción);
+
+        detPago.push({
+          '_id': uuidv4(),
+          'pago_id' : id_pago,
+          'valor_pago' : det.dbl_valor_pagado,
+          'total_pago' : det.dbl_total_pago,
+          'valor_iva_pago' : det.dbl_valor_iva_pagado,
+          'estado_pago_id': det.int_estado_pago,
+          'forma_pago_id' : det.int_id_forma_pago,
+          'nombre_banco': det.str_nombre_banco,
+          'codigo_transaccion': det.str_codigo_transacción
+        });
+
+
+
+      });
+
+
+      let resDB = await actualizarEstadoPago(data, codigo_pago);
+
+      let resDb2 = await actualizarPagoyDetalle(codigos,detPago);
+
+      console.log("imprimir estado:");
+      console.log(resDb2);
+
+
+      res.status(200).json({
+        message: "Pago actualizado exitosamente",
+        error: false,
+        data: pagoDecoded,
+        data_server: responseData.str_res_pago,
+      });
+    } else {
+      throw new Error("Error de comunicacion con zonapagos o código no encontrado");
+    }
+
+
 
   } catch (error) {
     res.status(500).json({
       message: "Servicio no disponible temporalmente",
       error: true,
-      det_error: error
+      det_error: error.message
     });
   }
 

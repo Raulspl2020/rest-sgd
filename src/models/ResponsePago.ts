@@ -2,7 +2,7 @@ class ResponsePago {
     private int_ped_numero :  number;
     private int_n_pago: number;
     private int_pago_parcial :  number;
-    private int_pago_terminado:  number;
+    public int_pago_terminado:  number;
     private int_estado_pago :  number;
     private dbl_valor_pagado :  number;
     private dbl_total_pago: number;

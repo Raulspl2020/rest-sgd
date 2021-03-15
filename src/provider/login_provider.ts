@@ -20,11 +20,14 @@ export  const validar = async(user:any, pass:any) => {
 };
 
 export const getUser = async(user:any) => {
-    let query = await conAuth
+    let query = conAuth
         .where({ 'login': user })
         .orWhere({ 'email': user })
         .select('login', 'name', 'email', 'active', 'activation_code')
-        .from("sec_users").first();
+        .from("sec_users").first().then((result)=>{
+            console.log("aqui esta el result");
+            console.log(result);
+        });
     return query;
 
 };

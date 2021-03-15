@@ -9,6 +9,21 @@ export const guardarPago = async (params: any) => {
 };
 
 
+export const detIdPagoByCodigo = async (codigo: any) => {
+    let result = await conDB
+    .select('_id')
+    .from('fin_pago')
+    .where('codigo', codigo);
+    if(result.length>0){
+        return result[0]._id;
+    }else{
+        return false;
+    }
+   
+};
+
+
+
 export const actualizarEstadoPago = async (params: any, codigo:string) => {
     let result = await conDB('fin_pago')
     .where('codigo', codigo )
@@ -57,8 +72,34 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago:any) => {
             return false;
         });
 
+};
 
+
+
+export const actualizarPagoyDetalle = async (ids: any, dataInsert:any) => {
+
+    let id =0;
+    const trx = await conDB.transaction();
+    return await trx('fin_detalle_pago')
+    .whereIn('codigo_transaccion',ids)
+    .del()
+        .then((ids: any) => {
+            let detalle: any = dataInsert;
+
+            return trx('fin_detalle_pago').insert(detalle);
+        })
+
+        .then((result:any)=>{
+             trx.commit();
+             return id;
+        })
+        .catch((result:any)=>{
+            console.log(result);
+            trx.rollback();
+            return false;
+        });
 
 };
+
 
 
