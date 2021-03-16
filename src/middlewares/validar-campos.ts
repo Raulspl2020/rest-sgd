@@ -35,6 +35,7 @@ export const validarIdPago = (req: any, res: any, next: any) => {
 
 export const validatorCampos = (req: any, res: any, next: any) => {
 
+
   const validationRule = {
     flt_total_con_iva: "required|numeric",
     flt_valor_iva: "required|numeric",
@@ -43,18 +44,20 @@ export const validatorCampos = (req: any, res: any, next: any) => {
     str_email: "required|string|email",
     str_id_cliente: "required|string",
     str_tipo_id: "present",
-    str_nombre_cliente: "required|string",
+    str_nombre_cliente: ['required','string'],
     str_apellido_cliente: "required|string",
     str_telefono_cliente: "required|string",
-     str_opcional1: "present|numeric", // codigo paquete
-     str_opcional2: "present|string", //valor en letras
-     str_opcional3: "numeric", //matricula
-     str_opcional4: "string", // periodo
+    str_opcional1: "present|numeric", // codigo paquete
+    str_opcional2: "present|string", //valor en letras
+    str_opcional3: "numeric", //matricula
+    str_opcional4: "string", // periodo
     // str_opcional5: "present|string",
   };
 
 
   let validation = new Validator(req.body, validationRule);
+  //let expresion = /[^`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/g;
+
 
   if (validation.passes()) {
     next();

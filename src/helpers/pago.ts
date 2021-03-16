@@ -65,6 +65,13 @@ export const decodeResPago = (cadena: string) => {
 };
 
 
+export const limpiarCampos = (cadena:string) =>{
+  if(cadena==undefined){
+    cadena ="";
+  }
+  return cadena.toString().replace(/[`~!@#$%^&*¬()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gim, '');
+}
+
 export const dataConfigPago = (infoPago: any) => {
 
     let data: any = {
@@ -108,7 +115,7 @@ export const dataConfigPago = (infoPago: any) => {
           },
           {
             int_codigo: 104,
-            str_valor: "https://www.google.com.co/",
+            str_valor: "https://sigedin.itp.edu.co/",
           },
           {
             int_codigo: 105,
@@ -127,8 +134,8 @@ export const dataConfigPago = (infoPago: any) => {
             str_valor: "1",
           },
           {
-            int_codigo: 109,
-            str_valor: "1",
+            int_codigo: 109, //activa el campo editable
+            str_valor: "0",
           },
           {
             int_codigo: 110,

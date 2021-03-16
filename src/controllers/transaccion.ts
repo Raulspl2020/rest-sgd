@@ -3,7 +3,7 @@ import cryptoRandomString from "crypto-random-string";
 import { v4 as uuidv4 } from 'uuid';
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
-import { decodeResPago, dataConfigPago } from "../helpers/pago";
+import { decodeResPago, dataConfigPago, limpiarCampos } from "../helpers/pago";
 import dateFormat from 'dateformat';
 import {
   guardarPago,
@@ -13,6 +13,8 @@ import {
   actualizarPagoyDetalle,
   detIdPagoByCodigo
 } from "../provider/pago_provider";
+import { join } from "path";
+let Validator = require("validatorjs");
 
 //====================
 //   /transaccion/estado
@@ -52,22 +54,22 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         let infoPago = new Pago({
           flt_total_con_iva: dataBody.dbl_total_pago,
           flt_valor_iva: dataBody.dbl_valor_iva_pagado,
-          str_id_pago: codigo_pago,
-          str_descripcion_pago: dataBody.str_descripcion,
+          str_id_pago: limpiarCampos(codigo_pago),
+          str_descripcion_pago: limpiarCampos(dataBody.str_descripcion),
           str_email: dataBody.str_email,
-          str_id_cliente: dataBody.str_id_cliente,
-          str_tipo_id: dataBody.str_tipo_id,
-          str_nombre_cliente: dataBody.str_nombre_cliente,
-          str_apellido_cliente: dataBody.str_apellido_cliente,
-          str_telefono_cliente: dataBody.str_telefono_cliente,
-          str_opcional1: dataBody.str_campo1, //codigo paquete
-          str_opcional2: dataBody.str_campo2, //valor en letras
-          str_opcional3: dataBody.str_campo3, //matricula
-          str_opcional4: dataBody.str_campo4, //periodo
-          str_opcional5: dataBody.str_campo5,
+          str_id_cliente: limpiarCampos(dataBody.str_id_cliente),
+          str_tipo_id: limpiarCampos(dataBody.str_tipo_id),
+          str_nombre_cliente: limpiarCampos(dataBody.str_nombre_cliente),
+          str_apellido_cliente: limpiarCampos(dataBody.str_apellido_cliente),
+          str_telefono_cliente: limpiarCampos(dataBody.str_telefono_cliente),
+          str_opcional1: limpiarCampos(dataBody.str_campo1), //codigo paquet)e
+          str_opcional2: limpiarCampos(dataBody.str_campo2), //valor en letra)s
+          str_opcional3: limpiarCampos(dataBody.str_campo3), //matricul)a
+          str_opcional4: limpiarCampos(dataBody.str_campo4), //period)o
+          str_opcional5: limpiarCampos(dataBody.str_campo5),
         });
 
-        let resSavePago = await savePago(infoPago,null);
+        let resSavePago = await savePago(infoPago, null);
         id_pago = resSavePago.pago_id;
 
       }
@@ -89,10 +91,10 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           'valor_pago': det.dbl_valor_pagado,
           'total_pago': det.dbl_total_pago,
           'valor_iva_pago': det.dbl_valor_iva_pagado,
-          'estado_pago_id': det.int_estado_pago,
-          'forma_pago_id': det.int_id_forma_pago,
-          'nombre_banco': det.str_nombre_banco,
-          'codigo_transaccion': det.str_codigo_transacción
+          'estado_pago_id': (det.int_estado_pago=='') ? null: det.int_estado_pago ,
+          'forma_pago_id': (det.int_id_forma_pago=='')? null : det.int_id_forma_pago,
+          'nombre_banco': (det.str_nombre_banco=='') ? null : det.str_nombre_banco,
+          'codigo_transaccion': (det.str_codigo_transacción=='') ? null : det.str_codigo_transacción
         });
 
       });
@@ -103,14 +105,14 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       //borra y crea los detalles pago: true-false
       let resDb2 = await actualizarPagoyDetalle(codigos, detPago);
 
-      if(resDb2){
+      if (resDb2) {
         res.status(200).json({
           message: "Pago actualizado exitosamente",
           error: false,
           data: pagoDecoded,
           data_server: responseData.str_res_pago,
         });
-      }else{
+      } else {
         throw new Error("No se ha podido insertar los detalle de pago");
       }
     } else {
@@ -186,19 +188,19 @@ export const inicioPago = async (req: any, res = response) => {
     let infoPago = new Pago({
       flt_total_con_iva: dataBody.flt_total_con_iva,
       flt_valor_iva: dataBody.flt_valor_iva,
-      str_id_pago: dataBody.str_id_pago,
-      str_descripcion_pago: dataBody.str_descripcion_pago,
+      str_id_pago: limpiarCampos(dataBody.str_id_pago),
+      str_descripcion_pago: limpiarCampos(dataBody.str_descripcion_pago),
       str_email: dataBody.str_email,
-      str_id_cliente: dataBody.str_id_cliente,
-      str_tipo_id: dataBody.str_tipo_id,
-      str_nombre_cliente: dataBody.str_nombre_cliente,
-      str_apellido_cliente: dataBody.str_apellido_cliente,
-      str_telefono_cliente: dataBody.str_telefono_cliente,
-      str_opcional1: dataBody.str_opcional1, //codigo paquete
-      str_opcional2: dataBody.str_opcional2, //valor en letras
-      str_opcional3: dataBody.str_opcional3, //matricula
-      str_opcional4: dataBody.str_opcional4, //periodo
-      str_opcional5: dataBody.str_opcional5,
+      str_id_cliente: limpiarCampos(dataBody.str_id_cliente),
+      str_tipo_id: limpiarCampos(dataBody.str_tipo_id),
+      str_nombre_cliente: limpiarCampos(dataBody.str_nombre_cliente),
+      str_apellido_cliente: limpiarCampos(dataBody.str_apellido_cliente),
+      str_telefono_cliente: limpiarCampos(dataBody.str_telefono_cliente),
+      str_opcional1: limpiarCampos(dataBody.str_opcional1), //codigo paquete
+      str_opcional2: limpiarCampos(dataBody.str_opcional2), //valor en letras
+      str_opcional3: limpiarCampos(dataBody.str_opcional3), //matricula
+      str_opcional4: limpiarCampos(dataBody.str_opcional4), //periodo
+      str_opcional5: limpiarCampos(dataBody.str_opcional5),
     });
 
     //si no se envia el codigo se crea un nuevo pago
@@ -208,12 +210,34 @@ export const inicioPago = async (req: any, res = response) => {
         dataBody.str_nombre_cliente +
         dataBody.str_apellido_cliente +
         dataBody.str_id_cliente.trim();
-      let codigo = await cryptoRandomString({
-        length: 10,
-        characters: cadena.replace(/\s+/g, ""),
-      });
-      infoPago.str_id_pago = codigo;
 
+      cadena = limpiarCampos(cadena.replace(/\s+/g, ""));
+      let validation;
+      let contador = 0;
+      //si el codigo no es afanumerico se genera otro
+      do {
+
+        let codigo = await cryptoRandomString({
+          length: 10,
+          characters: cadena,
+        });
+
+        let regla = {
+          'cadena': 'present|alpha_num'
+        };
+
+        let campos = {
+          'cadena': codigo
+        };
+        validation = new Validator(campos, regla);
+        infoPago.str_id_pago = codigo;
+        contador++;
+
+        if (contador > 1000) {
+          throw new Error("No se ha podido generar el codigo");
+
+        }
+      } while (validation.fails());
 
 
       let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
@@ -224,7 +248,7 @@ export const inicioPago = async (req: any, res = response) => {
 
       let responseData = await responseZona.json();
 
-      
+
       if (responseData.int_codigo == 1) {
 
         let response = await savePago(infoPago, JSON.stringify(responseData));
@@ -244,7 +268,7 @@ export const inicioPago = async (req: any, res = response) => {
     res.status(500).json({
       message: "Algo salio mal",
       error: true,
-      det_error: error,
+      det_error: error.message,
     });
   }
 };
@@ -252,7 +276,7 @@ export const inicioPago = async (req: any, res = response) => {
 //====================
 //   guardarEL pago generado
 //=====================
-const savePago = async (infoPago: any, responseData:any) => {
+const savePago = async (infoPago: any, responseData: any) => {
   console.log("ejecutamos la fucnion de save");
 
   //pendiente validar precios: si son diferentes mostrar alerta
@@ -265,56 +289,56 @@ const savePago = async (infoPago: any, responseData:any) => {
   try {
 
 
-      let conceptos = await getConceptosPaquete(paquete_id);
-      if (conceptos.length > 0) {
-        conceptos.forEach((concepto: any) => {
-          tDetallePago.push({
-            pago_id: null,
-            concepto_id: concepto._id,
-            descuento: concepto.descuento,
-            aumento: concepto.aumento,
-            valor_unidad:
-              concepto.categoria_id == 0
-                ? infoPago.flt_total_con_iva
-                : concepto.valor_unidad,
-            cantidad: concepto.cantidad,
-          });
+    let conceptos = await getConceptosPaquete(paquete_id);
+    if (conceptos.length > 0) {
+      conceptos.forEach((concepto: any) => {
+        tDetallePago.push({
+          pago_id: null,
+          concepto_id: concepto._id,
+          descuento: concepto.descuento,
+          aumento: concepto.aumento,
+          valor_unidad:
+            concepto.categoria_id == 0
+              ? infoPago.flt_total_con_iva
+              : concepto.valor_unidad,
+          cantidad: concepto.cantidad,
         });
-      } else {
-        throw new Error("No se encontro el paquete...");
-      }
+      });
+    } else {
+      throw new Error("No se encontro el paquete...");
+    }
 
 
-      let tPago: any = {
-        codigo: infoPago.str_id_pago,
-        descripcion: infoPago.str_descripcion_pago,
-        json_response: responseData,
-        estado_id: 888,
-        estudiante_id: infoPago.str_id_cliente,
-        matricula_id: (infoPago.str_opcional3 == "") ? null : infoPago.str_opcional3,
-        valor: infoPago.flt_total_con_iva,
-        valor_letras: infoPago.str_opcional2,
-        periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
-        archivo_id: null,
-        categoria_pago_id: conceptos[0].categoria_id,
+    let tPago: any = {
+      codigo: infoPago.str_id_pago,
+      descripcion: infoPago.str_descripcion_pago,
+      json_response: responseData,
+      estado_id: 200,
+      estudiante_id: infoPago.str_id_cliente,
+      matricula_id: (infoPago.str_opcional3 == "") ? null : infoPago.str_opcional3,
+      valor: infoPago.flt_total_con_iva,
+      valor_letras: infoPago.str_opcional2,
+      periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
+      archivo_id: null,
+      categoria_pago_id: conceptos[0].categoria_id,
+    };
+
+    //guardar el detalle de la factura
+    let resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+
+    if (resultSavePago != false) {
+      ret = {
+        statusCode: 200,
+        message: "Ejecucion correcta",
+        error: false,
+        pago_id: resultSavePago,
+        data: JSON.parse(responseData),
       };
 
-      //guardar el detalle de la factura
-      let resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
-
-      if (resultSavePago != false) {
-        ret = {
-          statusCode: 200,
-          message: "Ejecucion correcta",
-          error: false,
-          pago_id: resultSavePago,
-          data: JSON.parse(responseData),
-        };
-
-        return ret;
-      } else {
-        throw new Error("No se ha podido guardar el pago");
-      }
+      return ret;
+    } else {
+      throw new Error("No se ha podido guardar el pago");
+    }
 
   } catch (error) {
     ret = {
