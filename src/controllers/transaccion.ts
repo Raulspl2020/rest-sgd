@@ -3,7 +3,8 @@ import cryptoRandomString from "crypto-random-string";
 import { v4 as uuidv4 } from 'uuid';
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
-import { decodeResPago, dataConfigPago, limpiarCampos } from "../helpers/pago";
+import { dataConfigPago, limpiarCampos } from "../helpers/pago";
+import  { ListResponsePago } from "../models/ResponsePago";
 import dateFormat from 'dateformat';
 import {
   guardarPago,
@@ -45,7 +46,8 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     let responseData = await response.json();
 
     if (responseData.int_error == 0) {
-      let pagoDecoded = decodeResPago(responseData.str_res_pago);
+      const resss = new ListResponsePago();
+      let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
 
       let dataBody: any = pagoDecoded[0];
       if (id_pago == false) {
@@ -153,7 +155,8 @@ export const verificaPago = async (req: any, res = response) => {
     .then((response) => {
       if (response.int_error == 0) {
         
-        let pagoDecoded = decodeResPago(response.str_res_pago);
+        const resss = new ListResponsePago();
+        let pagoDecoded = resss.decodePagoToList(response.str_res_pago);
         res.status(200).json({
           message: response.str_detalle,
           error: false,
