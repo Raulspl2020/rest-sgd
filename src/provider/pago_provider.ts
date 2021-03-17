@@ -55,6 +55,8 @@ export const getConceptos = async (ids: any) => {
 };
 
 
+
+
 export const getConceptosPaquete = async (id: any) => {
     let result = await conDB('fin_paquete')
     .join('fin_detalle_paquete', 'fin_paquete._id', '=', 'fin_detalle_paquete.paquete_id')

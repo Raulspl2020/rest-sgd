@@ -152,6 +152,7 @@ export const verificaPago = async (req: any, res = response) => {
     .then((res) => res.json())
     .then((response) => {
       if (response.int_error == 0) {
+        
         let pagoDecoded = decodeResPago(response.str_res_pago);
         res.status(200).json({
           message: response.str_detalle,

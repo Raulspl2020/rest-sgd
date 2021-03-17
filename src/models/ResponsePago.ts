@@ -35,7 +35,7 @@ class ResponsePago {
     private _str_franquicia: string;
     private _int_cod_aprobacion: string;
     private _int_num_recibido: string;
-
+    
 
     constructor(params: any) {
         this.int_ped_numero = params.int_ped_numero;
@@ -69,6 +69,10 @@ class ResponsePago {
     }
 
 
+
+
+    
+
     get int_numero_tarjeta(): number {
         return this._int_numero_tarjeta;
     }
@@ -95,6 +99,12 @@ class ResponsePago {
     set int_num_recibido(new_int_num_recibido: string){
         this._int_num_recibido = new_int_num_recibido;
     }
+
+    
+
+
+
+
 
 
 
