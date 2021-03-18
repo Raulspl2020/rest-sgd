@@ -14,7 +14,6 @@ import {
   actualizarPagoyDetalle,
   detIdPagoByCodigo
 } from "../provider/pago_provider";
-import { join } from "path";
 let Validator = require("validatorjs");
 
 //====================
@@ -96,7 +95,13 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           'estado_pago_id': (det.int_estado_pago=='') ? null: det.int_estado_pago ,
           'forma_pago_id': (det.int_id_forma_pago=='')? null : det.int_id_forma_pago,
           'nombre_banco': (det.str_nombre_banco=='') ? null : det.str_nombre_banco,
-          'codigo_transaccion': (det.str_codigo_transacción=='') ? null : det.str_codigo_transacción
+          'codigo_transaccion': (det.str_codigo_transacción=='') ? null : det.str_codigo_transacción,
+          'fecha' : dateFormat(Date.parse(det.dat_fecha), 'yyyy-mm-dd HH:MM::ss'),
+          'ticketID': (det.str_ticketID=='') ? null : det.ticketID,
+          'numero_tarjeta': (det.int_numero_tarjeta=='') ? null : det.int_numero_tarjeta,
+          'franquicia' : (det.str_franquicia=='') ? null : det.str_franquicia,
+          'cod_aprobacion': (det.int_cod_aprobacion=='') ? null : det.int_cod_aprobacion,
+          'num_recibido': (det.int_num_recibido=='') ? null : det.int_num_recibido
         });
 
       });
