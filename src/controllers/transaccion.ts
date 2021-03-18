@@ -5,7 +5,8 @@ import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
 import { dataConfigPago, limpiarCampos } from "../helpers/pago";
 import  { ListResponsePago } from "../models/ResponsePago";
-import dateFormat from 'dateformat';
+import { parse,format  } from 'date-format-parse';
+import { convertTo24Hour } from "../helpers/global";
 import {
   guardarPago,
   guardarPagoyDetalle,
@@ -32,6 +33,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
   };
 
   let fechaUpdate = new Date();
+  console.log(fechaUpdate);
 
   try {
 
@@ -78,7 +80,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       let data: any = {
         'json_detalle': responseData.str_res_pago,
         'estado_id': pagoDecoded[0].int_pago_terminado,
-        'fecha_update': dateFormat(fechaUpdate, 'yyyy-mm-dd HH:MM::ss')
+        'fecha_update': format(fechaUpdate,  'YYYY-MM-DD HH:MM:ss')
       };
 
       let codigos: any = [];
@@ -96,7 +98,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           'forma_pago_id': (det.int_id_forma_pago=='')? null : det.int_id_forma_pago,
           'nombre_banco': (det.str_nombre_banco=='') ? null : det.str_nombre_banco,
           'codigo_transaccion': (det.str_codigo_transacción=='') ? null : det.str_codigo_transacción,
-          'fecha' : dateFormat(Date.parse(det.dat_fecha), 'yyyy-mm-dd HH:MM::ss'),
+          'fecha' : format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:MM:ss'),
           'ticketID': (det.str_ticketID=='') ? null : det.ticketID,
           'numero_tarjeta': (det.int_numero_tarjeta=='') ? null : det.int_numero_tarjeta,
           'franquicia' : (det.str_franquicia=='') ? null : det.str_franquicia,

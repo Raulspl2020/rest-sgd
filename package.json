@@ -10,8 +10,6 @@
         "start:dev": "nodemon src/app.js",
         "watch": "nodemon --exec ts-node -- ./src/app.ts",
         "watch:dev": "supervisor --exec ts-node -- ./src/app.ts",
-        
-
         "build": "tsc"
     },
     "author": "Duvan Rosero",
@@ -28,6 +26,7 @@
         "cors": "^2.8.5",
         "cross-spawn": "^7.0.3",
         "crypto-random-string": "^3.3.0",
+        "date-format-parse": "^0.2.6",
         "dateformat": "^4.5.1",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",

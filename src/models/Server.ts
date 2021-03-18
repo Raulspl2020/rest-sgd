@@ -32,13 +32,13 @@ class Server {
 
         cron.schedule('*/15 * * * *', () => {
             verificaPagosPendientes().then((result) => {
-                console.log(result);
+               // console.log(result);
             });
         });
 
         cron.schedule('*/60 * * * *', () => {
             verificaPagosPendientesEfectivo().then((result) => {
-                console.log(result);
+                //console.log(result);
             });
         });
     }
