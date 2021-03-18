@@ -9,12 +9,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.vistaHolaMundo = void 0;
+exports.pagoPersonalizado = exports.vistaHolaMundo = void 0;
 const express_1 = require("express");
 //====================
 //   /page/inicio 
 //=====================
 exports.vistaHolaMundo = (req, res = express_1.response) => __awaiter(void 0, void 0, void 0, function* () {
     res.render("hola_mundo");
+});
+//====================
+//   /page/PagoPersonalizado 
+//=====================
+exports.pagoPersonalizado = (req, res = express_1.response) => __awaiter(void 0, void 0, void 0, function* () {
+    let data = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    res.render("pago_general", data);
 });
 //# sourceMappingURL=template.js.map

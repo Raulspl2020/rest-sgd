@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.decodeResPago = void 0;
+exports.dataConfigPago = exports.limpiarCampos = exports.decodeResPago = void 0;
 const ResponsePago_1 = require("../models/ResponsePago");
 exports.decodeResPago = (cadena) => {
     let datos = cadena.split("|");
@@ -8,7 +8,7 @@ exports.decodeResPago = (cadena) => {
     let row = [];
     let matriz = [];
     datos.forEach(element => {
-        if ((element.trim().indexOf(';') != -1) && (element.trim().length <= 3)) {
+        if ((element.trim().indexOf(';') != -1)) {
             matriz.push(row);
             row = [];
             let aux = element.trim().split(' ');
@@ -57,5 +57,83 @@ exports.decodeResPago = (cadena) => {
         listapagos.push(responsePago);
     });
     return listapagos;
+};
+exports.limpiarCampos = (cadena) => {
+    if (cadena == undefined) {
+        cadena = "";
+    }
+    return cadena.toString().replace(/[`~!@#$%^&*¬()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gim, '');
+};
+exports.dataConfigPago = (infoPago) => {
+    let data = {
+        InformacionPago: infoPago,
+        InformacionSeguridad: {
+            int_id_comercio: process.env.ZONAPAGOS_ID,
+            str_usuario: process.env.ZONAPAGOS_USER,
+            str_clave: process.env.ZONAPAGOS_PASS,
+            int_modalidad: 1,
+        },
+        AdicionalesPago: [
+            {
+                int_codigo: 111,
+                str_valor: "0",
+            },
+            {
+                int_codigo: 112,
+                str_valor: "0",
+            },
+        ],
+        AdicionalesConfiguracion: [
+            {
+                int_codigo: 50,
+                str_valor: "2701",
+            },
+            {
+                int_codigo: 100,
+                str_valor: "1",
+            },
+            {
+                int_codigo: 101,
+                str_valor: "1",
+            },
+            {
+                int_codigo: 102,
+                str_valor: "1",
+            },
+            {
+                int_codigo: 103,
+                str_valor: "0",
+            },
+            {
+                int_codigo: 104,
+                str_valor: "https://sigedin.itp.edu.co/",
+            },
+            {
+                int_codigo: 105,
+                str_valor: "1",
+            },
+            {
+                int_codigo: 106,
+                str_valor: "3",
+            },
+            {
+                int_codigo: 107,
+                str_valor: "0",
+            },
+            {
+                int_codigo: 108,
+                str_valor: "1",
+            },
+            {
+                int_codigo: 109,
+                str_valor: "1",
+            },
+            {
+                int_codigo: 110,
+                str_valor: "0",
+            },
+        ],
+    };
+    return data;
 };
 //# sourceMappingURL=pago.js.map

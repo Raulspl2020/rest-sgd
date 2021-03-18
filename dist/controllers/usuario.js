@@ -61,22 +61,22 @@ exports.getAuditoriaUsuario = (req, res = express_1.response) => __awaiter(void 
 //=====================
 exports.getUserContacto = (req, res = express_1.response) => __awaiter(void 0, void 0, void 0, function* () {
     let body = req.body;
-    console.log(req);
     let ideUsuario = req.params.ideUsuario;
     try {
         let result = yield usuarioProvider.contactoUsuatio(ideUsuario);
         let json = {};
-        if (result[0].length) {
-            json = {
-                data: result,
-                rs: true,
-            };
+        if (result[0].length > 0) {
+            res.status(200).json({
+                message: json.msj,
+                data: result[0][0],
+                error: false,
+            });
         }
         else {
-            json = {
-                msj: "No se encontraron resultados",
-                rs: false
-            };
+            res.status(200).json({
+                message: "No se encontraron resultados",
+                error: true,
+            });
         }
     }
     catch (error) {

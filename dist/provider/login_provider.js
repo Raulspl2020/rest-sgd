@@ -31,11 +31,14 @@ exports.validar = (user, pass) => __awaiter(void 0, void 0, void 0, function* ()
     return yield database_1.conAuth.raw(sql, [user, user, user, pass]);
 });
 exports.getUser = (user) => __awaiter(void 0, void 0, void 0, function* () {
-    let query = yield database_1.conAuth
+    let query = database_1.conAuth
         .where({ 'login': user })
         .orWhere({ 'email': user })
         .select('login', 'name', 'email', 'active', 'activation_code')
-        .from("sec_users").first();
+        .from("sec_users").first().then((result) => {
+        console.log("aqui esta el result");
+        console.log(result);
+    });
     return query;
 });
 exports.getUserGoogle = (user) => __awaiter(void 0, void 0, void 0, function* () {

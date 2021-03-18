@@ -13,11 +13,11 @@ class Pago {
         this.str_nombre_cliente = param.str_nombre_cliente;
         this.str_apellido_cliente = param.str_apellido_cliente;
         this.str_telefono_cliente = param.str_telefono_cliente;
-        this.str_opcional1 = (param.str_opcional1) ? param.str_opcional1 : "";
-        this.str_opcional2 = (param.str_opcional2) ? param.str_opcional2 : "";
-        this.str_opcional3 = (param.str_opcional3) ? param.str_opcional3 : "";
-        this.str_opcional4 = (param.str_opcional4) ? param.str_opcional4 : "";
-        this.str_opcional5 = (param.str_opcional5) ? param.str_opcional5 : "";
+        this.str_opcional1 = param.str_opcional1 ? param.str_opcional1 : "";
+        this.str_opcional2 = param.str_opcional2 ? param.str_opcional2 : "";
+        this.str_opcional3 = param.str_opcional3 ? param.str_opcional3 : "";
+        this.str_opcional4 = param.str_opcional4 ? param.str_opcional4 : "";
+        this.str_opcional5 = param.str_opcional5 ? param.str_opcional5 : "";
     }
 }
 exports.Pago = Pago;

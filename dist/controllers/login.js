@@ -200,7 +200,7 @@ exports.correoRecuperacion = (req, res) => __awaiter(void 0, void 0, void 0, fun
             user: process.env.EMAIL,
             pass: process.env.EMAIL_PASS,
         };
-        var dataMail = {
+        let dataMail = {
             from_name: body.from_name,
             enviar_a: user.email,
             asunto: "Recuperacion de contraseña Sigedin",
@@ -298,13 +298,4 @@ exports.resetPass = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         res.render("form_resset_pass", data);
     }
 });
-// export {
-//     googleAuth,
-//     auth,
-//     renewToken,
-//     correoRecuperacion,
-//     resetPass,
-//     saveNewPass,
-//     googleView,
-// };
 //# sourceMappingURL=login.js.map

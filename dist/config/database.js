@@ -7,7 +7,7 @@ exports.conAuth = exports.conDB = void 0;
 const knex_1 = __importDefault(require("knex"));
 const db = {
     desarrollo: {
-        host: "190.217.113.102",
+        host: "10.10.13.13",
         user: "dvn",
         password: "duvan07+",
         database: "sigedin_ies",
@@ -23,7 +23,7 @@ const db = {
 };
 const auth = {
     desarrollo: {
-        host: "190.217.113.102",
+        host: "10.10.13.13",
         user: "dvn",
         password: "duvan07+",
         database: "sigedin_seguridad",
@@ -42,9 +42,7 @@ if (process.env.NODE_ENV == "dev") {
     auth.default = auth.desarrollo;
 }
 else {
-    console.log(db);
     console.log("El entorno es: " + process.env.NODE_ENV);
-    console.log(process.env.NODE_ENV);
     db.default = db.produccion;
     auth.default = auth.produccion;
 }

@@ -14,10 +14,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const routes_1 = __importDefault(require("../routes"));
+const cron_job_1 = require("../helpers/cron_job");
 const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const express_fileupload_1 = __importDefault(require("express-fileupload"));
 const path_1 = __importDefault(require("path"));
+const node_cron_1 = __importDefault(require("node-cron"));
 class Server {
     constructor() {
         this.app = express_1.default();
@@ -26,6 +28,21 @@ class Server {
         this.middlewares();
         this.routes();
         this.config();
+        this.cronJob();
+    }
+    cronJob() {
+        return __awaiter(this, void 0, void 0, function* () {
+            node_cron_1.default.schedule('*/15 * * * *', () => {
+                cron_job_1.verificaPagosPendientes().then((result) => {
+                    // console.log(result);
+                });
+            });
+            node_cron_1.default.schedule('*/60 * * * *', () => {
+                cron_job_1.verificaPagosPendientesEfectivo().then((result) => {
+                    //console.log(result);
+                });
+            });
+        });
     }
     middlewares() {
         //Cors
@@ -37,7 +54,7 @@ class Server {
         //File-upploads
         this.app.use(express_fileupload_1.default());
         //carpeta publica
-        this.app.use(express_1.default.static('public'));
+        this.app.use('/api/static', express_1.default.static('public'));
     }
     dbConnection() {
         return __awaiter(this, void 0, void 0, function* () {

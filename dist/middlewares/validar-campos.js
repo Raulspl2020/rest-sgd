@@ -40,24 +40,24 @@ exports.validatorCampos = (req, res, next) => {
         str_descripcion_pago: "required|string",
         str_email: "required|string|email",
         str_id_cliente: "required|string",
-        str_tipo_id: "present|string",
-        str_nombre_cliente: "required|string",
+        str_tipo_id: "present",
+        str_nombre_cliente: ['required', 'string'],
         str_apellido_cliente: "required|string",
-        str_telefono_cliente: "required|string"
-        // str_opcional1: "present|string",
-        // str_opcional2: "present|string",
-        // str_opcional3: "present|string",
-        // str_opcional4: "present|string",
-        // str_opcional5: "present|string",
+        str_telefono_cliente: "required|string",
+        str_opcional1: "present|numeric",
+        str_opcional2: "present|string",
+        str_opcional3: "numeric",
+        str_opcional4: "string",
     };
     let validation = new Validator(req.body, validationRule);
+    //let expresion = /[^`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/g;
     if (validation.passes()) {
         next();
     }
     else {
         res.status(412).send({
             error: true,
-            message: "Validacion fallida",
+            message: "Hay campos obligatorios sin completar",
             errors: validation.errors.all(),
         });
     }
