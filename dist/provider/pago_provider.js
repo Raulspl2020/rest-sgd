@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.actualizarPagoyDetalle = exports.guardarPagoyDetalle = exports.getConceptosPaquete = exports.getConceptos = exports.actualizarEstadoPago = exports.detIdPagoByCodigo = exports.obtenerPagosPendientes = exports.guardarPago = void 0;
 const database_1 = require("../config/database");
 exports.guardarPago = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    let result = yield database_1.conDB('fin_pago').insert(params);
+    let result = yield database_1.conDB("fin_pago").insert(params);
     return result;
 });
 //Usado por las tareas cron para verificar los pagos cada cierto tiempo
@@ -27,9 +27,9 @@ exports.obtenerPagosPendientes = (minutos, forma_pago_ids) => __awaiter(void 0, 
 });
 exports.detIdPagoByCodigo = (codigo) => __awaiter(void 0, void 0, void 0, function* () {
     let result = yield database_1.conDB
-        .select('_id')
-        .from('fin_pago')
-        .where('codigo', codigo);
+        .select("_id")
+        .from("fin_pago")
+        .where("codigo", codigo);
     if (result.length > 0) {
         return result[0]._id;
     }
@@ -38,33 +38,33 @@ exports.detIdPagoByCodigo = (codigo) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.actualizarEstadoPago = (params, codigo) => __awaiter(void 0, void 0, void 0, function* () {
-    let result = yield database_1.conDB('fin_pago')
-        .where('codigo', codigo)
-        .update(params);
+    let result = yield database_1.conDB("fin_pago").where("codigo", codigo).update(params);
     return result;
 });
 exports.getConceptos = (ids) => __awaiter(void 0, void 0, void 0, function* () {
-    let result = yield database_1.conDB.select('_id', 'codigo', 'descripcion', 'valor').from('fin_concepto')
-        .whereIn('_id', ids);
+    let result = yield database_1.conDB
+        .select("_id", "codigo", "descripcion", "valor")
+        .from("fin_concepto")
+        .whereIn("_id", ids);
     return result;
 });
 exports.getConceptosPaquete = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    let result = yield database_1.conDB('fin_paquete')
-        .join('fin_detalle_paquete', 'fin_paquete._id', '=', 'fin_detalle_paquete.paquete_id')
-        .select('fin_paquete._id', 'fin_paquete.descripcion', 'fin_paquete.categoria_id', 'fin_paquete.tipo', 'fin_detalle_paquete._id', 'fin_detalle_paquete.valor_unidad', 'fin_detalle_paquete.cantidad', 'fin_detalle_paquete.descuento', 'fin_detalle_paquete.aumento')
-        .where('fin_paquete._id', id);
+    let result = yield database_1.conDB("fin_paquete")
+        .join("fin_detalle_paquete", "fin_paquete._id", "=", "fin_detalle_paquete.paquete_id")
+        .select("fin_paquete._id", "fin_paquete.descripcion", "fin_paquete.categoria_id", "fin_paquete.tipo", "fin_detalle_paquete._id", "fin_detalle_paquete.valor_unidad", "fin_detalle_paquete.cantidad", "fin_detalle_paquete.descuento", "fin_detalle_paquete.aumento")
+        .where("fin_paquete._id", id);
     return result;
 });
 exports.guardarPagoyDetalle = (params, tDetallePago) => __awaiter(void 0, void 0, void 0, function* () {
     let id = 0;
     const trx = yield database_1.conDB.transaction();
-    return yield trx('fin_pago')
+    return yield trx("fin_pago")
         .insert(params)
         .then((ids) => {
         let detalle = tDetallePago;
-        detalle.forEach((det) => det.pago_id = ids[0]);
+        detalle.forEach((det) => (det.pago_id = ids[0]));
         id = ids;
-        return trx('fin_detalle_factura').insert(detalle);
+        return trx("fin_detalle_factura").insert(detalle);
     })
         .then((result) => {
         trx.commit();
@@ -75,14 +75,14 @@ exports.guardarPagoyDetalle = (params, tDetallePago) => __awaiter(void 0, void 0
         return false;
     });
 });
-exports.actualizarPagoyDetalle = (ids, dataInsert) => __awaiter(void 0, void 0, void 0, function* () {
+exports.actualizarPagoyDetalle = (id, dataInsert) => __awaiter(void 0, void 0, void 0, function* () {
     const trx = yield database_1.conDB.transaction();
-    return yield trx('fin_detalle_pago')
-        .whereIn('codigo_transaccion', ids)
+    return yield trx("fin_detalle_pago")
+        .where("pago_id", id)
         .del()
         .then((ids) => {
         let detalle = dataInsert;
-        return trx('fin_detalle_pago').insert(detalle);
+        return trx("fin_detalle_pago").insert(detalle);
     })
         .then((result) => {
         trx.commit();

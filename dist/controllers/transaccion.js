@@ -36,9 +36,9 @@ exports.actualizarTransaccion = (req, res = express_1.response) => __awaiter(voi
         str_id_pago: codigo_pago
     };
     let fechaUpdate = new Date();
-    console.log(fechaUpdate);
     try {
         let id_pago = yield pago_provider_1.detIdPagoByCodigo(codigo_pago);
+        console.log("inicia la consulta");
         let response = yield node_fetch_1.default(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
             method: "POST",
             body: JSON.stringify(data),
@@ -74,12 +74,10 @@ exports.actualizarTransaccion = (req, res = express_1.response) => __awaiter(voi
             let data = {
                 'json_detalle': responseData.str_res_pago,
                 'estado_id': pagoDecoded[0].int_pago_terminado,
-                'fecha_update': date_format_parse_1.format(fechaUpdate, 'YYYY-MM-DD HH:MM:ss')
+                'fecha_update': date_format_parse_1.format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss')
             };
-            let codigos = [];
             let detPago = [];
             pagoDecoded.forEach((det) => {
-                codigos.push(det.str_codigo_transacción);
                 detPago.push({
                     '_id': uuid_1.v4(),
                     'pago_id': id_pago,
@@ -90,8 +88,8 @@ exports.actualizarTransaccion = (req, res = express_1.response) => __awaiter(voi
                     'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago,
                     'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco,
                     'codigo_transaccion': (det.str_codigo_transacción == '') ? null : det.str_codigo_transacción,
-                    'fecha': date_format_parse_1.format(date_format_parse_1.parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:MM:ss'),
-                    'ticketID': (det.str_ticketID == '') ? null : det.ticketID,
+                    'fecha': date_format_parse_1.format(date_format_parse_1.parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss'),
+                    'ticketID': (det.str_ticketID == '') ? null : det.str_ticketID,
                     'numero_tarjeta': (det.int_numero_tarjeta == '') ? null : det.int_numero_tarjeta,
                     'franquicia': (det.str_franquicia == '') ? null : det.str_franquicia,
                     'cod_aprobacion': (det.int_cod_aprobacion == '') ? null : det.int_cod_aprobacion,
@@ -101,7 +99,7 @@ exports.actualizarTransaccion = (req, res = express_1.response) => __awaiter(voi
             //actualiza la fecha y el estado de un pago en la DB
             let resDB = yield pago_provider_1.actualizarEstadoPago(data, codigo_pago);
             //borra y crea los detalles pago: true-false
-            let resDb2 = yield pago_provider_1.actualizarPagoyDetalle(codigos, detPago);
+            let resDb2 = yield pago_provider_1.actualizarPagoyDetalle(id_pago, detPago);
             if (resDb2) {
                 res.status(200).json({
                     message: "Pago actualizado exitosamente",
