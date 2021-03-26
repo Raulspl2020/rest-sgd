@@ -17,7 +17,13 @@ export const obtenerPagosPendientes = async (
     AND fin_detalle_pago.forma_pago_id IN (?)`;
 
   let result = await conDB.raw(sql, [minutos, forma_pago_ids]);
-  return result;
+  if (result[0].length > 0) {
+    return result[0];
+  } {
+    return false;
+  }
+
+
 };
 
 export const detIdPagoByCodigo = async (codigo: any) => {
@@ -111,3 +117,39 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
       return false;
     });
 };
+
+
+//obtiene la configuracion del periodo
+export const getConfigPeriodo = async (id_periodo: any) => {
+  let result = await conDB
+    .select()
+    .from("fin_config")
+    .where("periodo_id", id_periodo).first();
+  return result;
+};
+
+//obtiene el detalle de un paquete
+export const getPaquete = async (id_periodo: any, codigo: any) => {
+  let sql = `SELECT
+  fin_paquete.codigo
+  , fin_paquete.descripcion
+  , fin_detalle_paquete.valor_unidad
+  , fin_detalle_paquete.cantidad
+  , fin_detalle_paquete.aumento
+  , SUM( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) - ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.aumento) -   ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.descuento) ) AS subtotal
+  , fin_detalle_paquete.descuento
+  , fin_concepto.fecha_actualizacion
+FROM
+  fin_paquete
+  INNER JOIN fin_config 
+      ON (fin_paquete.config_id = fin_config._id)
+  INNER JOIN fin_detalle_paquete 
+      ON (fin_detalle_paquete.paquete_id = fin_paquete._id)
+  INNER JOIN fin_concepto 
+      ON (fin_detalle_paquete.concepto_id = fin_concepto._id)
+      WHERE fin_config.periodo_id=?
+      AND fin_paquete.codigo=?`;
+
+  return await conDB.raw(sql, [id_periodo, codigo]);;
+};
+

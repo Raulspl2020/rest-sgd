@@ -51,7 +51,7 @@ export const validatorCampos = (req: any, res: any, next: any) => {
     str_opcional2: "present|string", //valor en letras
     str_opcional3: "numeric", //matricula
     str_opcional4: "string", // periodo
-    // str_opcional5: "present|string",
+    str_opcional5: "numeric", //categoria pago
   };
 
 

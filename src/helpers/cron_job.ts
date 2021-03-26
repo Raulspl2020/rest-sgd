@@ -6,11 +6,17 @@ export const verificaPagosPendientes = async () => {
     try {
         let result = await obtenerPagosPendientes(7, [29, 32]);
 
-        if (result[0].length > 0) {
-            let responseZona = await fetch(`${process.env.BASE_URL}/transaccion/estado?id_pago=${result[0][0].codigo}`);
-            let responseData = await responseZona.json();
-            console.log("Ejecutando tarea de verificacion");
-            return responseData;
+        if (result != false) {
+
+            result.forEach((row: any) => {
+                fetch(`${process.env.BASE_URL}/transaccion/estado?id_pago=${row.codigo}`)
+                    .then(response => response.json())
+                    .then((responseData) => {
+                        console.log("Ejecutando tarea de verificacion");
+                        return responseData;
+                    });
+            });
+
         } else {
             return null;
         }
@@ -26,12 +32,16 @@ export const verificaPagosPendientes = async () => {
 export const verificaPagosPendientesEfectivo = async () => {
     try {
         let result = await obtenerPagosPendientes(60, [41, 42]);
+        if (result != false) {
+            result.forEach((row: any) => {
+                fetch(`${process.env.BASE_URL}/transaccion/estado?id_pago=${row.codigo}`)
+                    .then(response => response.json())
+                    .then((responseData) => {
+                        console.log("Ejecutando tarea de verificacion");
+                        return responseData;
+                    });
+            });
 
-        if (result[0].length > 0) {
-            let responseZona = await fetch(`${process.env.BASE_URL}/transaccion/estado?id_pago=${result[0][0].codigo}`);
-            let responseData = await responseZona.json();
-            console.log("Ejecutando tarea de verificacion");
-            return responseData;
         } else {
             return null;
         }

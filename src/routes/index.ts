@@ -8,6 +8,7 @@ import routerEstudiante from "../routes/estudiante";
 import routerTransaccion from "../routes/transaccion";
 import routerUsuario from "../routes/usuario";
 import routerTemplate from "../routes/template";
+import routerMatricula from "../routes/matricula";
 
 //====================
 //   ROUTES: /api
@@ -29,6 +30,7 @@ app.use("/estudiante", routerEstudiante);
 app.use("/transaccion", routerTransaccion);
 app.use("/usuario", routerUsuario);
 app.use("/page", routerTemplate);
+app.use("/matricula", routerMatricula);
 
 // app.use(require("./inicio"));
 
