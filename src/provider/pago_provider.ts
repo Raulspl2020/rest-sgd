@@ -120,11 +120,13 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
 
 
 //obtiene la configuracion del periodo
+//traer la configuracion mas reciente
 export const getConfigPeriodo = async (id_periodo: any) => {
   let result = await conDB
     .select()
     .from("fin_config")
-    .where("periodo_id", id_periodo).first();
+    .where("estado", 1)
+    .limit(1).first();
   return result;
 };
 
