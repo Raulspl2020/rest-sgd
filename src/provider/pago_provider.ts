@@ -121,7 +121,7 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
 
 //obtiene la configuracion del periodo
 //traer la configuracion mas reciente
-export const getConfigPeriodo = async (id_periodo: any) => {
+export const getConfigPeriodo = async () => {
   let result = await conDB
     .select()
     .from("fin_config")
@@ -134,13 +134,16 @@ export const getConfigPeriodo = async (id_periodo: any) => {
 export const getPaquete = async (id_periodo: any, codigo: any) => {
   let sql = `SELECT
   fin_paquete.codigo
-  , fin_paquete.descripcion
+  , fin_paquete.descripcion AS paquete
+  , fin_concepto.descripcion AS concepto
   , fin_detalle_paquete.valor_unidad
   , fin_detalle_paquete.cantidad
   , fin_detalle_paquete.aumento
-  , SUM( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) - ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.aumento) -   ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.descuento) ) AS subtotal
+  , IF(fin_detalle_paquete.cantidad > 0, SUM( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) - ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.aumento) -   ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.descuento) ), fin_detalle_paquete.valor_unidad ) AS subtotal
   , fin_detalle_paquete.descuento
   , fin_concepto.fecha_actualizacion
+  ,fin_detalle_paquete.descuento_ext
+  , fin_detalle_paquete.concepto_id
 FROM
   fin_paquete
   INNER JOIN fin_config 
@@ -149,9 +152,28 @@ FROM
       ON (fin_detalle_paquete.paquete_id = fin_paquete._id)
   INNER JOIN fin_concepto 
       ON (fin_detalle_paquete.concepto_id = fin_concepto._id)
-      WHERE fin_config.periodo_id=?
-      AND fin_paquete.codigo=?`;
+      WHERE fin_paquete.periodo_id=?
+      AND fin_paquete.codigo=?
+      GROUP BY fin_detalle_paquete._id
+      `;
+      
 
-  return await conDB.raw(sql, [id_periodo, codigo]);;
+  let result =  await conDB.raw(sql, [id_periodo, codigo]);
+  if (result[0].length > 0) {
+    return result[0];
+} else {
+    return false;
+}
 };
+
+
+//consulta descuentos a un estudiante
+export const getDescuento = async (cod_matricula:any, periodo_id:any) => {
+  let result = await conDB
+  .select()
+  .from("fin _porcentaje_soporte")
+  .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id });
+  return result;
+};
+
 

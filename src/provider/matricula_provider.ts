@@ -1,10 +1,12 @@
 import { conDB } from '../config/database';
 export const getInfoMatricula = async (cod_matricula: any) => {
+    // cod_nivel_edu: 6= tecnologico 7= profesional
     let sql = `SELECT
     col_matricula.cod_matricula
     , col_tipodoc.cod_aux AS cod_doc
     , col_tipodoc.siglas AS tipo_doc
     , tec_estadomatricula.nom_estadomatricula
+    , col_persona.ide_persona
     , col_persona.ape1_persona
     , col_persona.ape2_persona
     , col_persona.nom1_persona
@@ -14,6 +16,7 @@ export const getInfoMatricula = async (cod_matricula: any) => {
     , col_periodo.nom_periodo
     , col_periodo.cod_periodo
     , col_nivel_educacion.nom_nivel_educativo
+    , col_nivel_educacion.cod_nivel_edu 
     , SUM(col_colegio_asignatura.nro_creditos) AS nro_creditos
 FROM
     col_colegio_asignatura_matricula
@@ -47,10 +50,12 @@ FROM
 };
 
 
-export const getDetPeriodo = async (cod_colegio: any, cod_periodo:any) => {
+export const getDetPeriodo = async (cod_colegio: any, cod_periodo:any, fechaActual:string) => {
+   // let fechaActual='2021-03-29';
     let result = await conDB
         .select("cod_colegio_periodo","fec_inicio","fec_fin", "cod_estado", "fec_ini_matordinaria","fec_fin_matordinaria","fec_ini_matextraord","fec_fin_matextraord")
         .from("col_colegio_periodo")
+        .whereRaw('? BETWEEN fec_ini_matordinaria AND fec_fin_matordinaria',[fechaActual])
         .where({
             'cod_colegio' : cod_colegio,
             'cod_periodo' : cod_periodo
