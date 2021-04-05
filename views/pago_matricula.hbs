@@ -8,26 +8,27 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous" />
-            <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
     <title>Inicio</title>
 </head>
 
 <body class="bg-light">
-    <div class="container mt-3">
+    <div class="container mt-3" id="app">
         <div class="row">
-            <div class="offset-md-2 col-md-8">
+            <div class="offset-md-1 col-md-10">
                 <div class="card border border border-dark">
 
                     <div class="card-body pb-1 ">
                         <h4 class="card-title text-center text-dark border border border-info bg-light">
 
-                            <img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 60px;" class="img img-fluid" alt="">
+                            <img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 60px;" class="img img-fluid"
+                                alt="">
                             Matricula financiera
                             <i class="fa fa-users text-info"></i>
                         </h4>
                     </div>
-{{!-- 
+                    {{!--
                     <div class="card-body">
                         <h1 class="card-title text-center text-success">
                             Matricula Financiera
@@ -39,9 +40,9 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="">Identificacion:</label>
+                                    <label for="">Identificación:</label>
                                     <div type="text" class="form-control bg-light">
-                                        1124862618
+                                        {[ matricula.selTipoIde ]}-{[ matricula.txtId ]}
                                     </div>
                                 </div>
                             </div>
@@ -50,7 +51,7 @@
                                 <div class="form-group">
                                     <label for="">Estudiante:</label>
                                     <div type="text" class="form-control bg-light">
-                                        Duvan Andenys Rosero Lopez
+                                        {[ matricula.txtApellido ]} {[ matricula.txtNombre ]}
                                     </div>
                                 </div>
                             </div>
@@ -61,7 +62,7 @@
                                 <div class="form-group">
                                     <label for="">Programa:</label>
                                     <div type="text" class="form-control bg-light">
-                                        TECNOLOGIA EN DESARROLLO DE SOFTWARE
+                                        {[matricula.txtPrograma]}
                                     </div>
                                 </div>
                             </div>
@@ -70,7 +71,7 @@
                                 <div class="form-group">
                                     <label for="">Matricula:</label>
                                     <div type="text" class="form-control bg-light">
-                                        3504 - ITP-MOCOA 2021-1
+                                        {{ID_MATRICULA}} - {[matricula.txtSede]} {[matricula.txtPeriodo]}
                                     </div>
                                 </div>
                             </div>
@@ -103,8 +104,7 @@
                                         <div class="form-group">
                                             <label for="">Descripcion:</label>
                                             <div type="text" class="form-control bg-light">
-                                                PAGO MATRICULA EXTRADORDINARIA + DERECHOS COMPLEMENTARIOS
-                                                + DESCUENTO 10%
+                                                {[factura.txtDescFactura]}
                                             </div>
                                         </div>
                                     </div>
@@ -122,7 +122,7 @@
                                         <div class="form-group">
                                             <label for="">Valor en letras:</label>
                                             <div type="text" class="form-control bg-light text-primary">
-                                                OCHOCIENTOS VEINTICUATRO MIL PESOS
+                                                {[numeroLetras]}
                                             </div>
                                         </div>
                                     </div>
@@ -148,13 +148,26 @@
                                                     <tr>
                                                         <th scope="col">#</th>
                                                         <th scope="col">CONCEPTO</th>
+                                                        <th scope="col">CANTIDAD</th>
                                                         <th scope="col">DESCUENTO</th>
                                                         <th scope="col">AUMENTO</th>
-                                                        <th scope="col">TOTAL</th>
+                                                        <th scope="col">V/UNIDAD</th>
+                                                        <th scope="col">SUBTOTAL</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr>
+
+                                                    <tr v-for="row in detFactura">
+                                                        <th scope="row">1</th>
+                                                        <td>{[row.concepto]}</td>
+                                                        <td>{[row.cantidad]}</td>
+                                                        <td> {[row.descuento *100]}% </td>
+                                                        <td> {[row.aumento *100]}% </td>
+                                                        <td> $ {[row.valor_unidad]} </td>
+                                                        <td> $ {[row.subtotal]} </td>
+                                                    </tr>
+
+                                                    {{!-- <tr>
                                                         <th scope="row">1</th>
                                                         <td>PAGO MATRICULA ORDINARIA DTO 10%</td>
                                                         <td>10%</td>
@@ -168,7 +181,7 @@
                                                         <td>0%</td>
                                                         <td>0%</td>
                                                         <td>$ 139.000</td>
-                                                    </tr>
+                                                    </tr> --}}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -179,7 +192,7 @@
                                         </div>
                                         <div class="col-6">
                                             <div style="text-align: right">
-                                                <strong>Total: </strong> $824.000
+                                                <strong>Total a pagar: </strong> $ {[ factura.txtTotalPagar ]}
                                             </div>
                                         </div>
                                     </div>
@@ -212,7 +225,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"
         integrity="sha384-nsg8ua9HAw1y0W1btsyWgBklPnCUAFLuTMS2G72MMONqmOymq585AcH49TLBQObG"
         crossorigin="anonymous"></script>
+    <script src="{{BASE_URL}}/static/js/numLetras.js" type="text/javascript"></script>
     <script>
+
         $(function () {
             var triggerTabList = [].slice.call(
                 document.querySelectorAll("#myTab a")
@@ -227,6 +242,140 @@
             });
 
         });
+
+
+
+
+        var app = new Vue({
+            el: "#app",
+            delimiters: ['{[', ']}'],
+            beforeMount() {
+                this.consultarPersona()
+            },
+            data() {
+                return {
+                    matricula: {
+                        txtId: "",
+                        selTipoIde: "",
+                        txtNombre: "",
+                        txtApellido: "",
+                        txtPrograma: "",
+                        txtSede: "",
+                        txtPeriodo: "",
+                        txtDescripcionFactura: "",
+                        activarBoton: true,
+                        txtBoton: "Confirmar pago",
+                        colorTextoAlert: "text-success"
+                    },
+                    factura: {
+                        txtDescFactura: "",
+                        txtTotalPagar: 0
+                    },
+                    detFactura: [],
+                    numeroLetras: "CERO PESOS",
+                };
+            },
+            methods: {
+                consultarPersona() {
+                    console.log("El evento onchange se ejecuta");
+
+                    fetch(`{{BASE_URL}}/matricula/generarpagomatricula/{{ID_MATRICULA}}`)
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (!data.error) {
+                                let matricula = data.matricula;
+                                let detalle_factura = data.detalle_factura;
+                                this.matricula.txtId = matricula.ide_persona;
+                                this.matricula.selTipoIde = matricula.tipo_doc;
+                                this.matricula.txtNombre = matricula.nom1_persona + " " + matricula.nom2_persona;
+                                this.matricula.txtApellido = matricula.ape1_persona + " " + matricula.ape2_persona;
+                                this.matricula.txtPrograma = matricula.nom_nivel_educativo;
+                                this.matricula.txtSede = matricula.siglas_colegio;
+                                this.matricula.txtPeriodo = matricula.nom_periodo;
+                                this.factura.txtDescFactura = detalle_factura[0].paquete;
+                                this.numeroLetras = numeroALetras(data.total_a_pagar_int, {
+                                    plural: "PESOS",
+                                    singular: "PESO",
+                                    centPlural: "CENTAVOS",
+                                    centSingular: "CENTAVO",
+                                });
+                                this.factura.txtTotalPagar = data.total_a_pagar;
+                                this.detFactura = data.detalle_factura;
+                            }else{
+                                alert(data.message);
+                            }
+                        });
+                },
+                continuarPago() {
+                    if (this.formpago.txtTotal < 1000) {
+                        this.numeroLetras = "Ingrese un valor mayor que 1000";
+                        this.formpago.colorTextoAlert = "text-danger";
+                    } else {
+                        this.formpago.activarBoton = false;
+                        this.formpago.txtBoton = "Procesando...";
+
+
+                        let data = {
+                            "flt_total_con_iva": this.formpago.txtTotal,
+                            "flt_valor_iva": 0,
+                            "str_id_pago": "",//enviar vacio
+                            "str_descripcion_pago": this.formpago.txtConcepto,
+                            "str_email": this.formpago.txtEmail,
+                            "str_id_cliente": this.formpago.txtId,
+                            "str_tipo_id": this.formpago.selTipoIde,
+                            "str_nombre_cliente": this.formpago.txtNombre,
+                            "str_apellido_cliente": this.formpago.txtApellido,
+                            "str_telefono_cliente": this.formpago.txtCelular,
+                            "str_opcional1": "0", //codigo del paquete
+                            "str_opcional2": this.numeroLetras,
+
+                        };
+
+                        fetch(
+                            `{{BASE_URL}}/transaccion/InicioPago`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.error) {
+                                    this.formpago.colorTextoAlert = "text-danger";
+                                    this.numeroLetras = data.message;
+                                    this.formpago.activarBoton = true;
+                                    this.formpago.txtBoton = "Confirmar pago";
+                                } else {
+                                    this.formpago.activarBoton = false;
+                                    this.formpago.txtBoton = "Redireccionando...";
+                                    window.location = data.data.str_url;
+
+                                }
+
+                            }).catch((err) => {
+                                console.log(err);
+                            });
+                    }
+                },
+                numeroALetras(numero) {
+                    this.formpago.colorTextoAlert = "text-success";
+                    this.numeroLetras = numeroALetras(this.formpago.txtTotal, {
+                        plural: "PESOS",
+                        singular: "PESO",
+                        centPlural: "CENTAVOS",
+                        centSingular: "CENTAVO",
+                    });
+                },
+
+                procesarFormulario() { },
+            },
+        });
+
+
+
+
+
     </script>
 </body>
 

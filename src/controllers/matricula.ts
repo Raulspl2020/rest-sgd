@@ -1,6 +1,7 @@
 import { getInfoMatricula, getDetPeriodo } from "../provider/matricula_provider";
 import { getConfigPeriodo, getPaquete, getDescuento } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
+import  * as moneda   from 'currency-formatter';
 
 //====================
 //   /matricula/generarpagomatricula 
@@ -20,6 +21,7 @@ export const generarpagoMatricula = async (req: any, res: any) => {
     let id_matricula = req.params.id_matricula.trim();
     try {
         let result = await getInfoMatricula(id_matricula);
+        console.log(result[0]);
         if (result[0].length > 0) {
             resultDB = result[0][0];
             let resultConfig = await getConfigPeriodo();
@@ -44,6 +46,8 @@ export const generarpagoMatricula = async (req: any, res: any) => {
                     resultPaquete = await getPaquete(resultDB.cod_periodo, 1);
                 } else if (resultDB.cod_nivel_edu == 7) {
                     resultPaquete = await getPaquete(resultDB.cod_periodo, 4);
+                }else if(resultDB.cod_nivel_edu == 16){
+                    resultPaquete = await getPaquete(resultDB.cod_periodo, 5);
                 }
 
 
@@ -129,6 +133,8 @@ export const generarpagoMatricula = async (req: any, res: any) => {
                     resultPaquete = await getPaquete(resultDB.cod_periodo, 2);
                 } else if (resultDB.cod_nivel_edu == 7) {
                     resultPaquete = await getPaquete(resultDB.cod_periodo, 3);
+                }else if(resultDB.cod_nivel_edu == 16){
+                    resultPaquete = await getPaquete(resultDB.cod_periodo, 5);
                 }
 
                 if (resultPaquete != false) {
@@ -180,7 +186,7 @@ export const generarpagoMatricula = async (req: any, res: any) => {
                         total_a_pagar = element.subtotal + total_a_pagar;
                     });
 
-                    
+
                 } else {
                     throw new Error("No se encontraron precios configurados");
                 }
@@ -196,14 +202,15 @@ export const generarpagoMatricula = async (req: any, res: any) => {
                 message: "Ejecución correcta",
                 matricula: resultDB,
                 detalle_factura: resultPaquete,
-                total_a_pagar,
-                total_sin_descuento
+                total_a_pagar: moneda.format(total_a_pagar,{locale: 'es-CO'}).replace('$','').trim(),
+                total_general : moneda.format(total_sin_descuento,{locale: 'es-CO'}).replace('$','').trim(),
+                total_a_pagar_int:  moneda.unformat(moneda.format(total_a_pagar,{locale: 'es-CO'}).replace('$','').trim(),{locale: 'es-CO'})
 
 
             });
 
         } else {
-            throw new Error("No se encontro la matricula");
+            throw new Error("No se encontró la matricula académica");
         }
 
 

@@ -28,6 +28,7 @@ export const pagoMatricula = async(req:any, res = response) => {
     console.log(id_matricula);
     let data: any ={};
     data.BASE_URL = process.env.BASE_URL.toString();
+    data.ID_MATRICULA = id_matricula;
     res.render("pago_matricula",data);
 
 };
