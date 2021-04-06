@@ -17,48 +17,51 @@ export const getInfoMatricula = async (cod_matricula: any) => {
     , col_periodo.cod_periodo
     , col_nivel_educacion.nom_nivel_educativo
     , col_nivel_educacion.cod_nivel_edu 
-    , SUM(col_colegio_asignatura.nro_creditos) AS nro_creditos
-FROM
-    col_colegio_asignatura_matricula
-    INNER JOIN col_matricula 
-        ON (col_colegio_asignatura_matricula.cod_matricula = col_matricula.cod_matricula)
-    INNER JOIN tec_estadomatricula 
-        ON (col_matricula.cod_estadomatricula = tec_estadomatricula.cod_estadomatricula)
-    INNER JOIN col_persona 
-        ON (col_matricula.ide_estudiante = col_persona.ide_persona)
-    INNER JOIN tec_programa_persona 
-        ON (tec_programa_persona.id_programa_persona = col_matricula.id_programa_persona)
-    INNER JOIN col_colegio_periodo 
-        ON (col_matricula.cod_colegio_periodo = col_colegio_periodo.cod_colegio_periodo)
-    INNER JOIN col_colegio_asignatura 
-        ON (col_colegio_asignatura_matricula.cod_colegio_asignatura = col_colegio_asignatura.cod_colegio_asignatura)
-    INNER JOIN col_tipodoc 
-        ON (col_persona.tipo_doc = col_tipodoc.tipo_doc)
-    INNER JOIN tec_institucion_programa 
-        ON (tec_programa_persona.cod_colegio_programa = tec_institucion_programa.cod_colegio_programa)
-    INNER JOIN col_nivel_educacion 
-        ON (tec_institucion_programa.cod_nivel_educativo = col_nivel_educacion.cod_nivel_educativo)
-    INNER JOIN col_colegio 
-        ON (col_colegio_periodo.cod_colegio = col_colegio.cod_colegio)
-    INNER JOIN col_periodo 
-        ON (col_colegio_periodo.cod_periodo = col_periodo.cod_periodo)
+    ,SUM(IF(
+        col_colegio_asignatura_matricula.cod_estadomateria IN (1, 2, 3, 5)
+        AND col_colegio_asignatura_matricula.cod_formaacademica = 1,
+        col_colegio_asignatura.nro_creditos,
+        0
+      )) AS nro_creditos  
+      FROM
+      col_matricula
+      LEFT JOIN col_colegio_asignatura_matricula  
+          ON (col_colegio_asignatura_matricula.cod_matricula = col_matricula.cod_matricula)
+      INNER JOIN tec_estadomatricula 
+          ON (col_matricula.cod_estadomatricula = tec_estadomatricula.cod_estadomatricula)
+      INNER JOIN col_persona 
+          ON (col_matricula.ide_estudiante = col_persona.ide_persona)
+      INNER JOIN tec_programa_persona 
+          ON (tec_programa_persona.id_programa_persona = col_matricula.id_programa_persona)
+      INNER JOIN col_colegio_periodo 
+          ON (col_matricula.cod_colegio_periodo = col_colegio_periodo.cod_colegio_periodo)
+      LEFT JOIN col_colegio_asignatura 
+          ON (col_colegio_asignatura_matricula.cod_colegio_asignatura = col_colegio_asignatura.cod_colegio_asignatura)
+      INNER JOIN col_tipodoc 
+          ON (col_persona.tipo_doc = col_tipodoc.tipo_doc)
+      INNER JOIN tec_institucion_programa 
+          ON (tec_programa_persona.cod_colegio_programa = tec_institucion_programa.cod_colegio_programa)
+      INNER JOIN col_nivel_educacion 
+          ON (tec_institucion_programa.cod_nivel_educativo = col_nivel_educacion.cod_nivel_educativo)
+      INNER JOIN col_colegio 
+          ON (col_colegio_periodo.cod_colegio = col_colegio.cod_colegio)
+      INNER JOIN col_periodo 
+          ON (col_colegio_periodo.cod_periodo = col_periodo.cod_periodo)
                 WHERE col_matricula.cod_matricula =? 
-                AND col_colegio_asignatura_matricula.cod_estadomateria IN (1,2,3,5)
-                AND col_colegio_asignatura_matricula.cod_formaacademica =1
         GROUP BY col_matricula.cod_matricula`;
     return await conDB.raw(sql, [cod_matricula]);
 };
 
 
-export const getDetPeriodo = async (cod_colegio: any, cod_periodo:any, fechaActual:string) => {
-   // let fechaActual='2021-03-29';
+export const getDetPeriodo = async (cod_colegio: any, cod_periodo: any, fechaActual: string) => {
+    // let fechaActual='2021-03-29';
     let result = await conDB
-        .select("cod_colegio_periodo","fec_inicio","fec_fin", "cod_estado", "fec_ini_matordinaria","fec_fin_matordinaria","fec_ini_matextraord","fec_fin_matextraord")
+        .select("cod_colegio_periodo", "fec_inicio", "fec_fin", "cod_estado", "fec_ini_matordinaria", "fec_fin_matordinaria", "fec_ini_matextraord", "fec_fin_matextraord")
         .from("col_colegio_periodo")
-        .whereRaw('? BETWEEN fec_ini_matordinaria AND fec_fin_matordinaria',[fechaActual])
+        .whereRaw('? BETWEEN fec_ini_matordinaria AND fec_fin_matordinaria', [fechaActual])
         .where({
-            'cod_colegio' : cod_colegio,
-            'cod_periodo' : cod_periodo
+            'cod_colegio': cod_colegio,
+            'cod_periodo': cod_periodo
         });
     if (result.length > 0) {
         return result[0];
