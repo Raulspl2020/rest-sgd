@@ -51,7 +51,7 @@ export const getConceptos = async (ids: any) => {
   return result;
 };
 
-export const getConceptosPaquete = async (id: any) => {
+export const getConceptosPaquete = async (codigo: any) => {
   let result = await conDB("fin_paquete")
     .join(
       "fin_detalle_paquete",
@@ -70,12 +70,13 @@ export const getConceptosPaquete = async (id: any) => {
       "fin_detalle_paquete.descuento",
       "fin_detalle_paquete.aumento"
     )
-    .where("fin_paquete._id", id);
+    .where("fin_paquete.codigo", codigo);
   return result;
 };
 
 export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
   let id = 0;
+  console.log(tDetallePago);
   const trx = await conDB.transaction();
   return await trx("fin_pago")
     .insert(params)

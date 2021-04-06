@@ -11,6 +11,8 @@ export const getInfoMatricula = async (cod_matricula: any) => {
     , col_persona.ape2_persona
     , col_persona.nom1_persona
     , col_persona.nom2_persona
+    ,col_persona.email_persona
+    ,col_persona.cel_persona
     , col_colegio.siglas_colegio
     , col_colegio.cod_colegio
     , col_periodo.nom_periodo

@@ -6,6 +6,7 @@ import fetch from "node-fetch";
 import { dataConfigPago, limpiarCampos } from "../helpers/pago";
 import  { ListResponsePago } from "../models/ResponsePago";
 import { parse,format  } from 'date-format-parse';
+import { consultarpagoMatricula } from "../controllers/matricula";
 import {
   guardarPago,
   guardarPagoyDetalle,
@@ -70,7 +71,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           str_opcional5: limpiarCampos(dataBody.str_campo5),
         });
 
-        let resSavePago = await savePago(infoPago, null);
+        let resSavePago = await savePago(infoPago, null,null);
         id_pago = resSavePago.pago_id;
 
       }
@@ -222,6 +223,7 @@ export const inicioPago = async (req: any, res = response) => {
       cadena = limpiarCampos(cadena.replace(/\s+/g, ""));
       let validation;
       let contador = 0;
+      let pagoMat:any= null;
       //si el codigo no es afanumerico se genera otro
       do {
 
@@ -247,6 +249,16 @@ export const inicioPago = async (req: any, res = response) => {
         }
       } while (validation.fails());
 
+      //verificar si es un pago de matricula, si lo es consultar el valor a pagar
+      let conceptos = await getConceptosPaquete(infoPago.str_opcional1);
+      if(conceptos.length > 0 && conceptos[0].categoria_id==1 && infoPago.str_opcional3!="" ) {
+        pagoMat = await consultarpagoMatricula(infoPago.str_opcional3);
+        infoPago.flt_total_con_iva = pagoMat.total_a_pagar_int
+        infoPago.str_opcional3 = pagoMat.matricula.cod_matricula;
+        infoPago.str_opcional4 = pagoMat.matricula.cod_periodo;
+      }
+      
+
 
       let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
         method: "POST",
@@ -254,12 +266,13 @@ export const inicioPago = async (req: any, res = response) => {
         headers: { "Content-Type": "application/json" },
       });
 
+     
       let responseData = await responseZona.json();
 
 
       if (responseData.int_codigo == 1) {
 
-        let response = await savePago(infoPago, JSON.stringify(responseData));
+        let response = await savePago(infoPago, JSON.stringify(responseData),pagoMat);
         res.status(response.statusCode).json(response);
 
       } else {
@@ -284,7 +297,7 @@ export const inicioPago = async (req: any, res = response) => {
 //====================
 //   guardarEL pago generado
 //=====================
-const savePago = async (infoPago: any, responseData: any) => {
+const savePago = async (infoPago: any, responseData: any,dataMatricula:any) => {
   console.log("ejecutamos la fucnion de save");
 
   //pendiente validar precios: si son diferentes mostrar alerta
@@ -296,9 +309,28 @@ const savePago = async (infoPago: any, responseData: any) => {
 
   try {
 
-
+    //buscamos un paquete por codigo
     let conceptos = await getConceptosPaquete(paquete_id);
     if (conceptos.length > 0) {
+
+      //si es un pago de matricula
+      if(dataMatricula!==null){
+
+        dataMatricula.detalle_factura.forEach((concepto: any) => {
+          console.log("Espago de matricula");
+          console.log(concepto);
+          tDetallePago.push({
+          pago_id: null,
+          concepto_id: concepto.concepto_id,
+          descuento: concepto.descuento,
+          aumento: concepto.aumento,
+          valor_unidad: concepto.valor_unidad,
+          cantidad: concepto.cantidad,
+          });
+        });
+
+      }else{
+
       conceptos.forEach((concepto: any) => {
         tDetallePago.push({
           pago_id: null,
@@ -312,6 +344,8 @@ const savePago = async (infoPago: any, responseData: any) => {
           cantidad: concepto.cantidad,
         });
       });
+
+    }
     } else {
       throw new Error("No se encontro el paquete...");
     }
@@ -327,7 +361,7 @@ const savePago = async (infoPago: any, responseData: any) => {
       valor: infoPago.flt_total_con_iva,
       valor_letras: infoPago.str_opcional2,
       periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
-      archivo_id: null,
+    //  archivo_id: null,
       categoria_pago_id: conceptos[0].categoria_id,
     };
 

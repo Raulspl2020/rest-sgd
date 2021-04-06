@@ -171,7 +171,7 @@
                                                         <th scope="row">{[index+1]} </th>
                                                         <td>{[row.concepto]}</td>
                                                         <td>{[row.cantidad]}</td>
-                                                        <td> {[row.descuento *100]}% </td>
+                                                        <td data-bs-toggle="tooltip" title="Some tooltip text!"> {[row.descuento *100]}% </td>
                                                         <td> {[row.aumento *100]}% </td>
                                                         <td> $ {[row.valor_unidad]} </td>
                                                         <td> $ {[row.subtotal]} </td>
@@ -208,7 +208,9 @@
                                         <div style="text-align: right" class="float-right">
                                             {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
                                             </h4> --}}
-                                            <button class="btn btn-outline-success">
+                                            <button class="btn btn-outline-success" data-bs-toggle="tooltip"
+                                            @click="continuarPago"
+                                                data-bs-placement="top" title="Confirma el pago procede al cobro">
                                                 <i class="fa fa-money"></i> Confirmar pago
                                             </button>
                                         </div>
@@ -257,6 +259,11 @@
                 });
             });
 
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
         });
 
 
@@ -273,12 +280,15 @@
                     matricula: {
                         txtId: "",
                         selTipoIde: "",
+                        codTipoID: 0,
                         txtNombre: "",
                         txtApellido: "",
                         txtPrograma: "",
                         txtSede: "",
                         txtPeriodo: "",
                         txtNroCreditos: 0,
+                        email_persona: "",
+                        cel_persona: "",
                         txtDescripcionFactura: "",
                         activarBoton: true,
                         txtBoton: "Confirmar pago",
@@ -286,7 +296,9 @@
                     },
                     factura: {
                         txtDescFactura: "",
-                        txtTotalPagar: 0
+                        txtTotalPagar: 0,
+                        txtTotalPagarInt: 0,
+                        cod_paquete: "0"
                     },
                     detFactura: [],
                     numeroLetras: "CERO PESOS",
@@ -310,42 +322,44 @@
                                 this.matricula.txtSede = matricula.siglas_colegio;
                                 this.matricula.txtPeriodo = matricula.nom_periodo;
                                 this.factura.txtDescFactura = detalle_factura[0].paquete;
+                                this.factura.txtTotalPagarInt = data.total_a_pagar_int;
                                 this.numeroLetras = numeroALetras(data.total_a_pagar_int, {
                                     plural: "PESOS",
                                     singular: "PESO",
                                     centPlural: "CENTAVOS",
                                     centSingular: "CENTAVO",
                                 });
+                                this.matricula.cel_persona = matricula.cel_persona;
+                                this.matricula.codTipoID = matricula.cod_doc
+                                this.matricula.email_persona = matricula.email_persona;
                                 this.factura.txtTotalPagar = data.total_a_pagar;
                                 this.detFactura = data.detalle_factura;
                                 this.matricula.txtNroCreditos = matricula.nro_creditos;
+                                this.factura.cod_paquete = data.detalle_factura[0].codigo;
                             } else {
                                 alert(data.message);
                             }
                         });
                 },
                 continuarPago() {
-                    if (this.formpago.txtTotal < 1000) {
-                        this.numeroLetras = "Ingrese un valor mayor que 1000";
-                        this.formpago.colorTextoAlert = "text-danger";
-                    } else {
-                        this.formpago.activarBoton = false;
-                        this.formpago.txtBoton = "Procesando...";
+                       // this.formpago.activarBoton = false;
+                      //  this.formpago.txtBoton = "Procesando...";
 
 
                         let data = {
-                            "flt_total_con_iva": this.formpago.txtTotal,
+                            "flt_total_con_iva": this.factura.txtTotalPagarInt,
                             "flt_valor_iva": 0,
                             "str_id_pago": "",//enviar vacio
-                            "str_descripcion_pago": this.formpago.txtConcepto,
-                            "str_email": this.formpago.txtEmail,
-                            "str_id_cliente": this.formpago.txtId,
-                            "str_tipo_id": this.formpago.selTipoIde,
-                            "str_nombre_cliente": this.formpago.txtNombre,
-                            "str_apellido_cliente": this.formpago.txtApellido,
-                            "str_telefono_cliente": this.formpago.txtCelular,
-                            "str_opcional1": "0", //codigo del paquete
+                            "str_descripcion_pago":  this.factura.txtDescFactura,
+                            "str_email": this.matricula.email_persona,
+                            "str_id_cliente":  this.matricula.txtId,
+                            "str_tipo_id":  this.matricula.codTipoID,
+                            "str_nombre_cliente": this.matricula.txtNombre,
+                            "str_apellido_cliente": this.matricula.txtApellido,
+                            "str_telefono_cliente": this.matricula.cel_persona,
+                            "str_opcional1": this.factura.cod_paquete, //codigo del paquete
                             "str_opcional2": this.numeroLetras,
+                            "str_opcional3":  {{ID_MATRICULA}}
 
                         };
 
@@ -374,7 +388,7 @@
                             }).catch((err) => {
                                 console.log(err);
                             });
-                    }
+                    
                 },
                 numeroALetras(numero) {
                     this.formpago.colorTextoAlert = "text-success";

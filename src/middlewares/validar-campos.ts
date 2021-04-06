@@ -43,7 +43,7 @@ export const validatorCampos = (req: any, res: any, next: any) => {
     str_descripcion_pago: "required|string",
     str_email: "required|string|email",
     str_id_cliente: "required|string",
-    str_tipo_id: "present",
+    str_tipo_id: "present|numeric",
     str_nombre_cliente: ['required','string'],
     str_apellido_cliente: "required|string",
     str_telefono_cliente: "required|string",
