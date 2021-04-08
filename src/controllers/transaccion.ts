@@ -37,6 +37,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
   try {
     let id_pago = await detIdPagoByCodigo(codigo_pago);
 
+
     console.log("inicia la consulta");
     let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
       method: "POST",
@@ -67,11 +68,12 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           str_opcional1: limpiarCampos(dataBody.str_campo1), //codigo paquet)e
           str_opcional2: limpiarCampos(dataBody.str_campo2), //valor en letra)s
           str_opcional3: limpiarCampos(dataBody.str_campo3), //matricul)a
-          str_opcional4: limpiarCampos(dataBody.str_campo4), //period)o
+          str_opcional4: limpiarCampos(dataBody.str_campo4), //periodo
           str_opcional5: limpiarCampos(dataBody.str_campo5),
         });
 
         let resSavePago = await savePago(infoPago, null,null);
+
         id_pago = resSavePago.pago_id;
 
       }
@@ -259,14 +261,17 @@ export const inicioPago = async (req: any, res = response) => {
       }
       
 
+      //recortamos el tamaño de la descripcion
+      let finpago2:Pago = new Pago(infoPago);
+      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0,-(finpago2.str_descripcion_pago.length-70));
 
+      
       let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
         method: "POST",
-        body: JSON.stringify(dataConfigPago(infoPago)),
+        body: JSON.stringify(dataConfigPago(finpago2)),
         headers: { "Content-Type": "application/json" },
       });
 
-     
       let responseData = await responseZona.json();
 
 
@@ -287,7 +292,7 @@ export const inicioPago = async (req: any, res = response) => {
 
   } catch (error) {
     res.status(500).json({
-      message: "Algo salio mal",
+      message: error.message,
       error: true,
       det_error: error.message,
     });
@@ -311,14 +316,14 @@ const savePago = async (infoPago: any, responseData: any,dataMatricula:any) => {
 
     //buscamos un paquete por codigo
     let conceptos = await getConceptosPaquete(paquete_id);
+
     if (conceptos.length > 0) {
 
       //si es un pago de matricula
       if(dataMatricula!==null){
 
         dataMatricula.detalle_factura.forEach((concepto: any) => {
-          console.log("Espago de matricula");
-          console.log(concepto);
+
           tDetallePago.push({
           pago_id: null,
           concepto_id: concepto.concepto_id,
@@ -334,7 +339,7 @@ const savePago = async (infoPago: any, responseData: any,dataMatricula:any) => {
       conceptos.forEach((concepto: any) => {
         tDetallePago.push({
           pago_id: null,
-          concepto_id: concepto._id,
+          concepto_id: concepto.concepto_id,
           descuento: concepto.descuento,
           aumento: concepto.aumento,
           valor_unidad:

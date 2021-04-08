@@ -65,6 +65,7 @@ export const getConceptosPaquete = async (codigo: any) => {
       "fin_paquete.categoria_id",
       "fin_paquete.tipo",
       "fin_detalle_paquete._id",
+      "fin_detalle_paquete.concepto_id",
       "fin_detalle_paquete.valor_unidad",
       "fin_detalle_paquete.cantidad",
       "fin_detalle_paquete.descuento",
@@ -76,12 +77,15 @@ export const getConceptosPaquete = async (codigo: any) => {
 
 export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
   let id = 0;
+  let detalle: any = tDetallePago;
+  console.log("Antes de guardar");
+  console.log(params);
   console.log(tDetallePago);
   const trx = await conDB.transaction();
   return await trx("fin_pago")
     .insert(params)
     .then((ids: any) => {
-      let detalle: any = tDetallePago;
+
 
       detalle.forEach((det: any) => (det.pago_id = ids[0]));
       id = ids;
@@ -94,6 +98,7 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
     })
     .catch((result: any) => {
       trx.rollback();
+      console.log(result);
       return false;
     });
 };

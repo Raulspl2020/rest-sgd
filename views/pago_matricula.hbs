@@ -171,7 +171,8 @@
                                                         <th scope="row">{[index+1]} </th>
                                                         <td>{[row.concepto]}</td>
                                                         <td>{[row.cantidad]}</td>
-                                                        <td data-bs-toggle="tooltip" title="Some tooltip text!"> {[row.descuento *100]}% </td>
+                                                        <td data-bs-toggle="tooltip" title="Some tooltip text!">
+                                                            {[row.descuento *100]}% </td>
                                                         <td> {[row.aumento *100]}% </td>
                                                         <td> $ {[row.valor_unidad]} </td>
                                                         <td> $ {[row.subtotal]} </td>
@@ -200,6 +201,14 @@
 
                                 </div>
                                 <div class="row">
+                                    <div class="col-12">
+                                        <div class="alert alert-danger p-2" role="alert" v-if="mostrarAlert">
+                                            {[msjResp]}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
                                     <div class="col-6">
                                         {{!-- <div><strong>Esado transaccion: </strong> PENDIENTE</div> --}}
                                         <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong> </h4>
@@ -209,9 +218,9 @@
                                             {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
                                             </h4> --}}
                                             <button class="btn btn-outline-success" data-bs-toggle="tooltip"
-                                            @click="continuarPago"
-                                                data-bs-placement="top" title="Confirma el pago procede al cobro">
-                                                <i class="fa fa-money"></i> Confirmar pago
+                                                @click="continuarPago" data-bs-placement="top" :disabled="!activarBoton"
+                                                title="Confirma el pago procede al cobro">
+                                                <i class="fa fa-money"></i> {[txtBoton]}
                                             </button>
                                         </div>
                                     </div>
@@ -290,8 +299,6 @@
                         email_persona: "",
                         cel_persona: "",
                         txtDescripcionFactura: "",
-                        activarBoton: true,
-                        txtBoton: "Confirmar pago",
                         colorTextoAlert: "text-success"
                     },
                     factura: {
@@ -302,6 +309,10 @@
                     },
                     detFactura: [],
                     numeroLetras: "CERO PESOS",
+                    activarBoton: true,
+                    txtBoton: "Confirmar pago",
+                    msjResp: "",
+                    mostrarAlert : false
                 };
             },
             methods: {
@@ -342,54 +353,57 @@
                         });
                 },
                 continuarPago() {
-                       // this.formpago.activarBoton = false;
-                      //  this.formpago.txtBoton = "Procesando...";
+                    // this.formpago.activarBoton = false;
+                    //  this.formpago.txtBoton = "Procesando...";
 
 
-                        let data = {
-                            "flt_total_con_iva": this.factura.txtTotalPagarInt,
-                            "flt_valor_iva": 0,
-                            "str_id_pago": "",//enviar vacio
-                            "str_descripcion_pago":  this.factura.txtDescFactura,
-                            "str_email": this.matricula.email_persona,
-                            "str_id_cliente":  this.matricula.txtId,
-                            "str_tipo_id":  this.matricula.codTipoID,
-                            "str_nombre_cliente": this.matricula.txtNombre,
-                            "str_apellido_cliente": this.matricula.txtApellido,
-                            "str_telefono_cliente": this.matricula.cel_persona,
-                            "str_opcional1": this.factura.cod_paquete, //codigo del paquete
-                            "str_opcional2": this.numeroLetras,
-                            "str_opcional3":  {{ID_MATRICULA}}
+                    let data = {
+                        "flt_total_con_iva": this.factura.txtTotalPagarInt,
+                        "flt_valor_iva": 0,
+                        "str_id_pago": "",//enviar vacio
+                        "str_descripcion_pago": this.factura.txtDescFactura,
+                        "str_email": this.matricula.email_persona,
+                        "str_id_cliente": this.matricula.txtId,
+                        "str_tipo_id": this.matricula.codTipoID,
+                        "str_nombre_cliente": this.matricula.txtNombre,
+                        "str_apellido_cliente": this.matricula.txtApellido,
+                        "str_telefono_cliente": this.matricula.cel_persona,
+                        "str_opcional1": this.factura.cod_paquete, //codigo del paquete
+                        "str_opcional2": this.numeroLetras,
+                        "str_opcional3": '{{ ID_MATRICULA }}'
+                    }
 
-                        };
 
-                        fetch(
-                            `{{BASE_URL}}/transaccion/InicioPago`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(data)
-                        })
-                            .then((response) => response.json())
-                            .then((data) => {
-                                if (data.error) {
-                                    this.formpago.colorTextoAlert = "text-danger";
-                                    this.numeroLetras = data.message;
-                                    this.formpago.activarBoton = true;
-                                    this.formpago.txtBoton = "Confirmar pago";
-                                } else {
-                                    this.formpago.activarBoton = false;
-                                    this.formpago.txtBoton = "Redireccionando...";
-                                    window.location = data.data.str_url;
+                    this.activarBoton = false;
+                    this.txtBoton = "Procesando...";
+                    fetch(
+                        `{{BASE_URL}}/transaccion/InicioPago`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.error) {
+                                this.msjResp = data.message;
+                                this.mostrarAlert = true;
+                                this.activarBoton = true;
+                                this.txtBoton = "Confirmar pago";
+                            } else {
+                                this.activarBoton = false;
+                                this.txtBoton = "Redireccionando...";
+                                window.location = data.data.str_url;
 
-                                }
+                            }
 
-                            }).catch((err) => {
-                                console.log(err);
-                            });
-                    
+                        }).catch((err) => {
+                            console.log(err);
+                        });
                 },
+
+
                 numeroALetras(numero) {
                     this.formpago.colorTextoAlert = "text-success";
                     this.numeroLetras = numeroALetras(this.formpago.txtTotal, {
@@ -402,6 +416,9 @@
 
                 procesarFormulario() { },
             },
+
+
+
         });
 
 
