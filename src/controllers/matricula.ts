@@ -14,6 +14,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
     let total_con_descuento = 0;
     let total_sin_descuento = 0;
     let porcentaje_descuento = 0;
+    let porcentaje_aumento = 0;
+    let descripcionFactura ="";
+    let auxDescripcion ="";
     let precios: any;
     let periodo: any;
     id_matricula = id_matricula.trim();
@@ -26,11 +29,21 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
             //para consultar las fechas de matriculas 
             periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
 
-            //consular los descuentos que un estudiante tiene asignados
+
+            //consular los descuentos y multas que un estudiante tiene asignados
             let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
             resultDto.forEach((row: any) => {
-                porcentaje_descuento = porcentaje_descuento + row.porcentaje;
+                //si aplica descuento sino aplica aumento
+                if (row.accion == 1) {
+                    porcentaje_descuento = porcentaje_descuento + row.porcentaje;
+                    auxDescripcion = auxDescripcion+ " + DESCUENTO "+( row.porcentaje*100)+"% "+row.observacion
+                } else {
+                    porcentaje_aumento = porcentaje_aumento + row.porcentaje;
+                    auxDescripcion = auxDescripcion+ " + AUMENTO "+( row.porcentaje*100)+"% "+row.observacion
+                }
+
             });
+
 
 
             //configurar deacuerdo a la configuracion del periodo
@@ -49,22 +62,34 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 }
 
 
+
+
                 // resultPaquete = await getPaquete(resultDB.cod_periodo, 1);
 
 
                 if (resultPaquete != false) {
+
+                    descripcionFactura = ""+ resultPaquete[0].paquete + auxDescripcion
 
                     precios = resultPaquete;
                     //recorrer los detalles de paquete
                     precios.forEach((element: any, index: number) => {
 
 
+
+
+
                         //si se puede aplicar descuento externo
                         if (element.descuento_ext == '1') {
 
+                            console.log("Se va a aplicar descuento");
+
+                            //añade aumento para matricula extraordinaria
                             if (periodo == false) {
                                 precios[index].aumento = resultConfig.porcentaje_ext;
+                                descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
                             }
+                            console.log(precios[index].aumento);
 
 
                             let totaAPagar = 0;
@@ -73,7 +98,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                             } else {
                                 precios[index].cantidad = resultDB.nro_creditos;
                                 precios[index].descuento = porcentaje_descuento;
+                                precios[index].aumento = porcentaje_aumento + precios[index].aumento;
                                 porcentaje_descuento = 0;
+                                porcentaje_aumento = 0;
                                 total = element.subtotal * Number(resultDB.nro_creditos);
                                 totaAPagar = totaAPagar + total;
                             }
@@ -91,6 +118,18 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                             total_sin_descuento = totaAPagar;
                         }
 
+
+                        //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
+                        resultDto.forEach((row: any) => {
+                            //si aplica descuento sino aplica aumento
+                            if (row.tipo == 1) {
+                                precios[index].descuento = row.porcentaje;
+                            }
+
+                        });
+
+
+
                         //calcula el total sin descuento
                         if (element.cantidad > 0) {
                             total_a_pagar = total_a_pagar + (element.subtotal * element.cantidad);
@@ -106,6 +145,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     //volvemos a recorrer para calcular totales
                     total_a_pagar = 0;
                     precios.forEach((element: any, index: number) => {
+                        precios[index].paquete = descripcionFactura;
                         let subtotal = (element.valor_unidad * element.cantidad);
                         precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
                         total_a_pagar = element.subtotal + total_a_pagar;
@@ -135,6 +175,8 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 if (resultPaquete != false) {
 
 
+                    descripcionFactura = ""+ resultPaquete[0].paquete + auxDescripcion
+
                     precios = resultPaquete;
                     //recorrer los detalles de paquete
                     precios.forEach((element: any, index: number) => {
@@ -146,6 +188,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                             //añade aumento para matricula extraordinaria
                             if (periodo == false) {
                                 precios[index].aumento = resultConfig.porcentaje_ext;
+                                descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
                             }
 
                             let totaAPagar = 0;
@@ -175,6 +218,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     //volvemos a recorrer para calcular totales
                     total_a_pagar = 0;
                     precios.forEach((element: any, index: number) => {
+                        precios[index].paquete = descripcionFactura;
                         let subtotal = (element.valor_unidad * element.cantidad);
                         precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
                         total_a_pagar = element.subtotal + total_a_pagar;

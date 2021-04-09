@@ -178,7 +178,7 @@ export const getDescuento = async (cod_matricula:any, periodo_id:any) => {
   let result = await conDB
   .select()
   .from("fin _porcentaje_soporte")
-  .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id });
+  .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
   return result;
 };
 

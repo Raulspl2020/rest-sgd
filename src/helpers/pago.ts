@@ -72,7 +72,7 @@ export const limpiarCampos = (cadena:string) =>{
   if(cadena==undefined){
     cadena ="";
   }
-  return cadena.toString().replace(/[`~!@#$%^&*¬()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gim, '');
+  return cadena.toString().replace(/[`~!@#$%^&*¬()_|\-=?;:'",.<>\{\}\[\]\\\/]/gim, '');
 }
 
 export const dataConfigPago = (infoPago: any) => {

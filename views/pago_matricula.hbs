@@ -20,7 +20,7 @@
                 <div class="card border border border-dark">
 
                     <div class="card-body pb-1 ">
-                        <h4 class="card-title text-center text-dark border border border-danger bg-warning">
+                        <h4 class="card-title text-center text-light border border border-dark bg-danger">
 
                             <img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 60px;" class="img img-fluid"
                                 alt="">
@@ -89,20 +89,32 @@
 
                         <hr />
 
-                        <ul class="nav nav-tabs" id="myTab" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab"
-                                    aria-controls="home" aria-selected="true">Pagos</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
-                                    aria-controls="profile" aria-selected="false">Consulta precios</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact" role="tab"
-                                    aria-controls="contact" aria-selected="false">Carga certificado de votacion</a>
-                            </li>
-                        </ul>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home"
+                                            role="tab" aria-controls="home" aria-selected="true">Pagos</a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact"
+                                            role="tab" aria-controls="contact" aria-selected="false">Carga certificado
+                                            de votacion</a>
+                                    </li>
+
+                                </ul>
+                            </div>
+
+                            <div class="col-md-2">
+                                <a id="profile-tab" class="btn btn-outline-secondary" href="#">Consulta precios</a>
+                            </div>
+                        </div>
+
+
+
+
+
                         <div class="tab-content" id="myTabContent">
                             <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
 
@@ -130,8 +142,8 @@
 
                                     <div class="col-md-10">
                                         <div class="form-group">
-                                            <label for="">Valor en letras:</label>
-                                            <div type="text" class="form-control bg-light text-primary">
+                                            <label for="">Total en letras:</label>
+                                            <div type="text" class="form-control bg-light text-success">
                                                 {[numeroLetras]}
                                             </div>
                                         </div>
@@ -229,9 +241,11 @@
 
 
                             </div>
-                            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+
+                            {{!-- <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                                 Consulta los precios de derechos pecuniarios
-                            </div>
+                            </div> --}}
+
                             <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
                                 carga certificado de votacion
 
@@ -312,7 +326,7 @@
                     activarBoton: true,
                     txtBoton: "Confirmar pago",
                     msjResp: "",
-                    mostrarAlert : false
+                    mostrarAlert: false
                 };
             },
             methods: {
@@ -370,7 +384,8 @@
                         "str_telefono_cliente": this.matricula.cel_persona,
                         "str_opcional1": this.factura.cod_paquete, //codigo del paquete
                         "str_opcional2": this.numeroLetras,
-                        "str_opcional3": '{{ ID_MATRICULA }}'
+                        "str_opcional3": '{{ ID_MATRICULA }}',
+                        "observacion_factura": this.factura.txtDescFactura,
                     }
 
 

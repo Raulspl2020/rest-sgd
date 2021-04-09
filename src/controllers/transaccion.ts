@@ -193,7 +193,6 @@ export const verificaPago = async (req: any, res = response) => {
 export const inicioPago = async (req: any, res = response) => {
   let dataBody: any = req.body;
 
-
   try {
 
     let infoPago = new Pago({
