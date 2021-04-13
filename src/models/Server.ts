@@ -30,15 +30,15 @@ class Server {
 
     async cronJob() {
 
-       // cron.schedule('*/15 * * * *', () => {
+        // cron.schedule('*/15 * * * *', () => {
         cron.schedule('* * * * *', () => {
             verificaPagosPendientes().then((result) => {
-               // console.log(result);
+                // console.log(result);
             });
         });
 
         cron.schedule('* * * * *', () => {
-        //cron.schedule('*/60 * * * *', () => {
+            //cron.schedule('*/60 * * * *', () => {
             verificaPagosPendientesEfectivo().then((result) => {
                 //console.log(result);
             });
@@ -54,7 +54,13 @@ class Server {
         //body-parser-json
         this.app.use(bodyParser.json());
         //File-upploads
-        this.app.use(fileUpload());
+        this.app.use(fileUpload(
+            {useTempFiles : true,
+            tempFileDir : '/tmp/',
+            createParentPath: true
+        }
+
+        ));
         //carpeta publica
         this.app.use('/api/static', express.static('public'));
     }

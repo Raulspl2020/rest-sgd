@@ -1,5 +1,5 @@
 import { getInfoMatricula, getDetPeriodo } from "../provider/matricula_provider";
-import { getConfigPeriodo, getPaquete, getDescuento } from "../provider/pago_provider";
+import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 
@@ -15,8 +15,8 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
     let total_sin_descuento = 0;
     let porcentaje_descuento = 0;
     let porcentaje_aumento = 0;
-    let descripcionFactura ="";
-    let auxDescripcion ="";
+    let descripcionFactura = "";
+    let auxDescripcion = "";
     let precios: any;
     let periodo: any;
     id_matricula = id_matricula.trim();
@@ -36,10 +36,10 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 //si aplica descuento sino aplica aumento
                 if (row.accion == 1) {
                     porcentaje_descuento = porcentaje_descuento + row.porcentaje;
-                    auxDescripcion = auxDescripcion+ " + DESCUENTO "+( row.porcentaje*100)+"% "+row.observacion
+                    auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
                 } else {
                     porcentaje_aumento = porcentaje_aumento + row.porcentaje;
-                    auxDescripcion = auxDescripcion+ " + AUMENTO "+( row.porcentaje*100)+"% "+row.observacion
+                    auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + row.observacion
                 }
 
             });
@@ -69,7 +69,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                 if (resultPaquete != false) {
 
-                    descripcionFactura = ""+ resultPaquete[0].paquete + auxDescripcion
+                    descripcionFactura = "" + resultPaquete[0].paquete + auxDescripcion
 
                     precios = resultPaquete;
                     //recorrer los detalles de paquete
@@ -175,7 +175,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 if (resultPaquete != false) {
 
 
-                    descripcionFactura = ""+ resultPaquete[0].paquete + auxDescripcion
+                    descripcionFactura = "" + resultPaquete[0].paquete + auxDescripcion
 
                     precios = resultPaquete;
                     //recorrer los detalles de paquete
@@ -267,8 +267,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 export const generarpagoMatricula = async (req: any, res: any) => {
 
     try {
-        let result = await consultarpagoMatricula(req.params.id_matricula.trim());
-        return res.json(result);
+        let result: any = await consultarpagoMatricula(req.params.id_matricula.trim());
+        result.categorias = await getCategriaDescuento(1);
+        return res.status(200).json(result);
 
     } catch (error) {
         return res.status(500).json({
@@ -475,9 +476,10 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
             }
 
 
-            return res.json({
+            return res.status(200).json({
                 error: false,
                 message: "Ejecución correcta",
+                categorias: await getCategriaDescuento(1),
                 matricula: resultDB,
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),

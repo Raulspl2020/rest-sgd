@@ -162,24 +162,35 @@ FROM
       AND fin_paquete.codigo=?
       GROUP BY fin_detalle_paquete._id
       `;
-      
 
-  let result =  await conDB.raw(sql, [id_periodo, codigo]);
+
+  let result = await conDB.raw(sql, [id_periodo, codigo]);
   if (result[0].length > 0) {
     return result[0];
-} else {
+  } else {
     return false;
-}
+  }
 };
 
 
 //consulta descuentos a un estudiante
-export const getDescuento = async (cod_matricula:any, periodo_id:any) => {
+export const getDescuento = async (cod_matricula: any, periodo_id: any) => {
   let result = await conDB
-  .select()
-  .from("fin _porcentaje_soporte")
-  .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
+    .select()
+    .from("fin _porcentaje_soporte")
+    .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
   return result;
 };
+
+
+//consulta las categorias de descuento disponibles
+export const getCategriaDescuento = async (accion: any) => {
+  let result = await conDB
+    .select()
+    .from("fin_porcetaje_categoria")
+    .where({ 'accion': accion });
+  return result;
+};
+
 
 

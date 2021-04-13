@@ -1,12 +1,14 @@
 import { response } from "express";
 import cryptoRandomString from "crypto-random-string";
 import { v4 as uuidv4 } from 'uuid';
+
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
 import { dataConfigPago, limpiarCampos } from "../helpers/pago";
-import  { ListResponsePago } from "../models/ResponsePago";
-import { parse,format  } from 'date-format-parse';
+import { ListResponsePago } from "../models/ResponsePago";
+import { parse, format } from 'date-format-parse';
 import { consultarpagoMatricula } from "../controllers/matricula";
+import { subirArchivo } from '../helpers/subir-archivo';
 import {
   guardarPago,
   guardarPagoyDetalle,
@@ -16,6 +18,49 @@ import {
   detIdPagoByCodigo
 } from "../provider/pago_provider";
 let Validator = require("validatorjs");
+
+
+//====================
+//   /transaccion/soporteDescuento
+//=====================
+export const soporteDescuento = async (req: any, res = response) => {
+
+  try {
+
+    let body = req.body;
+
+    //subir el archivo si existe
+    if (req.files && req.files.archivo) {
+      const { archivo } = req.files;
+  
+      const carpeta =  `soportedescuento/${body.estudiante_id}-${body.matricula_id}/`;
+      const pathCompleto = await subirArchivo(req.files,undefined,carpeta);
+      console.log(pathCompleto);
+    }
+
+
+
+
+
+
+    res.status(200).json({
+      message: "Servicio no disponible temporalmente",
+      error: true,
+      body
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Servicio no disponible temporalmente",
+      error: true,
+      det_error: error.message
+    });
+  }
+
+
+
+}
 
 //====================
 //   /transaccion/estado
@@ -72,7 +117,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           str_opcional5: limpiarCampos(dataBody.str_campo5),
         });
 
-        let resSavePago = await savePago(infoPago, null,null);
+        let resSavePago = await savePago(infoPago, null, null);
 
         id_pago = resSavePago.pago_id;
 
@@ -81,7 +126,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       let data: any = {
         'json_detalle': responseData.str_res_pago,
         'estado_id': pagoDecoded[0].int_pago_terminado,
-        'fecha_update': format(fechaUpdate,  'YYYY-MM-DD HH:mm:ss')
+        'fecha_update': format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss')
       };
 
       let detPago: any = [];
@@ -93,16 +138,16 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           'valor_pago': det.dbl_valor_pagado,
           'total_pago': det.dbl_total_pago,
           'valor_iva_pago': det.dbl_valor_iva_pagado,
-          'estado_pago_id': (det.int_estado_pago=='') ? null: det.int_estado_pago ,
-          'forma_pago_id': (det.int_id_forma_pago=='')? null : det.int_id_forma_pago,
-          'nombre_banco': (det.str_nombre_banco=='') ? null : det.str_nombre_banco,
-          'codigo_transaccion': (det.str_codigo_transacción=='') ? null : det.str_codigo_transacción,
-          'fecha' : format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss'),
-          'ticketID': (det.str_ticketID=='') ? null : det.str_ticketID,
-          'numero_tarjeta': (det.int_numero_tarjeta=='') ? null : det.int_numero_tarjeta,
-          'franquicia' : (det.str_franquicia=='') ? null : det.str_franquicia,
-          'cod_aprobacion': (det.int_cod_aprobacion=='') ? null : det.int_cod_aprobacion,
-          'num_recibido': (det.int_num_recibido=='') ? null : det.int_num_recibido
+          'estado_pago_id': (det.int_estado_pago == '') ? null : det.int_estado_pago,
+          'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago,
+          'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco,
+          'codigo_transaccion': (det.str_codigo_transacción == '') ? null : det.str_codigo_transacción,
+          'fecha': format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss'),
+          'ticketID': (det.str_ticketID == '') ? null : det.str_ticketID,
+          'numero_tarjeta': (det.int_numero_tarjeta == '') ? null : det.int_numero_tarjeta,
+          'franquicia': (det.str_franquicia == '') ? null : det.str_franquicia,
+          'cod_aprobacion': (det.int_cod_aprobacion == '') ? null : det.int_cod_aprobacion,
+          'num_recibido': (det.int_num_recibido == '') ? null : det.int_num_recibido
         });
 
       });
@@ -112,7 +157,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
       //borra y crea los detalles pago: true-false
       let resDb2 = await actualizarPagoyDetalle(id_pago, detPago);
-      
+
 
       if (resDb2) {
         res.status(200).json({
@@ -161,7 +206,7 @@ export const verificaPago = async (req: any, res = response) => {
     .then((res) => res.json())
     .then((response) => {
       if (response.int_error == 0) {
-        
+
         const resss = new ListResponsePago();
         let pagoDecoded = resss.decodePagoToList(response.str_res_pago);
         res.status(200).json({
@@ -224,7 +269,7 @@ export const inicioPago = async (req: any, res = response) => {
       cadena = limpiarCampos(cadena.replace(/\s+/g, ""));
       let validation;
       let contador = 0;
-      let pagoMat:any= null;
+      let pagoMat: any = null;
       //si el codigo no es afanumerico se genera otro
       do {
 
@@ -252,19 +297,19 @@ export const inicioPago = async (req: any, res = response) => {
 
       //verificar si es un pago de matricula, si lo es consultar el valor a pagar
       let conceptos = await getConceptosPaquete(infoPago.str_opcional1);
-      if(conceptos.length > 0 && conceptos[0].categoria_id==1 && infoPago.str_opcional3!="" ) {
+      if (conceptos.length > 0 && conceptos[0].categoria_id == 1 && infoPago.str_opcional3 != "") {
         pagoMat = await consultarpagoMatricula(infoPago.str_opcional3);
         infoPago.flt_total_con_iva = pagoMat.total_a_pagar_int
         infoPago.str_opcional3 = pagoMat.matricula.cod_matricula;
         infoPago.str_opcional4 = pagoMat.matricula.cod_periodo;
       }
-      
+
 
       //recortamos el tamaño de la descripcion
-      let finpago2:Pago = new Pago(infoPago);
-      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0,-(finpago2.str_descripcion_pago.length-70));
+      let finpago2: Pago = new Pago(infoPago);
+      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
 
-      
+
       let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
         method: "POST",
         body: JSON.stringify(dataConfigPago(finpago2)),
@@ -276,7 +321,7 @@ export const inicioPago = async (req: any, res = response) => {
 
       if (responseData.int_codigo == 1) {
 
-        let response = await savePago(infoPago, JSON.stringify(responseData),pagoMat);
+        let response = await savePago(infoPago, JSON.stringify(responseData), pagoMat);
         res.status(response.statusCode).json(response);
 
       } else {
@@ -301,7 +346,7 @@ export const inicioPago = async (req: any, res = response) => {
 //====================
 //   guardarEL pago generado
 //=====================
-const savePago = async (infoPago: any, responseData: any,dataMatricula:any) => {
+const savePago = async (infoPago: any, responseData: any, dataMatricula: any) => {
   console.log("ejecutamos la fucnion de save");
 
   //pendiente validar precios: si son diferentes mostrar alerta
@@ -319,37 +364,37 @@ const savePago = async (infoPago: any, responseData: any,dataMatricula:any) => {
     if (conceptos.length > 0) {
 
       //si es un pago de matricula
-      if(dataMatricula!==null){
+      if (dataMatricula !== null) {
 
         dataMatricula.detalle_factura.forEach((concepto: any) => {
 
           tDetallePago.push({
-          pago_id: null,
-          concepto_id: concepto.concepto_id,
-          descuento: concepto.descuento,
-          aumento: concepto.aumento,
-          valor_unidad: concepto.valor_unidad,
-          cantidad: concepto.cantidad,
+            pago_id: null,
+            concepto_id: concepto.concepto_id,
+            descuento: concepto.descuento,
+            aumento: concepto.aumento,
+            valor_unidad: concepto.valor_unidad,
+            cantidad: concepto.cantidad,
           });
         });
 
-      }else{
+      } else {
 
-      conceptos.forEach((concepto: any) => {
-        tDetallePago.push({
-          pago_id: null,
-          concepto_id: concepto.concepto_id,
-          descuento: concepto.descuento,
-          aumento: concepto.aumento,
-          valor_unidad:
-            concepto.categoria_id == 0
-              ? infoPago.flt_total_con_iva
-              : concepto.valor_unidad,
-          cantidad: concepto.cantidad,
+        conceptos.forEach((concepto: any) => {
+          tDetallePago.push({
+            pago_id: null,
+            concepto_id: concepto.concepto_id,
+            descuento: concepto.descuento,
+            aumento: concepto.aumento,
+            valor_unidad:
+              concepto.categoria_id == 0
+                ? infoPago.flt_total_con_iva
+                : concepto.valor_unidad,
+            cantidad: concepto.cantidad,
+          });
         });
-      });
 
-    }
+      }
     } else {
       throw new Error("No se encontro el paquete...");
     }
@@ -365,7 +410,7 @@ const savePago = async (infoPago: any, responseData: any,dataMatricula:any) => {
       valor: infoPago.flt_total_con_iva,
       valor_letras: infoPago.str_opcional2,
       periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
-    //  archivo_id: null,
+      //  archivo_id: null,
       categoria_pago_id: conceptos[0].categoria_id,
     };
 

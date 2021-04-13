@@ -10,6 +10,7 @@
         integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous" />
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
+
     <title>Inicio</title>
 </head>
 
@@ -99,8 +100,8 @@
 
                                     <li class="nav-item">
                                         <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact"
-                                            role="tab" aria-controls="contact" aria-selected="false">Carga certificado
-                                            de votacion</a>
+                                            role="tab" aria-controls="contact" aria-selected="false">Carga soporte
+                                            para descuento</a>
                                     </li>
 
                                 </ul>
@@ -247,7 +248,79 @@
                             </div> --}}
 
                             <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
-                                carga certificado de votacion
+
+
+                                <div class="card mt-3 mb-4">
+                                    <div class="card-body bg-light">
+                                        <h5 class="card-title">Solicitud de descuento </h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">No aplica para derechos
+                                            complementarios</h6>
+
+
+                                        <div>
+
+                                        </div>
+
+
+
+                                        <form class="p-4" @submit.prevent="enviarArchivo" enctype="multipart/form-data">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label for="">Tipo descuento:
+                                                            <span class="text-danger">*</span></label>
+                                                        <select class="form-select" aria-label="Default select example"
+                                                            v-model="porcentaje.categoria">
+                                                            <option disabled value="">Seleccionar</option>
+                                                            <option :value="row._id" v-for="(row, index) in categorias">
+                                                                {[row.descripcion]}</option>
+
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <label for="txtObservacion">Observación </label>
+                                                        <input type="text" class="form-control"
+                                                            v-model="porcentaje.observacion" id="txtObservacion"
+                                                            placeholder="Ej: pago certificado o record academico" />
+                                                    </div>
+                                                </div>
+
+
+
+
+                                                <div class="col-md-12 mt-2">
+                                                    <label for="formFileLg" style="cursor: pointer"
+                                                        class="form-label">Arrastra
+                                                        aquí un
+                                                        documento
+                                                        para solicitar descuento en tu
+                                                        matricula, Ej: certificado de votación para descuento de
+                                                        10%
+                                                        <div>
+                                                            <input v-show="true"
+                                                                style="border: 2px dashed #0087F7;  background: white; cursor: pointer"
+                                                                class="form-control form-control-lg" id="formFileLg"
+                                                                type="file" v-on:change="handleFileUpload()" ref="file">
+
+                                                        </div>
+                                                    </label>
+                                                </div>
+
+                                                <div class="col-md-12">
+                                                    <button class="btn btn-success" type="submit">Enviar</button>
+                                                </div>
+                                            </div>
+
+
+
+                                        </form>
+                                    </div>
+                                </div>
+
+
 
                             </div>
                         </div>
@@ -287,6 +360,9 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl)
             })
 
+
+
+
         });
 
 
@@ -313,7 +389,8 @@
                         email_persona: "",
                         cel_persona: "",
                         txtDescripcionFactura: "",
-                        colorTextoAlert: "text-success"
+                        colorTextoAlert: "text-success",
+                        cod_periodo : ''
                     },
                     factura: {
                         txtDescFactura: "",
@@ -321,15 +398,59 @@
                         txtTotalPagarInt: 0,
                         cod_paquete: "0"
                     },
+                    porcentaje: {
+                        categoria: 1,
+                        observacion: ''
+                    },
                     detFactura: [],
+                    categorias: [],
                     numeroLetras: "CERO PESOS",
                     activarBoton: true,
                     txtBoton: "Confirmar pago",
                     msjResp: "",
-                    mostrarAlert: false
+                    mostrarAlert: false,
+                    file: ''
                 };
             },
             methods: {
+
+                enviarArchivo() {
+                    console.log("Enviar archivo file");
+
+
+                    let formData = new FormData();
+
+                    formData.append('archivo', this.file);
+    
+                    formData.append('obsercacion', this.porcentaje.observacion);
+                    formData.append('porcentaje_categoria_id', this.porcentaje.categoria);
+                    formData.append('estudiante_id', this.matricula.txtId);
+                    formData.append('matricula_id', '{{ID_MATRICULA}}');
+                    formData.append('periodo_id', this.matricula.cod_periodo);
+                    formData.append('nom_periodo', this.matricula.txtPeriodo);
+                    formData.append('accion', '1');
+
+
+                    fetch('{{BASE_URL}}/transaccion/soporteDescuento',
+                        {
+                            method: 'POST',
+                            body: formData
+                        }
+                    ).then((response) => response.json())
+                        .then(function (data) {
+                            console.log('SUCCESS!!');
+                        })
+                        .catch(function () {
+                            console.log('FAILURE!!');
+                        });
+
+
+
+                },
+                handleFileUpload() {
+                    this.file = this.$refs.file.files[0];
+                },
+
                 consultarPersona() {
                     console.log("El evento onchange se ejecuta");
 
@@ -338,6 +459,7 @@
                         .then((data) => {
                             if (!data.error) {
                                 let matricula = data.matricula;
+                                this.categorias = data.categorias;
                                 let detalle_factura = data.detalle_factura;
                                 this.matricula.txtId = matricula.ide_persona;
                                 this.matricula.selTipoIde = matricula.tipo_doc;
@@ -346,6 +468,7 @@
                                 this.matricula.txtPrograma = matricula.nom_nivel_educativo;
                                 this.matricula.txtSede = matricula.siglas_colegio;
                                 this.matricula.txtPeriodo = matricula.nom_periodo;
+                                this.matricula.cod_periodo = matricula.cod_periodo;
                                 this.factura.txtDescFactura = detalle_factura[0].paquete;
                                 this.factura.txtTotalPagarInt = data.total_a_pagar_int;
                                 this.numeroLetras = numeroALetras(data.total_a_pagar_int, {
