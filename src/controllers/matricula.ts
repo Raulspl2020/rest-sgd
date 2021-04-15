@@ -1,5 +1,5 @@
 import { getInfoMatricula, getDetPeriodo } from "../provider/matricula_provider";
-import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento } from "../provider/pago_provider";
+import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 
@@ -33,7 +33,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
             //consular los descuentos y multas que un estudiante tiene asignados
             let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
             resultDto.forEach((row: any) => {
-                //si aplica descuento sino aplica aumento
+                //si aplica descuento sino aplica aumento, si es 1 añade un descuento
                 if (row.accion == 1) {
                     porcentaje_descuento = porcentaje_descuento + row.porcentaje;
                     auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
@@ -122,8 +122,10 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                         //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
                         resultDto.forEach((row: any) => {
                             //si aplica descuento sino aplica aumento
-                            if (row.tipo == 1) {
+                            if (row.tipo == 1 && row.accion == 1) {
                                 precios[index].descuento = row.porcentaje;
+                            } else if (row.tipo == 1 && row.accion == 0) {
+                                precios[index].aumento = row.porcentaje;
                             }
 
                         });
@@ -239,6 +241,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 error: false,
                 message: "Ejecución correcta",
                 matricula: resultDB,
+                soportes : await getCategoriaPorcentajeByMatricula(id_matricula),
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
                 total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),

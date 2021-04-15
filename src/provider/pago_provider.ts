@@ -136,6 +136,45 @@ export const getConfigPeriodo = async () => {
   return result;
 };
 
+//obtiene una categoria de porcentaje
+export const getCategoriaPorcentaje = async (id: any) => {
+  let result = await conDB
+    .select()
+    .from("fin_porcetaje_categoria")
+    .where("_id", id)
+    .limit(1).first();
+  return result;
+};
+
+//obtiene una categoria de porcentaje
+export const getCategoriaPorcentajeByMatricula = async (cod_matricula: any) => {
+  let result = await conDB
+  .select('fin_porcentaje_soporte.fecha','fin_porcentaje_soporte.porcentaje','fin_porcentaje_soporte.observacion','fin_porcetaje_categoria.descripcion','fin_porcentaje_estado.descripcion as estado')
+  .from("fin_porcentaje_soporte")
+  .join(
+    "fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id",
+    "=",
+    "fin_porcetaje_categoria._id"
+  )
+  .join(
+    "fin_porcentaje_estado", "fin_porcentaje_estado._id",
+    "=",
+    "fin_porcentaje_soporte.porcentaje_estado_id"
+  )
+
+
+    .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
+  return result;
+};
+
+
+//guarda una solicitud de descuento o aumento
+export const guardarProcentajeSoporte = async (data: any) => {
+  let result = await conDB
+    ('fin_porcentaje_soporte').insert(data);
+  return result;
+};
+
 //obtiene el detalle de un paquete
 export const getPaquete = async (id_periodo: any, codigo: any) => {
   let sql = `SELECT
@@ -177,7 +216,7 @@ FROM
 export const getDescuento = async (cod_matricula: any, periodo_id: any) => {
   let result = await conDB
     .select()
-    .from("fin _porcentaje_soporte")
+    .from("fin_porcentaje_soporte")
     .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
   return result;
 };

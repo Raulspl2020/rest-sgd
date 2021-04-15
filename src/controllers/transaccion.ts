@@ -15,7 +15,10 @@ import {
   getConceptosPaquete,
   actualizarEstadoPago,
   actualizarPagoyDetalle,
-  detIdPagoByCodigo
+  detIdPagoByCodigo,
+  getConfigPeriodo,
+  getCategoriaPorcentaje,
+  guardarProcentajeSoporte
 } from "../provider/pago_provider";
 let Validator = require("validatorjs");
 
@@ -24,19 +27,57 @@ let Validator = require("validatorjs");
 //   /transaccion/soporteDescuento
 //=====================
 export const soporteDescuento = async (req: any, res = response) => {
-
+  let metadatos: any = null;
+  let id_config: any = null;
   try {
 
     let body = req.body;
 
     //subir el archivo si existe
     if (req.files && req.files.archivo) {
-      const { archivo } = req.files;
-  
-      const carpeta =  `soportedescuento/${body.estudiante_id}-${body.matricula_id}/`;
-      const pathCompleto = await subirArchivo(req.files,undefined,carpeta);
-      console.log(pathCompleto);
+      const carpeta = `soportedescuento/${body.estudiante_id}-${body.matricula_id}/`;
+      const dataFile: any = await subirArchivo(req.files, undefined, carpeta);
+      console.log(dataFile);
+
+      metadatos = {
+        'url': '',
+        'extencion': dataFile[1],
+        'nombre': dataFile[0],
+        'size': dataFile[2],
+        'basepath': dataFile[3],
+
+      };
+
     }
+
+
+    let resultConfig = await getConfigPeriodo();
+    let resultCategoria = await getCategoriaPorcentaje(body.porcentaje_categoria_id);
+    console.log(resultCategoria);
+    console.log(resultConfig);
+    if (resultConfig) {
+      id_config = resultConfig._id
+    } else {
+      throw new Error("No se encontró configuracion activa");
+    }
+
+
+    const dataPorcentaje: any = {
+      estudiante_id: body.estudiante_id,
+      porcentaje: (resultCategoria.valor) ? resultCategoria.valor : 0,
+      config_id: id_config,
+      porcentaje_categoria_id: body.porcentaje_categoria_id,
+      matricula_id: body.matricula_id,
+      nom_periodo: body.nom_periodo,
+      periodo_id: body.periodo_id,
+      observacion: body.observacion,
+      accion: (body.accion) ? body.accion : 1,
+      tipo: (body.accion) ? body.tipo : 0,
+      json_file: JSON.stringify(metadatos),
+      porcentaje_estado_id: (body.porcentaje_estado_id) ? body.porcentaje_estado_id : 1
+    };
+
+    let resultInsert = await guardarProcentajeSoporte(dataPorcentaje);
 
 
 
@@ -44,9 +85,9 @@ export const soporteDescuento = async (req: any, res = response) => {
 
 
     res.status(200).json({
-      message: "Servicio no disponible temporalmente",
-      error: true,
-      body
+      message: "Enviado exitosamente",
+      error: false,
+      dataPorcentaje
     });
 
   } catch (error) {

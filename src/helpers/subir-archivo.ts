@@ -30,7 +30,7 @@ export const subirArchivo = (files: any, extensionesValidas = ['png', 'jpg', 'jp
                 reject(err);
             }
 
-            resolve(nombreTemp);
+            resolve([nombreTemp,extension,archivo.size,uploadpathFull]);
         });
 
     });

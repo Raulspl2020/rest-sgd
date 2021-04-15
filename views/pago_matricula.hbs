@@ -21,7 +21,7 @@
                 <div class="card border border border-dark">
 
                     <div class="card-body pb-1 ">
-                        <h4 class="card-title text-center text-light border border border-dark bg-danger">
+                        <h4 class="card-title text-center text-light border border border-dark bg-danger" @click="consultarPersona">
 
                             <img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 60px;" class="img img-fluid"
                                 alt="">
@@ -120,7 +120,7 @@
                             <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
 
 
-                                <h3>Datos de la factura</h3>
+                                <h3>Datos de factura</h3>
 
                                 <div class="row">
                                     <div class="col-md-12">
@@ -185,7 +185,7 @@
                                                         <td>{[row.concepto]}</td>
                                                         <td>{[row.cantidad]}</td>
                                                         <td data-bs-toggle="tooltip" title="Some tooltip text!">
-                                                            {[row.descuento *100]}% </td>
+                                                            {[row.descuento *100]} % </td>
                                                         <td> {[row.aumento *100]}% </td>
                                                         <td> $ {[row.valor_unidad]} </td>
                                                         <td> $ {[row.subtotal]} </td>
@@ -265,53 +265,88 @@
 
                                         <form class="p-4" @submit.prevent="enviarArchivo" enctype="multipart/form-data">
                                             <div class="row">
-                                                <div class="col-md-12">
-                                                    <div class="form-group">
-                                                        <label for="">Tipo descuento:
-                                                            <span class="text-danger">*</span></label>
-                                                        <select class="form-select" aria-label="Default select example"
-                                                            v-model="porcentaje.categoria">
-                                                            <option disabled value="">Seleccionar</option>
-                                                            <option :value="row._id" v-for="(row, index) in categorias">
-                                                                {[row.descripcion]}</option>
+                                                <div class="col-md-6">
 
-                                                        </select>
-                                                    </div>
-                                                </div>
+                                                    <div class="row">
 
-                                                <div class="col-md-12">
-                                                    <div class="form-group">
-                                                        <label for="txtObservacion">Observación </label>
-                                                        <input type="text" class="form-control"
-                                                            v-model="porcentaje.observacion" id="txtObservacion"
-                                                            placeholder="Ej: pago certificado o record academico" />
-                                                    </div>
-                                                </div>
+                                                        <div class="form-group">
+                                                            <label for="">Tipo descuento:
+                                                                <span class="text-danger">*</span></label>
+                                                            <select class="form-select"
+                                                                aria-label="Default select example"
+                                                                v-model="porcentaje.categoria">
+                                                                <option disabled value="">Seleccionar</option>
+                                                                <option :value="row._id"
+                                                                    v-for="(row, index) in categorias">
+                                                                    {[row.descripcion]}</option>
 
-
-
-
-                                                <div class="col-md-12 mt-2">
-                                                    <label for="formFileLg" style="cursor: pointer"
-                                                        class="form-label">Arrastra
-                                                        aquí un
-                                                        documento
-                                                        para solicitar descuento en tu
-                                                        matricula, Ej: certificado de votación para descuento de
-                                                        10%
-                                                        <div>
-                                                            <input v-show="true"
-                                                                style="border: 2px dashed #0087F7;  background: white; cursor: pointer"
-                                                                class="form-control form-control-lg" id="formFileLg"
-                                                                type="file" v-on:change="handleFileUpload()" ref="file">
-
+                                                            </select>
                                                         </div>
-                                                    </label>
+
+                                                        <div class="col-md-12">
+                                                            <div class="form-group">
+                                                                <label for="txtObservacion">Observación </label>
+                                                                <input type="text" class="form-control"
+                                                                    v-model="porcentaje.observacion" id="txtObservacion"
+                                                                    placeholder="Ej: pago certificado o record academico" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-12 mt-2">
+                                                            <label for="formFileLg" style="cursor: pointer"
+                                                                class="form-label">Arrastra
+                                                                aquí un
+                                                                documento
+                                                                para solicitar descuento en tu
+                                                                matricula, Ej: certificado de votación para descuento de
+                                                                10%
+                                                                <div>
+                                                                    <input v-show="true"
+                                                                        style="border: 2px dashed #0087F7;  background: white; cursor: pointer"
+                                                                        class="form-control form-control-lg"
+                                                                        id="formFileLg" type="file"
+                                                                        v-on:change="handleFileUpload()" ref="file">
+
+                                                                </div>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="col-md-12">
+                                                            <button class="btn btn-success"
+                                                                :disabled="desactivarBotonSoporte"
+                                                                type="submit">Enviar</button>
+                                                        </div>
+
+
+                                                    </div>
+
+
                                                 </div>
 
-                                                <div class="col-md-12">
-                                                    <button class="btn btn-success" type="submit">Enviar</button>
+                                                <div class="col-md-6">
+                                                    <p>Estado de la solicitud</p>
+                                                    <ol class="list-group list-group-numbered">
+                                                        <li v-for="(row, index) in soportes"
+                                                            class="list-group-item d-flex justify-content-between align-items-start">
+                                                            <div class="ms-2 me-auto">
+                                                                <div class="fw-bold"> {[row.descripcion]} </div>
+                                                                {[row.observacion]}
+                                                            </div>
+                                                            <span
+                                                                :class="[row.estado=='APROBADO' || row.estado=='FACTURADO'  ? 'bg-success' : 'bg-warning']"
+                                                                class="badge  rounded-pill">{[row.estado]}
+                                                                {[row.porcentaje*100]} %</span>
+                                                        </li>
+
+
+                                                    </ol>
                                                 </div>
+
+
+
+
+
+
                                             </div>
 
 
@@ -390,7 +425,7 @@
                         cel_persona: "",
                         txtDescripcionFactura: "",
                         colorTextoAlert: "text-success",
-                        cod_periodo : ''
+                        cod_periodo: ''
                     },
                     factura: {
                         txtDescFactura: "",
@@ -404,12 +439,14 @@
                     },
                     detFactura: [],
                     categorias: [],
+                    soportes: [],
                     numeroLetras: "CERO PESOS",
                     activarBoton: true,
                     txtBoton: "Confirmar pago",
                     msjResp: "",
                     mostrarAlert: false,
-                    file: ''
+                    file: '',
+                    desactivarBotonSoporte: false
                 };
             },
             methods: {
@@ -419,10 +456,11 @@
 
 
                     let formData = new FormData();
+                    this.desactivarBotonSoporte = true;
 
                     formData.append('archivo', this.file);
-    
-                    formData.append('obsercacion', this.porcentaje.observacion);
+
+                    formData.append('observacion', this.porcentaje.observacion);
                     formData.append('porcentaje_categoria_id', this.porcentaje.categoria);
                     formData.append('estudiante_id', this.matricula.txtId);
                     formData.append('matricula_id', '{{ID_MATRICULA}}');
@@ -439,9 +477,12 @@
                     ).then((response) => response.json())
                         .then(function (data) {
                             console.log('SUCCESS!!');
-                        })
+                            this.consultarPersona();
+
+                        }.bind(this))
                         .catch(function () {
                             console.log('FAILURE!!');
+                            this.desactivarBotonSoporte = false;
                         });
 
 
@@ -477,6 +518,7 @@
                                     centPlural: "CENTAVOS",
                                     centSingular: "CENTAVO",
                                 });
+                                this.soportes = data.soportes;
                                 this.matricula.cel_persona = matricula.cel_persona;
                                 this.matricula.codTipoID = matricula.cod_doc
                                 this.matricula.email_persona = matricula.email_persona;
@@ -484,6 +526,7 @@
                                 this.detFactura = data.detalle_factura;
                                 this.matricula.txtNroCreditos = matricula.nro_creditos;
                                 this.factura.cod_paquete = data.detalle_factura[0].codigo;
+
                             } else {
                                 alert(data.message);
                             }
