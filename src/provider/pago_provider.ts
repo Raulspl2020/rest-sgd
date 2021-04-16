@@ -1,5 +1,84 @@
 import { conDB } from "../config/database";
 
+
+export const getInfoPago = async (codigoPago: string) => {
+  const sql = `SELECT
+    fin_pago._id AS id_pago
+  , fin_pago.codigo
+  , fin_pago.descripcion
+  , fin_pago.json_response
+  , fin_estado_pago.descripcion AS estado_pago
+  , fin_estado_pago._id
+  , fin_categoria_pago.descripcion
+  , fin_pago.fecha_update
+  , fin_detalle_pago.valor_pago
+  , fin_detalle_pago.total_pago
+  , fin_detalle_pago.valor_iva_pago
+  , estado2.descripcion AS estado_detalle
+  , fin_detalle_pago.fecha
+  , fin_forma_pago._id AS id_forma_pago
+  , fin_forma_pago.descripcion AS forma_pago
+  , fin_detalle_pago.nombre_banco
+  , fin_detalle_pago.codigo_transaccion
+  , fin_detalle_pago.ticketID
+  , fin_detalle_pago.numero_tarjeta
+  , fin_detalle_pago.franquicia
+  , fin_detalle_pago.cod_aprobacion
+  , fin_detalle_pago.num_recibido
+FROM
+fin_pago 
+  LEFT JOIN   fin_detalle_pago
+      ON (fin_detalle_pago.pago_id = fin_pago._id)
+  INNER JOIN fin_categoria_pago 
+      ON (fin_pago.categoria_pago_id = fin_categoria_pago._id)
+  INNER JOIN fin_forma_pago 
+      ON (fin_detalle_pago.forma_pago_id = fin_forma_pago._id)
+      INNER JOIN  fin_estado_pago AS estado2
+      ON (estado2._id = fin_detalle_pago.estado_pago_id)
+  INNER JOIN fin_estado_pago 
+      ON (fin_pago.estado_id = fin_estado_pago._id) 
+              WHERE fin_pago.codigo = ?
+              GROUP BY  fin_detalle_pago._id`;
+  let result = await conDB.raw(sql, [codigoPago]);
+  if (result[0].length > 0) {
+    return result[0];
+  } {
+    return false;
+  }
+}
+
+
+export const getInfoFactura = async (codigoPago: string) => {
+  let sql = `SELECT
+fin_pago._id AS pago_id
+, fin_pago.codigo
+, fin_pago.descripcion
+, fin_categoria_pago.descripcion AS categoria_pago
+, fin_pago.fecha_update
+, fin_detalle_factura._id AS id_detalle_factura
+, fin_detalle_factura.pago_id
+, fin_detalle_factura.concepto_id
+, fin_detalle_factura.descuento
+, fin_detalle_factura.aumento
+, fin_detalle_factura.valor_unidad
+, fin_detalle_factura.cantidad
+FROM
+fin_pago
+INNER JOIN fin_categoria_pago 
+    ON (fin_pago.categoria_pago_id = fin_categoria_pago._id)
+INNER JOIN fin_detalle_factura 
+    ON (fin_detalle_factura.pago_id = fin_pago._id)
+ WHERE fin_pago.codigo = ?
+ GROUP BY  fin_detalle_factura._id`;
+  let result = await conDB.raw(sql, [codigoPago]);
+  if (result[0].length > 0) {
+    return result[0];
+  } {
+    return false;
+  }
+}
+
+
 export const guardarPago = async (params: any) => {
   let result = await conDB("fin_pago").insert(params);
   return result;
@@ -149,18 +228,18 @@ export const getCategoriaPorcentaje = async (id: any) => {
 //obtiene una categoria de porcentaje
 export const getCategoriaPorcentajeByMatricula = async (cod_matricula: any) => {
   let result = await conDB
-  .select('fin_porcentaje_soporte.fecha','fin_porcentaje_soporte.porcentaje','fin_porcentaje_soporte.observacion','fin_porcetaje_categoria.descripcion','fin_porcentaje_estado.descripcion as estado')
-  .from("fin_porcentaje_soporte")
-  .join(
-    "fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id",
-    "=",
-    "fin_porcetaje_categoria._id"
-  )
-  .join(
-    "fin_porcentaje_estado", "fin_porcentaje_estado._id",
-    "=",
-    "fin_porcentaje_soporte.porcentaje_estado_id"
-  )
+    .select('fin_porcentaje_soporte.fecha', 'fin_porcentaje_soporte.porcentaje', 'fin_porcentaje_soporte.observacion', 'fin_porcetaje_categoria.descripcion', 'fin_porcentaje_estado.descripcion as estado')
+    .from("fin_porcentaje_soporte")
+    .join(
+      "fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id",
+      "=",
+      "fin_porcetaje_categoria._id"
+    )
+    .join(
+      "fin_porcentaje_estado", "fin_porcentaje_estado._id",
+      "=",
+      "fin_porcentaje_soporte.porcentaje_estado_id"
+    )
 
 
     .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
@@ -184,7 +263,7 @@ export const getPaquete = async (id_periodo: any, codigo: any) => {
   , fin_detalle_paquete.valor_unidad
   , fin_detalle_paquete.cantidad
   , fin_detalle_paquete.aumento
-  , IF(fin_detalle_paquete.cantidad > 0, SUM( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) - ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.aumento) -   ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.descuento) ), fin_detalle_paquete.valor_unidad ) AS subtotal
+  , IF(fin_detalle_paquete.cantidad > 0, SUM( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) + ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.aumento) -   ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.descuento) ), fin_detalle_paquete.valor_unidad ) AS subtotal
   , fin_detalle_paquete.descuento
   , fin_concepto.fecha_actualizacion
   ,fin_detalle_paquete.descuento_ext

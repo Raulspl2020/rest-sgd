@@ -4,6 +4,86 @@ import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 
 
+//====================
+//   /matricula/generarpagoinscripcion 
+//=====================
+export const consultarPagoInscripcion = async (req: any, res: any) => {
+    let resultDB: any;
+    let resultPaquete: any;
+    let total = 0;
+    let total_a_pagar = 0;
+    let total_con_descuento = 0;
+    let total_sin_descuento = 0;
+    let porcentaje_descuento = 0;
+    let porcentaje_aumento = 0;
+    let descripcionFactura = "";
+    let auxDescripcion = "";
+    let precios: any;
+    let periodo: any;
+    let id_matricula = req.params.id_matricula.trim();
+
+    try {
+        let result = await getInfoMatricula(id_matricula);
+
+        resultDB = result[0][0];
+
+        if (result[0].length > 0) {
+            resultPaquete = await getPaquete(resultDB.cod_periodo, 6);
+            if (resultPaquete.length < 1) {
+                throw new Error("No se encontraron precios configurados");
+            }
+            //consular los descuentos y multas que un estudiante tiene asignados
+            let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+            resultDto.forEach((row: any) => {
+                //si aplica descuento sino aplica aumento, si es 1 añade un descuento
+                if (row.accion == 1) {
+                    porcentaje_descuento = porcentaje_descuento + row.porcentaje;
+                    auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
+                } else {
+                    porcentaje_aumento = porcentaje_aumento + row.porcentaje;
+                    auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + row.observacion
+                }
+            });
+
+            resultPaquete.forEach((element: any, index: number) => {
+
+                //calcula el total sin descuento
+                if (element.cantidad > 0) {
+                    total_a_pagar = total_a_pagar + (element.subtotal * element.cantidad);
+                } else {
+                    total = element.subtotal * Number(resultDB.nro_creditos);
+                    total_a_pagar = total_a_pagar + total;
+                }
+                total_sin_descuento = total_a_pagar;
+
+
+
+            });
+
+
+        } else {
+            throw new Error("No se encontró la inscripción");
+        }
+
+        return res.status(200).json({
+            error: false,
+            message: "Ejecución correcta",
+            matricula: resultDB,
+            detalle_factura: resultPaquete,
+            total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
+            total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),
+            total_a_pagar_int: moneda.unformat(moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' })
+        });
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: error.message
+        });
+    }
+}
+
+
+
 export const consultarpagoMatricula = async (id_matricula: any) => {
     let fechaActual = format(new Date(), 'YYYY-MM-DD');
     //let token = req.body.token;
@@ -74,9 +154,6 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     precios = resultPaquete;
                     //recorrer los detalles de paquete
                     precios.forEach((element: any, index: number) => {
-
-
-
 
 
                         //si se puede aplicar descuento externo
@@ -241,12 +318,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 error: false,
                 message: "Ejecución correcta",
                 matricula: resultDB,
-                soportes : await getCategoriaPorcentajeByMatricula(id_matricula),
+                soportes: await getCategoriaPorcentajeByMatricula(id_matricula),
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
                 total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),
                 total_a_pagar_int: moneda.unformat(moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' })
-
 
             };
 

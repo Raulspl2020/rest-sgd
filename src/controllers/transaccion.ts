@@ -99,8 +99,6 @@ export const soporteDescuento = async (req: any, res = response) => {
     });
   }
 
-
-
 }
 
 //====================

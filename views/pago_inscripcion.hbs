@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous" />
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
+
+    <title>Pago de Inscripción</title>
+</head>
+
+<body class="bg-dark">
+    <div class="container mt-3" id="app">
+        <div class="row">
+            <div class="offset-md-1 col-md-10">
+                <div class="card border border border-dark">
+
+                    <div class="card-body pb-1 ">
+                        <h4 class="card-title text-center text-light border border border-dark bg-info"
+                            @click="consultarPersona">
+
+                            <img src="{{BASE_URL}}/static/img/LogoITP2.svg" style="height: 60px;" class="img img-fluid"
+                                alt="">
+                            Pago inscripcion estudiante nuevo
+                            <i class="fa fa-users text-primary"></i>
+                        </h4>
+                    </div>
+                    {{!--
+                    <div class="card-body">
+                        <h1 class="card-title text-center text-success">
+                            Matricula Financiera
+                        </h1>
+                    </div> --}}
+
+                    <div class="container">
+                        <h3>Datos del estudiante</h3>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="">Identificación:</label>
+                                    <div type="text" class="form-control bg-light  ">
+                                        {[ matricula.selTipoIde ]}-{[ matricula.txtId ]}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label for="">Estudiante:</label>
+                                    <div type="text" class="form-control bg-light">
+                                        {[ matricula.txtApellido ]} {[ matricula.txtNombre ]}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label for="">Correo electrónico:</label>
+                                    <div type="text" class="form-control bg-light">
+                                        {[ matricula.email_persona ]} 
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="">Celuar:</label>
+                                    <div type="text" class="form-control bg-light">
+                                        {[matricula.cel_persona]}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-7">
+                                <div class="form-group">
+                                    <label for="">Programa:</label>
+                                    <div type="text" class="form-control bg-light">
+                                        {[matricula.txtPrograma]}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="">Codigo inscripción:</label>
+                                    <div type="text" class="form-control bg-light">
+                                        {{ID_MATRICULA}} - {[matricula.txtSede]} {[matricula.txtPeriodo]}
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                        <hr />
+
+
+
+
+
+
+
+                        <div class="tab-content" id="myTabContent">
+                            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+
+
+                                <h3>Datos de factura</h3>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="">Descripcion:</label>
+                                            <div type="text" class="form-control bg-light">
+                                                {[factura.txtDescFactura]}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label for="">Codigo:</label>
+                                            <div type="text" class="form-control bg-light">0125</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-10">
+                                        <div class="form-group">
+                                            <label for="">Total en letras:</label>
+                                            <div type="text" class="form-control bg-light text-success">
+                                                {[numeroLetras]}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <p class="mt-1">Detalle factura</p>
+                                        <div class="table-responsive">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">CONCEPTO</th>
+                                                        <th scope="col">CANTIDAD</th>
+                                                        <th scope="col">DESCUENTO</th>
+                                                        <th scope="col">AUMENTO</th>
+                                                        <th scope="col">V/UNIDAD</th>
+                                                        <th scope="col">SUBTOTAL</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+
+                                                    <tr v-for="(row, index) in detFactura">
+                                                        <th scope="row">{[index+1]} </th>
+                                                        <td>{[row.concepto]}</td>
+                                                        <td>{[row.cantidad]}</td>
+                                                        <td data-bs-toggle="tooltip" title="Some tooltip text!">
+                                                            {[row.descuento *100]} % </td>
+                                                        <td> {[row.aumento *100]}% </td>
+                                                        <td> $ {[row.valor_unidad]} </td>
+                                                        <td> $ {[row.subtotal]} </td>
+                                                    </tr>
+
+                                                    {{!-- <tr>
+                                                        <th scope="row">1</th>
+                                                        <td>PAGO MATRICULA ORDINARIA DTO 10%</td>
+                                                        <td>10%</td>
+                                                        <td>0%</td>
+                                                        <td>$ 824.000</td>
+                                                    </tr>
+
+                                                    <tr>
+                                                        <th scope="row">2</th>
+                                                        <td>PAGO DERECHOS COMPLEMENTARIOS</td>
+                                                        <td>0%</td>
+                                                        <td>0%</td>
+                                                        <td>$ 139.000</td>
+                                                    </tr> --}}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="alert alert-danger p-2" role="alert" v-if="mostrarAlert">
+                                            {[msjResp]}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        {{!-- <div><strong>Esado transaccion: </strong> PENDIENTE</div> --}}
+                                        <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong> </h4>
+                                    </div>
+                                    <div class="col-6">
+                                        <div style="text-align: right" class="float-right">
+                                            {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
+                                            </h4> --}}
+                                            <button class="btn btn-outline-success" data-bs-toggle="tooltip"
+                                                @click="continuarPago" data-bs-placement="top" :disabled="!activarBoton"
+                                                title="Confirma el pago procede al cobro">
+                                                <i class="fa fa-money"></i> {[txtBoton]}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br /><br />
+
+
+                            </div>
+
+                            {{!-- <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                                Consulta los precios de derechos pecuniarios
+                            </div> --}}
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.6.0/dist/umd/popper.min.js"
+        integrity="sha384-KsvD1yqQ1/1+IA7gi3P0tyJcT3vR+NdBTt13hSJ2lnve8agRGXTTyNaBYmCR/Nwi"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"
+        integrity="sha384-nsg8ua9HAw1y0W1btsyWgBklPnCUAFLuTMS2G72MMONqmOymq585AcH49TLBQObG"
+        crossorigin="anonymous"></script>
+    <script src="{{BASE_URL}}/static/js/numLetras.js" type="text/javascript"></script>
+    <script>
+
+
+
+        var app = new Vue({
+            el: "#app",
+            delimiters: ['{[', ']}'],
+            beforeMount() {
+                this.consultarPersona()
+            },
+            data() {
+                return {
+                    matricula: {
+                        txtId: "",
+                        selTipoIde: "",
+                        codTipoID: 0,
+                        txtNombre: "",
+                        txtApellido: "",
+                        txtPrograma: "",
+                        txtSede: "",
+                        txtPeriodo: "",
+                        txtNroCreditos: 0,
+                        email_persona: "",
+                        cel_persona: "",
+                        txtDescripcionFactura: "",
+                        colorTextoAlert: "text-success",
+                        cod_periodo: ''
+                    },
+                    factura: {
+                        txtDescFactura: "",
+                        txtTotalPagar: 0,
+                        txtTotalPagarInt: 0,
+                        cod_paquete: "0"
+                    },
+                    porcentaje: {
+                        categoria: 1,
+                        observacion: ''
+                    },
+                    detFactura: [],
+                    categorias: [],
+                    soportes: [],
+                    numeroLetras: "CERO PESOS",
+                    activarBoton: true,
+                    txtBoton: "Confirmar pago",
+                    msjResp: "",
+                    mostrarAlert: false,
+                    file: '',
+                    desactivarBotonSoporte: false
+                };
+            },
+            methods: {
+
+                enviarArchivo() {
+                    console.log("Enviar archivo file");
+
+
+                    let formData = new FormData();
+                    this.desactivarBotonSoporte = true;
+
+                    formData.append('archivo', this.file);
+
+                    formData.append('observacion', this.porcentaje.observacion);
+                    formData.append('porcentaje_categoria_id', this.porcentaje.categoria);
+                    formData.append('estudiante_id', this.matricula.txtId);
+                    formData.append('matricula_id', '{{ID_MATRICULA}}');
+                    formData.append('periodo_id', this.matricula.cod_periodo);
+                    formData.append('nom_periodo', this.matricula.txtPeriodo);
+                    formData.append('accion', '1');
+
+
+                    fetch('{{BASE_URL}}/transaccion/soporteDescuento',
+                        {
+                            method: 'POST',
+                            body: formData
+                        }
+                    ).then((response) => response.json())
+                        .then(function (data) {
+                            console.log('SUCCESS!!');
+                            this.consultarPersona();
+
+                        }.bind(this))
+                        .catch(function () {
+                            console.log('FAILURE!!');
+                            this.desactivarBotonSoporte = false;
+                        });
+
+
+
+                },
+                handleFileUpload() {
+                    this.file = this.$refs.file.files[0];
+                },
+
+                consultarPersona() {
+                    console.log("El evento onchange se ejecuta");
+
+                    fetch(`{{BASE_URL}}/matricula/generarpagoinscripcion/{{ID_MATRICULA}}`)
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (!data.error) {
+                                let matricula = data.matricula;
+                                this.categorias = data.categorias;
+                                let detalle_factura = data.detalle_factura;
+                                this.matricula.txtId = matricula.ide_persona;
+                                this.matricula.selTipoIde = matricula.tipo_doc;
+                                this.matricula.txtNombre = matricula.nom1_persona + " " + matricula.nom2_persona;
+                                this.matricula.txtApellido = matricula.ape1_persona + " " + matricula.ape2_persona;
+                                this.matricula.txtPrograma = matricula.nom_nivel_educativo;
+                                this.matricula.txtSede = matricula.siglas_colegio;
+                                this.matricula.txtPeriodo = matricula.nom_periodo;
+                                this.matricula.cod_periodo = matricula.cod_periodo;
+                                this.factura.txtDescFactura = detalle_factura[0].paquete;
+                                this.factura.txtTotalPagarInt = data.total_a_pagar_int;
+                                this.numeroLetras = numeroALetras(data.total_a_pagar_int, {
+                                    plural: "PESOS",
+                                    singular: "PESO",
+                                    centPlural: "CENTAVOS",
+                                    centSingular: "CENTAVO",
+                                });
+                                this.soportes = data.soportes;
+                                this.matricula.cel_persona = matricula.cel_persona;
+                                this.matricula.codTipoID = matricula.cod_doc
+                                this.matricula.email_persona = matricula.email_persona;
+                                this.factura.txtTotalPagar = data.total_a_pagar;
+                                this.detFactura = data.detalle_factura;
+                                this.matricula.txtNroCreditos = matricula.nro_creditos;
+                                this.factura.cod_paquete = data.detalle_factura[0].codigo;
+
+                            } else {
+                                alert(data.message);
+                            }
+                        });
+                },
+                continuarPago() {
+                    // this.formpago.activarBoton = false;
+                    //  this.formpago.txtBoton = "Procesando...";
+
+
+                    let data = {
+                        "flt_total_con_iva": this.factura.txtTotalPagarInt,
+                        "flt_valor_iva": 0,
+                        "str_id_pago": "",//enviar vacio
+                        "str_descripcion_pago": this.factura.txtDescFactura,
+                        "str_email": this.matricula.email_persona,
+                        "str_id_cliente": this.matricula.txtId,
+                        "str_tipo_id": this.matricula.codTipoID,
+                        "str_nombre_cliente": this.matricula.txtNombre,
+                        "str_apellido_cliente": this.matricula.txtApellido,
+                        "str_telefono_cliente": this.matricula.cel_persona,
+                        "str_opcional1": this.factura.cod_paquete, //codigo del paquete
+                        "str_opcional2": this.numeroLetras,
+                        "str_opcional3": '{{ ID_MATRICULA }}',
+                        "observacion_factura": this.factura.txtDescFactura,
+                    }
+
+
+                    this.activarBoton = false;
+                    this.txtBoton = "Procesando...";
+                    fetch(
+                        `{{BASE_URL}}/transaccion/InicioPago`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.error) {
+                                this.msjResp = data.message;
+                                this.mostrarAlert = true;
+                                this.activarBoton = true;
+                                this.txtBoton = "Confirmar pago";
+                            } else {
+                                this.activarBoton = false;
+                                this.txtBoton = "Redireccionando...";
+                                window.location = data.data.str_url;
+
+                            }
+
+                        }).catch((err) => {
+                            console.log(err);
+                        });
+                },
+
+
+                numeroALetras(numero) {
+                    this.formpago.colorTextoAlert = "text-success";
+                    this.numeroLetras = numeroALetras(this.formpago.txtTotal, {
+                        plural: "PESOS",
+                        singular: "PESO",
+                        centPlural: "CENTAVOS",
+                        centSingular: "CENTAVO",
+                    });
+                },
+
+                procesarFormulario() { },
+            },
+
+
+
+        });
+
+
+
+
+
+    </script>
+</body>
+
+</html>
