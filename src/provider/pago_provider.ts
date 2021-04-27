@@ -6,9 +6,8 @@ export const getInfoPago = async (codigoPago: string) => {
     fin_pago._id AS id_pago
   , fin_pago.codigo
   , fin_pago.descripcion
-  , fin_pago.json_response
   , fin_estado_pago.descripcion AS estado_pago
-  , fin_estado_pago._id
+  , fin_estado_pago._id as codigo_estado
   , fin_categoria_pago.descripcion
   , fin_pago.fecha_update
   , fin_detalle_pago.valor_pago
