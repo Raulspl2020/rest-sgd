@@ -45,3 +45,16 @@ export const pagoInscripcion= async(req:any, res = response) => {
     res.render("pago_inscripcion",data);
 
 };
+
+
+//====================
+//   /page/pagoinscripcion 
+//=====================
+export const viewConsultaPago= async(req:any, res = response) => {
+    let codigo = req.params.codigo;
+    let data: any ={};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    data.CODIGO_PAGO = codigo;
+    res.render("estado_pago",data);
+
+};
