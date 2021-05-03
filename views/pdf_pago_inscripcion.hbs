@@ -19,12 +19,20 @@
             font-weight: bold;
         }
 
+        hr {
+            color: #000000;
+            height: 0px;
+
+            border: 1px dashed;
+        }
+
         body {
             margin-top: 0.5cm;
             margin-left: 1cm;
             margin-right: 1cm;
             margin-bottom: .5cm;
             font-family: 'Helvetica';
+            background: url("{{BASE_URL}}/static/img/.svg") no-repeat fixed center;
         }
 
         .w-100 {
@@ -37,6 +45,24 @@
 
         .table-border td {
             border: 1px solid #000000;
+            padding: 2px;
+            margin: 0px;
+
+        }
+
+        .table-border th {
+            border: 1px solid #000000;
+            background: #80d8ff;
+            padding: 2px;
+
+        }
+
+        .sin_borde {
+            padding: 5px;
+            border-top: 0px;
+            border-right: 0px;
+            border-bottom: 1px solid black;
+            border-left: 0px;
         }
 
         .text-center {
@@ -81,37 +107,176 @@
 <body>
     <div class="">
 
-        <table>
+        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
             <tr>
-                <td><img src="{{BASE_URL}}/static/img/LogoITP2.svg" style="height: 90px;" class="img img-fluid" alt="">
+                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 150px;"
+                        class="img img-fluid">
                 </td>
-                <td><strong style="font-size: 10px;" >INSTITUTO TECNOLOGICO DEL PUTUMAYO</strong></td>
-                <td>
-                    
+                <td><strong style="font-size: 13px;">
+                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
+                        <br>NIT. 800.247.940-1
+                    </strong></td>
+                <td style="text-align: right">
+                    {{{codigo}}}
                 </td>
+            </tr>
+            <tr>
+                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
+                <td rowspan="3" style="text-align: right; margin: 0px;">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Mocoa, Putumayo - Colombia</td>
+            </tr>
+            <tr>
+                <td>Periodo: 2021-1</td>
             </tr>
         </table>
 
 
-        <div class="row">
-            <div class="col-md-6">
+        <table style="width: 100%; font-size: 12px;" class="table-border" cellpadding="0" cellspacing="0">
+            <tr>
+                <td colspan="2">Sede: MOCOA</td>
+                <th rowspan="2">REF: 65878783498</th>
+                <td rowspan="8" style="border: 0px; padding-left: 10px;">
+                    <div style="-webkit-transform: rotate(-90deg); width: 15px;"> <strong>ESTUDIANTE</strong> </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">Programa: TECNOLOGIA EN DESARROLLO DE SOFTWARE</td>
+            </tr>
+            <tr>
+                <td colspan="2">Nombre: DUVAN ROSERO LOPEZ</td>
+                <td>Pago hasta : 05-10-2021</td>
+            </tr>
 
-                <h1>Hola mundo</h1>
-                but
+            <tr>
+                <td>Identificación: 1124862618</td>
+                <td>Código: 3841545</td>
+                <td>Pago extraordinario hasta: 30-05-2021 </td>
+            </tr>
+            <tr>
+                <th colspan="2">CONCEPTO FACTURA</th>
+                <th>DESCUENTOS</th>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <ul>
+                        <li>punto uno</li>
+                        <li>punto dos</li>
+                        <li>punto tres</li>
+                    </ul>
+                </td>
+                <td style="text-align: center;">0%</td>
+            </tr>
+            <tr>
+                <td rowspan="2" colspan="2" style="width: 70%;">
+                    <small style="font-size: 10px; ">Páguese en efectivo en el banco BBVA o PSE (pagina ITP). Exija en
+                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
+                        en claso de reclamo. Esta boleta se debe pagar en efectivo</small>
+                </td>
+                <td style="background: #8bc34a;"> pago ordinario : <Strong>$ 820.0000</Strong> </td>
 
-                <div id="codigo">
-                    {{{codigo}}}
-                </div>
+            </tr>
 
-                <button type="button" class="btn btn-secondary">Secondary</button>
-            </div>
-        </div>
+            <tr>
+                <td style="background: #8bc34a;"> pago extra : <strong>$ 870.0000</strong></td>
+            </tr>
 
-
-
+        </table>
 
 
     </div>
+
+    <hr>
+
+
+    <div class="">
+
+        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
+            <tr>
+                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 150px;"
+                        class="img img-fluid">
+                </td>
+                <td><strong style="font-size: 13px;">
+                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
+                        <br>NIT. 800.247.940-1
+                    </strong></td>
+                <td style="text-align: right">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
+                <td rowspan="3" style="text-align: right; margin: 0px;">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Mocoa, Putumayo - Colombia</td>
+            </tr>
+            <tr>
+                <td>Periodo: 2021-1</td>
+            </tr>
+        </table>
+
+
+        <table style="width: 100%; font-size: 12px;" class="table-border" cellpadding="0" cellspacing="0">
+            <tr>
+                <td colspan="2">Sede: MOCOA</td>
+                <th rowspan="2">REF: 65878783498</th>
+                <td rowspan="8" style="border: 0px; padding-left: 10px;">
+                    <div style="-webkit-transform: rotate(-90deg); width: 15px;"> <strong>UNIVERSIDAD</strong> </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">Programa: TECNOLOGIA EN DESARROLLO DE SOFTWARE</td>
+            </tr>
+            <tr>
+                <td colspan="2">Nombre: DUVAN ROSERO LOPEZ</td>
+                <td>Pago hasta : 05-10-2021</td>
+            </tr>
+
+            <tr>
+                <td>Identificación: 1124862618</td>
+                <td>Código: 3841545</td>
+                <td>Pago extraordinario hasta: 30-05-2021 </td>
+            </tr>
+            <tr>
+                <th colspan="2">CONCEPTO FACTURA</th>
+                <th>DESCUENTOS</th>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <ul>
+                        <li>punto uno</li>
+                        <li>punto dos</li>
+                        <li>punto tres</li>
+                    </ul>
+                </td>
+                <td style="text-align: center;">0%</td>
+            </tr>
+            <tr>
+                <td rowspan="2" colspan="2" style="width: 70%;">
+                    <small style="font-size: 10px; ">Páguese en efectivo en el banco BBVA o PSE (pagina ITP). Exija en
+                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
+                        en claso de reclamo. Esta boleta se debe pagar en efectivo</small>
+                </td>
+                <td style="background: #8bc34a;"> pago ordinario : <Strong>$ 820.0000</Strong> </td>
+
+            </tr>
+
+            <tr>
+                <td style="background: #8bc34a;"> pago extra : <strong>$ 870.0000</strong></td>
+            </tr>
+
+        </table>
+
+
+    </div>
+
+
 
 </body>
 <script>

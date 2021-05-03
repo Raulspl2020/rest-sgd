@@ -51,9 +51,9 @@ export const generarPagoCodigoBarras = async (req: any, res = response) => {
 
         res.render('pdf_pago_inscripcion', data, (err, html) => {
 
-         //  res.write(html);
+        //   res.write(html);
 
-            pdf.create(html).toBuffer(function (err, buffer) {
+            pdf.create(html,{ format: 'Letter' }).toBuffer(function (err, buffer) {
                 res.contentType("application/pdf");
                 res.send(buffer);
             });
@@ -109,6 +109,8 @@ export const generarCodigoBarras = async (referencia: any, valor: any, fecha: an
         console.log(valor390n);
 
         let codigoBarras = "415" + convenio415 + "8020" + referencia8020 + "3900" + valor390n + "96" + fecha96;
+        let text = "(415)" + convenio415 + "(8020)" + referencia8020 + "(3900)" + valor390n + "(96)" + fecha96;
+
 
 
         const xmlSerializer = new XMLSerializer();
@@ -117,6 +119,10 @@ export const generarCodigoBarras = async (referencia: any, valor: any, fecha: an
 
         JsBarcode(svgNode, codigoBarras, {
             xmlDocument: document,
+            height: 55,
+            width: 1.3,
+            fontSize: 8,
+            text : text
         });
 
         const svgText = xmlSerializer.serializeToString(svgNode);
