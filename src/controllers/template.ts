@@ -1,8 +1,6 @@
 import { response } from 'express';
 
-var JsBarcode = require('jsbarcode');
 
-var { createCanvas } = require("canvas");
 
 
 const fs = require('fs');
@@ -71,10 +69,7 @@ export const viewPDFPago = async (req: any, res = response) => {
 //   /page/pagoinscripcion 
 //=====================
 export const viewConsultaPago = async (req: any, res = response) => {
-    // Canvas v1
-    var canvas = createCanvas();
 
-    JsBarcode(canvas, "41500000000258548020000018131047390000000470009620191231");
 
     // const buffer = canvas.toBuffer('application/pdf')
     // fs.writeFileSync('./image.pdf', buffer)
@@ -89,22 +84,6 @@ export const viewConsultaPago = async (req: any, res = response) => {
 
 
 
-const xmlSerializer = new XMLSerializer();
-const document = new DOMImplementation().createDocument('http://www.w3.org/1999/xhtml', 'html', null);
-const svgNode = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-
-    JsBarcode(svgNode, '415;0000000025854;8020;000018131047;3900;0000047000;96;20191231', {
-        xmlDocument: document,
-    });
-
-const svgText = xmlSerializer.serializeToString(svgNode);
-
-
-
-
-    fs.writeFile(__dirname + '/example.svg', svgText, function () {
-        console.log('wrote it');
-    });
 
     let codigo = req.params.codigo;
     let data: any = {};
