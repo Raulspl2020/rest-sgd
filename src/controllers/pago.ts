@@ -5,9 +5,7 @@ import JsBarcode from "jsbarcode";
 
 import { DOMImplementation, XMLSerializer } from "xmldom";
 
-//import pdf from 'html-pdf';
-const pdf = require("pdf-creator-node");
-// const html_to_pdf = require("html-pdf-node");
+const puppeteer =  require('puppeteer');
 
 //====================
 //   /pago/generarpagoinscripcion
@@ -35,7 +33,7 @@ export const getInfoPagoFactura = async (req: any, res: any) => {
 //====================
 //   /page/GenerarPagoCodigoBarras
 //=====================
-export const generarPagoCodigoBarras = async (req: any, res = response) => {
+export const generarPagoCodigoBarras = async (req: any, res: any) => {
   let svgText = await generarCodigoBarras("2343", "", "");
   let data: any = {};
   data.BASE_URL = process.env.BASE_URL.toString();
@@ -43,86 +41,43 @@ export const generarPagoCodigoBarras = async (req: any, res = response) => {
 
   try {
     let codigo = req.params.codigo;
+    res.render("pdf_pago_inscripcion", data, async (err: any, html: any) => {
+      try {
 
-    res.render("pdf_pago_inscripcion", data, (err, html) => {
-      //  res.write(html);
-      let options = {
-        format: "A3",
-        orientation: "portrait",
-        border: "10mm",
-        header: {
-            height: "45mm",
-            contents: '<div style="text-align: center;">Author: Shyam Hajare</div>'
-        },
-        footer: {
-            height: "28mm",
-            contents: {
-                first: 'Cover page',
-                2: 'Second page', // Any page number is working. 1-based index
-                default: '<span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>', // fallback value
-                last: 'Last Page'
-            }
-        }
-    };
-    var users = [
-      {
-        name: "Shyam",
-        age: "26",
-      },
-      {
-        name: "Navjot",
-        age: "26",
-      },
-      {
-        name: "Vitthal",
-        age: "26",
-      },
-    ];
-    var document = {
-      html: html,
-      data: {
-        users: users,
-      },
-      path: "./output.pdf",
-      type: "",
-    };
-     // console.log(html);
-
-      pdf
-        .create(document, options)
-        .then((res: any) => {
-          console.log("parece que si funciona");
-          console.log(res);
-        })
-        .catch((error: any) => {
-          console.log("algo paso");
-          console.error(error);
+        const browser = await puppeteer.launch({
+          args: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-setuid-sandbox']
         });
+        const page = await browser.newPage();
 
-      // pdf.create(html,{ format: 'Letter' }).toBuffer(function (err:any, buffer:any) {
-      //     console.log(err);
-      //     if(err){
-      //         res.json({
-      //             error: true,
-      //             message :  err.message
-      //         });
-      //     }
-      //     res.contentType("application/pdf");
-      //     res.send(buffer);
-      // });
-      // let options = { format: "A4" };
-      // let pagina: any = { content: html };
+        await page.setContent(html);
+        const pdf = await page.pdf({
+          format: 'Letter',
+          printBackground: true,
 
-      // html_to_pdf.generatePdf(pagina, options).then((pdfBuffer: any) => {
-      //   console.log("PDF Buffer:-", pdfBuffer);
-      //   res.contentType("application/pdf");
-      //   res.send(pdfBuffer);
-      // });
+        });
+        console.log(pdf);
+        console.log("Done");
+        await browser.close();
+        res.contentType("application/pdf");
+        res.send(pdf);
 
-      //res.write(html);
+      } catch (error) {
+        console.log("va a suceder otra vez");
+        console.log(error);
+        res.json({
+          error: true,
+          message: "El servicio no esta disponible"
+
+        });
+      }
     });
   } catch (error) {
     console.log("Error algo paso");
+    res.json({
+      error: true,
+      message: "El servicio no esta disponible"
+
+    });
   }
 };
 
@@ -193,14 +148,15 @@ export const generarCodigoBarras = async (
 
     JsBarcode(svgNode, codigoBarras, {
       xmlDocument: document,
-      height: 55,
-      width: 1.3,
+      height: 50,
+      width: 1,
       fontSize: 8,
       text: text,
+      margin: 3,
     });
 
     const svgText = xmlSerializer.serializeToString(svgNode);
 
     return svgText;
-  } catch (error) {}
+  } catch (error) { }
 };

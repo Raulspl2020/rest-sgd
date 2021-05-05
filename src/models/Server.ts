@@ -49,6 +49,7 @@ class Server {
         //Cors
         this.app.use(cors());
 
+
         // parse application/x-www-form-urlencoded
         this.app.use(bodyParser.urlencoded({ extended: false }));
         //body-parser-json
