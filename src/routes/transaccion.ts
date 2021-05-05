@@ -4,7 +4,7 @@ const router = Router();
 import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento } from '../controllers/transaccion';
 import { check } from 'express-validator';
 import { validarCampos, validatorCampos,validarIdPago } from '../middlewares/validar-campos';
-import { getInfoPagoFactura } from '../controllers/pago';
+import { getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
 
 
 
@@ -40,6 +40,9 @@ router.post('/soportedescuento', soporteDescuento);
 
 router.post('/InicioPago', [validatorCampos], inicioPago);
 router.post('/VerificacionPago',[validarIdPago], verificaPago);
+
+
+router.post('/InicioPagoCodigoBarras', InicioPagoCodigoBarras);
 
 
 //RUTAS PARA LOS PAGOS REALIZADOS Y FACTURAS

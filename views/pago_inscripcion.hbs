@@ -62,7 +62,7 @@
                                 <div class="form-group">
                                     <label for="">Correo electrónico:</label>
                                     <div type="text" class="form-control bg-light">
-                                        {[ matricula.email_persona ]} 
+                                        {[ matricula.email_persona ]}
                                     </div>
                                 </div>
                             </div>
@@ -206,14 +206,27 @@
                                         {{!-- <div><strong>Esado transaccion: </strong> PENDIENTE</div> --}}
                                         <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong> </h4>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-3">
+                                        <div style="text-align: right" class="float-right">
+                                            {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
+                                            </h4> --}}
+                                            <button class="btn btn-outline-info" data-bs-toggle="tooltip"
+                                                @click="continuarPago" data-bs-placement="top" :disabled="!activarBoton"
+                                                title="Confirma el pago procede al cobro">
+                                                <i class="fa fa-barcode"></i> Pago en efectivo
+                                            </button>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-3">
                                         <div style="text-align: right" class="float-right">
                                             {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
                                             </h4> --}}
                                             <button class="btn btn-outline-success" data-bs-toggle="tooltip"
                                                 @click="continuarPago" data-bs-placement="top" :disabled="!activarBoton"
                                                 title="Confirma el pago procede al cobro">
-                                                <i class="fa fa-money"></i> {[txtBoton]}
+                                                <i class="fa fa-credit-card"></i> {[txtBoton]}
                                             </button>
                                         </div>
                                     </div>
@@ -287,7 +300,7 @@
                     soportes: [],
                     numeroLetras: "CERO PESOS",
                     activarBoton: true,
-                    txtBoton: "Confirmar pago",
+                    txtBoton: "Confirmar pago en linea",
                     msjResp: "",
                     mostrarAlert: false,
                     file: '',

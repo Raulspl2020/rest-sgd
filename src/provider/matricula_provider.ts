@@ -73,3 +73,22 @@ export const getDetPeriodo = async (cod_colegio: any, cod_periodo: any, fechaAct
 };
 
 
+//consultas las fechas de un periodo
+export const getDatePeriodo = async (cod_colegio: any, cod_periodo: any) => {
+    // let fechaActual='2021-03-29';
+    let result = await conDB
+        .select("cod_colegio_periodo", "fec_inicio", "fec_fin", "cod_estado", "fec_ini_matordinaria", "fec_fin_matordinaria", "fec_ini_matextraord", "fec_fin_matextraord")
+        .from("col_colegio_periodo")
+        .where({
+            'cod_colegio': cod_colegio,
+            'cod_periodo': cod_periodo
+        });
+    if (result.length > 0) {
+        return result[0];
+    } else {
+        return false;
+    }
+};
+
+
+
