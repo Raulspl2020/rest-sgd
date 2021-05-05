@@ -5,7 +5,7 @@ import JsBarcode from "jsbarcode";
 
 import { DOMImplementation, XMLSerializer } from "xmldom";
 
-const puppeteer =  require('puppeteer');
+const puppeteer = require("puppeteer");
 
 //====================
 //   /pago/generarpagoinscripcion
@@ -43,31 +43,31 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
     let codigo = req.params.codigo;
     res.render("pdf_pago_inscripcion", data, async (err: any, html: any) => {
       try {
-
         const browser = await puppeteer.launch({
-          args: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-setuid-sandbox']
+          args: [
+            "--no-sandbox",
+            "--headless",
+            "--disable-gpu",
+            "--disable-setuid-sandbox",
+          ],
         });
         const page = await browser.newPage();
 
         await page.setContent(html);
         const pdf = await page.pdf({
-          format: 'Letter',
+          format: "Letter",
           printBackground: true,
-
         });
-        console.log(pdf);
-        console.log("Done");
+        console.log("Pdf generado");
         await browser.close();
         res.contentType("application/pdf");
         res.send(pdf);
-
       } catch (error) {
         console.log("va a suceder otra vez");
         console.log(error);
         res.json({
           error: true,
-          message: "El servicio no esta disponible"
-
+          message: "El servicio no esta disponible",
         });
       }
     });
@@ -75,8 +75,7 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
     console.log("Error algo paso");
     res.json({
       error: true,
-      message: "El servicio no esta disponible"
-
+      message: "El servicio no esta disponible",
     });
   }
 };
@@ -149,14 +148,14 @@ export const generarCodigoBarras = async (
     JsBarcode(svgNode, codigoBarras, {
       xmlDocument: document,
       height: 50,
-      width: 1,
-      fontSize: 8,
+      width: 1.13,
+      fontSize: 10,
       text: text,
-      margin: 3,
+      margin: 2,
     });
 
     const svgText = xmlSerializer.serializeToString(svgNode);
 
     return svgText;
-  } catch (error) { }
+  } catch (error) {}
 };
