@@ -1,4 +1,4 @@
-import { getInfoPago, getInfoFactura, getPaquete } from "../provider/pago_provider";
+import { getInfoPago, getInfoFactura, getPaquete, getDescuento, getConfigPeriodo } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 
 import JsBarcode from "jsbarcode";
@@ -8,6 +8,7 @@ import { getDatePeriodo, getInfoMatricula } from "../provider/matricula_provider
 import { generarHTMLPDF } from "../helpers/global";
 import { limpiarCampos } from "../helpers/pago";
 import cryptoRandomString from "crypto-random-string";
+import * as moneda from 'currency-formatter';
 
 let Validator = require("validatorjs");
 
@@ -45,6 +46,16 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
   let id_matricula = req.body.id_matricula;
   let id_paquete = req.body.id_paquete;
   let codigo: string = null;
+  let total = 0;
+  let total_a_pagar = 0;
+  let total_con_descuento = 0;
+  let total_sin_descuento = 0;
+  let porcentaje_descuento = 0;
+  let porcentaje_aumento = 0;
+  let descripcionFactura = "";
+  let auxDescripcion = "";
+  let precios: any;
+  let periodo: any;
 
   let infoPago: any = {};
 
@@ -57,7 +68,7 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 
 
     if (resultDB !== false) {
-
+      let resultConfig = await getConfigPeriodo();
 
       //generamos el codigo
       let cadena =
@@ -96,7 +107,52 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 
 
       //obtenemos el paquete a facturar
-      let resultPaquete = await getPaquete(resultDB.matricula.cod_periodo, id_paquete);
+      let resultPaquete: any = null;
+
+
+      //si es una inscripcion
+      if (id_paquete == 6) {
+        resultPaquete = await getPaquete(resultDB.matricula.cod_periodo, id_paquete);
+      } else {
+
+
+        //ciclo tecnologico
+        if (resultDB.cod_nivel_edu == 6) {
+          resultPaquete = await getPaquete(resultDB.cod_periodo, 1);
+        } else if (resultDB.cod_nivel_edu == 7) {
+          resultPaquete = await getPaquete(resultDB.cod_periodo, 4);
+        } else if (resultDB.cod_nivel_edu == 16) {
+          resultPaquete = await getPaquete(resultDB.cod_periodo, 5);
+        }
+
+        if (resultPaquete != false) {
+
+
+          //  verificar creditos
+
+
+          //configurar deacuerdo a la configuracion del periodo
+          if (resultDB.nro_creditos <= resultConfig.min_creditos) {
+
+            //se debe cobrar por credito individual
+            console.log("Se cobra por creditos");
+
+            resultPaquete.forEach((element: any, index: number) => {
+
+
+            });
+
+
+
+
+          } else {
+            console.log("Se cobra matricula completa");
+
+          }
+
+        } else {
+          throw new Error("No se encontraron precios configurados");
+        }
 
 
 
@@ -104,25 +160,52 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 
 
 
+      }
+
+
+
+
+      //consular los descuentos y multas que un estudiante tiene asignados
+      let resultDto = await getDescuento(resultDB.matricula.cod_matricula, resultDB.matricula.cod_periodo);
+
+
+      resultDto.forEach((row: any) => {
+        //si aplica descuento sino aplica aumento, si es 1 añade un descuento
+        if (row.accion == 1) {
+          porcentaje_descuento = porcentaje_descuento + row.porcentaje;
+          auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
+        } else {
+          porcentaje_aumento = porcentaje_aumento + row.porcentaje;
+          auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + row.observacion
+        }
+      });
+
+
+      resultPaquete.forEach((element: any, index: number) => {
+
+        //calcula el total sin descuento
+        if (element.cantidad > 0) {
+          total_a_pagar = total_a_pagar + (element.subtotal * element.cantidad);
+        } else {
+          total = element.subtotal * Number(resultDB.nro_creditos);
+          total_a_pagar = total_a_pagar + total;
+        }
+        total_sin_descuento = total_a_pagar;
+      });
 
       res.json({
         error: false,
         message: "Reuta lista",
         codigo,
         resultPaquete,
-        resultDB
+        resultDB,
+        detalle_factura: resultPaquete,
+        total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
+        total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),
+        total_a_pagar_int: moneda.unformat(moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' })
       });
 
-
-
-
     }
-
-    res.json({
-      error: false,
-      message: "No se ecnuentra nada",
-      resultDB
-    });
 
 
   } catch (error) {
@@ -132,10 +215,6 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 
     });
   }
-
-
-
-
 
 
 }
