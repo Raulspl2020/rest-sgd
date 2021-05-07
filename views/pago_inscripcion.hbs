@@ -211,9 +211,9 @@
                                             {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
                                             </h4> --}}
                                             <button class="btn btn-outline-info" data-bs-toggle="tooltip"
-                                                @click="continuarPago" data-bs-placement="top" :disabled="!activarBoton"
-                                                title="Confirma el pago procede al cobro">
-                                                <i class="fa fa-barcode"></i> Pago en efectivo
+                                                @click="continuarPagoEfectivo" data-bs-placement="top"
+                                                :disabled="!activarBotonEf" title="Genera PDF para pago en efectivo">
+                                                <i class="fa fa-barcode"></i> {[txtBotonEf]}
                                             </button>
                                         </div>
                                     </div>
@@ -300,7 +300,9 @@
                     soportes: [],
                     numeroLetras: "CERO PESOS",
                     activarBoton: true,
-                    txtBoton: "Confirmar pago en linea",
+                    txtBoton: "Pagar en linea",
+                    activarBotonEf: true,
+                    txtBotonEf: "Pagar en efectivo",
                     msjResp: "",
                     mostrarAlert: false,
                     file: '',
@@ -441,6 +443,43 @@
                             console.log(err);
                         });
                 },
+
+                continuarPagoEfectivo() {
+                    // this.formpago.activarBoton = false;
+                    //  this.formpago.txtBoton = "Procesando...";
+
+
+                    let data = {
+                        "id_matricula": '{{ ID_MATRICULA }}',
+                        "id_paquete": 6,
+                    }
+
+                    this.activarBotonEf = false;
+                    this.txtBotonEf = "Procesando...";
+                    fetch(
+                        `{{BASE_URL}}/transaccion/InicioPagoCodigoBarras`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.error) {
+                                alert(data.message);
+                            } else {
+                                this.activarBotonEf = false;
+                                this.txtBotonEf = "Redireccionando...";
+                                window.location = data.pfd_url;
+
+                            }
+
+                        }).catch((err) => {
+                            console.log(err);
+                        });
+                },
+
 
 
                 numeroALetras(numero) {

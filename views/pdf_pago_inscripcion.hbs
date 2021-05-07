@@ -145,189 +145,11 @@
         <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
             <tr>
                 <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
-                <th rowspan="2">REF: 65878783498</th>
+                <th rowspan="2">REF: {{referencia}}</th>
                 <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
                     <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
-                        <strong>ESTUDIANTE</strong> </div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
-            </tr>
-            <tr>
-                <td colspan="2">Nombre: {{matricula.ape1_persona }} {{ matricula.ape2_persona }} {{
-                    matricula.nom1_persona }} {{ matricula.nom2_persona}}</td>
-                <td>Pago ordinario hasta :  <strong style="float: right;">{{fecha_fin_ordinaria}}</strong></td>
-            </tr>
-
-            <tr>
-                <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
-                <td>Código matrícula: {{matricula.cod_matricula}}</td>
-                <td>Pago extraordinario hasta:  <strong style="float: right;"> {{fecha_fin_extraordinaria}}</strong> </td>
-            </tr>
-            <tr>
-                <th colspan="2">CONCEPTO FACTURA</th>
-                <th>DESCUENTOS</th>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <ul>
-                        <li>punto uno</li>
-                        <li>punto dos</li>
-                        <li>punto tres</li>
-                    </ul>
-                </td>
-                <td style="text-align: center;">0%</td>
-            </tr>
-            <tr>
-                <td rowspan="2" colspan="2" style="width: 70%;">
-                    <small style="font-size: 10px; ">Páguese en efectivo en el banco  <strong>BBVA</strong> o <strong>SuperGiros</strong>. Exija en
-                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
-                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
-                </td>
-                <td style="background: #8bc34a;"> pago ordinario : <Strong>$ 820.0000</Strong> </td>
-
-            </tr>
-
-            <tr>
-                <td style="background: #8bc34a;"> pago extra : <strong>$ 870.0000</strong></td>
-            </tr>
-
-        </table>
-
-
-    </div>
-    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Fecha impresión: {{fecha_actual}}</div>
-
-    <hr>
-
-
-    <div class="">
-
-        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
-            <tr>
-                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 120px;"
-                        class="img img-fluid">
-                </td>
-                <td><strong style="font-size: 10px;">
-                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
-                        <br>NIT. 800.247.940-1
-                    </strong></td>
-                <td style="text-align: right">
-                    {{{codigo}}}
-                </td>
-            </tr>
-            <tr>
-                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
-                <td rowspan="3" style="text-align: right; margin: 0px;">
-                    {{{codigo}}}
-                </td>
-            </tr>
-            <tr>
-                <td>Mocoa, Putumayo - Colombia</td>
-            </tr>
-            <tr>
-                <td>Periodo: {{matricula.nom_periodo}}</td>
-            </tr>
-        </table>
-
-
-        <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
-            <tr>
-                <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
-                <th rowspan="2">REF: 65878783498</th>
-                <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
-                    <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
-                        <strong>UNIVERSIDAD</strong> </div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
-            </tr>
-            <tr>
-                <td colspan="2">Nombre: {{matricula.ape1_persona }} {{ matricula.ape2_persona }} {{
-                    matricula.nom1_persona }} {{ matricula.nom2_persona}}</td>
-                <td>Pago ordinario hasta :  <strong style="float: right;">{{fecha_fin_ordinaria}}</strong></td>
-            </tr>
-
-            <tr>
-                <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
-                <td>Código matrícula: {{matricula.cod_matricula}}</td>
-                <td>Pago extraordinario hasta:  <strong style="float: right;"> {{fecha_fin_extraordinaria}}</strong> </td>
-            </tr>
-            <tr>
-                <th colspan="2">CONCEPTO FACTURA</th>
-                <th>DESCUENTOS</th>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <ul>
-                        <li>punto uno</li>
-                        <li>punto dos</li>
-                        <li>punto tres</li>
-                    </ul>
-                </td>
-                <td style="text-align: center;">0%</td>
-            </tr>
-            <tr>
-                <td rowspan="2" colspan="2" style="width: 70%;">
-                    <small style="font-size: 10px; ">Páguese en efectivo en el banco  <strong>BBVA</strong> o <strong>SuperGiros</strong>. Exija en
-                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
-                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
-                </td>
-                <td style="background: #8bc34a;"> pago ordinario : <Strong>$ 820.0000</Strong> </td>
-
-            </tr>
-
-            <tr>
-                <td style="background: #8bc34a;"> pago extra : <strong>$ 870.0000</strong></td>
-            </tr>
-
-        </table>
-
-
-    </div>
-    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Fecha impresión: {{fecha_actual}}</div>
-    <hr>
-
-
-    <div class="">
-
-        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
-            <tr>
-                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 120px;"
-                        class="img img-fluid">
-                </td>
-                <td><strong style="font-size: 10px;">
-                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
-                        <br>NIT. 800.247.940-1
-                    </strong></td>
-                <td style="text-align: right">
-                    {{{codigo}}}
-                </td>
-            </tr>
-            <tr>
-                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
-                <td rowspan="3" style="text-align: right; margin: 0px;">
-                    {{{codigo}}}
-                </td>
-            </tr>
-            <tr>
-                <td>Mocoa, Putumayo - Colombia</td>
-            </tr>
-            <tr>
-                <td>Periodo: {{matricula.nom_periodo}}</td>
-            </tr>
-        </table>
-
-
-        <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
-            <tr>
-                <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
-                <th rowspan="2">REF: 65878783498</th>
-                <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
-                    <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
-                        <strong>BANCO</strong> </div>
+                        <strong>ESTUDIANTE</strong>
+                    </div>
                 </td>
             </tr>
             <tr>
@@ -342,7 +164,197 @@
             <tr>
                 <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
                 <td>Código matrícula: {{matricula.cod_matricula}}</td>
-                <td>Pago extraordinario hasta: <strong style="float: right;"> {{fecha_fin_extraordinaria}}</strong> </td>
+                <td>Pago extraordinario hasta: <strong style="float: right;"> {{fecha_fin_extraordinaria}}</strong>
+                </td>
+            </tr>
+            <tr>
+                <th colspan="2">CONCEPTO FACTURA</th>
+                <th>DESCUENTOS</th>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <ul>
+
+                        {{#each  det_factura }}
+                        <ul style="font-size: 8px;">{{ paquete }}</ul>
+                        {{/each}}
+
+
+                    </ul>
+                </td>
+                <td style="text-align: center;">0%</td>
+            </tr>
+            <tr>
+                <td rowspan="2" colspan="2" style="width: 70%;">
+                    <small style="font-size: 10px; ">Páguese en efectivo en el banco <strong>BBVA</strong> o
+                        <strong>SuperGiros</strong>. Exija en
+                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
+                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
+                </td>
+                <td style="background: #8bc34a;"> Pago ordinario : <Strong  style="float: right;">$ {{ total_ordi_formateado }}</Strong> </td>
+
+            </tr>
+
+            <tr>
+                <td style="background: #8bc34a;"> Pago extraordinario : <strong  style="float: right;"> $ {{ total_ordi_formateado }}</strong></td>
+            </tr>
+
+        </table>
+
+
+    </div>
+    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
+
+    <hr>
+
+
+    <div class="">
+
+        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
+            <tr>
+                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 120px;"
+                        class="img img-fluid">
+                </td>
+                <td><strong style="font-size: 10px;">
+                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
+                        <br>NIT. 800.247.940-1
+                    </strong></td>
+                <td style="text-align: right">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
+                <td rowspan="3" style="text-align: right; margin: 0px;">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Mocoa, Putumayo - Colombia</td>
+            </tr>
+            <tr>
+                <td>Periodo: {{matricula.nom_periodo}}</td>
+            </tr>
+        </table>
+
+
+        <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
+            <tr>
+                <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
+                <th rowspan="2">REF: {{referencia}}</th>
+                <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
+                    <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
+                        <strong>UNIVERSIDAD</strong>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
+            </tr>
+            <tr>
+                <td colspan="2">Nombre: {{matricula.ape1_persona }} {{ matricula.ape2_persona }} {{
+                    matricula.nom1_persona }} {{ matricula.nom2_persona}}</td>
+                <td>Pago ordinario hasta : <strong style="float: right;">{{fecha_fin_ordinaria}}</strong></td>
+            </tr>
+
+            <tr>
+                <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
+                <td>Código matrícula: {{matricula.cod_matricula}}</td>
+                <td>Pago extraordinario hasta: <strong style="float: right;"> {{fecha_fin_extraordinaria}}</strong>
+                </td>
+            </tr>
+            <tr>
+                <th colspan="2">CONCEPTO FACTURA</th>
+                <th>DESCUENTOS</th>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <ul>
+                        {{#each  det_factura }}
+                        <ul style="font-size: 8px;">{{ paquete }}</ul>
+                        {{/each}}
+
+                    </ul>
+                </td>
+                <td style="text-align: center;">0%</td>
+            </tr>
+            <tr>
+                <td rowspan="2" colspan="2" style="width: 70%;">
+                    <small style="font-size: 10px; ">Páguese en efectivo en el banco <strong>BBVA</strong> o
+                        <strong>SuperGiros</strong>. Exija en
+                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
+                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
+                </td>
+                <td style="background: #8bc34a;"> Pago ordinario : <Strong style="float: right;">$ {{total_ordi_formateado}}</Strong> </td>
+
+            </tr>
+
+            <tr>
+                <td style="background: #8bc34a;"> Pago extraordinario : <strong style="float: right;">$ {{ total_ordi_formateado }}</strong></td>
+            </tr>
+
+        </table>
+
+
+    </div>
+    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
+    <hr>
+
+
+    <div class="">
+
+        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
+            <tr>
+                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 120px;"
+                        class="img img-fluid">
+                </td>
+                <td><strong style="font-size: 10px;">
+                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
+                        <br>NIT. 800.247.940-1
+                    </strong></td>
+                <td style="text-align: right">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
+                <td rowspan="3" style="text-align: right; margin: 0px;">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Mocoa, Putumayo - Colombia</td>
+            </tr>
+            <tr>
+                <td>Periodo: {{matricula.nom_periodo}}</td>
+            </tr>
+        </table>
+
+
+        <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
+            <tr>
+                <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
+                <th rowspan="2">REF: {{referencia}}</th>
+                <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
+                    <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
+                        <strong>BANCO</strong>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
+            </tr>
+            <tr>
+                <td colspan="2">Nombre: {{matricula.ape1_persona }} {{ matricula.ape2_persona }} {{
+                    matricula.nom1_persona }} {{ matricula.nom2_persona}}</td>
+                <td>Pago ordinario hasta : <strong style="float: right;">{{fecha_fin_ordinaria}}</strong></td>
+            </tr>
+
+            <tr>
+                <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
+                <td>Código matrícula: {{matricula.cod_matricula}}</td>
+                <td>Pago extraordinario hasta: <strong style="float: right;"> {{fecha_fin_extraordinaria}}</strong>
+                </td>
             </tr>
             {{!-- <tr>
                 <th colspan="2">CONCEPTO FACTURA</th>
@@ -362,19 +374,19 @@
                 <td rowspan="2" colspan="2" style="width: 70%; border: 0px;">
 
                 </td>
-                <td style="background: #8bc34a;"> pago ordinario : <Strong>$ 820.0000</Strong> </td>
+                <td style="background: #8bc34a;"> Pago ordinario : <Strong style="float: right;">$ {{total_ordi_formateado}}</Strong> </td>
 
             </tr>
 
             <tr>
-                <td style="background: #8bc34a;"> pago extra : <strong>$ 870.0000</strong></td>
+                <td style="background: #8bc34a;"> Pago extraordinario : <strong style="float: right;">$ {{ total_ordi_formateado }}</strong></td>
             </tr>
 
         </table>
 
 
     </div>
-    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Fecha impresión: {{fecha_actual}}</div>
+    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
 
 
 

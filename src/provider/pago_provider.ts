@@ -310,4 +310,28 @@ export const getCategriaDescuento = async (accion: any) => {
 };
 
 
+//añade el codigo de barras a un pago ya creado
+export const updateCodigoBarras = async(codigo:string, id:number) => {
+  return await conDB("fin_pago")
+      .where("fin_pago._id", id)
+      .update({ codigo_barras: codigo });
+};
+
+
+//consulta pago por codigo de barras
+export const getPagoByBarCOde = async (codigo: string) => {
+  let result = await conDB
+    .select()
+    .from("fin_pago")
+    .where({ 'codigo_barras': codigo });
+
+    if (result.length > 0) {
+      return result[0];
+    } else {
+      return false;
+    }
+};
+
+
+
 
