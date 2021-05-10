@@ -294,7 +294,7 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
           matricula_id: infoPago2.matricula.cod_matricula,
           valor: infoPago2.total_a_pagar,
           periodo_id: infoPago2.matricula.cod_periodo,
-          //  archivo_id: null,
+          cod_paquete: infoPago.det_factura[0].codigo,
           categoria_pago_id: conceptos[0].categoria_id,
         };
     

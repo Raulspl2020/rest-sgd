@@ -450,6 +450,7 @@ const savePago = async (infoPago: any, responseData: any, dataMatricula: any) =>
       valor_letras: infoPago.str_opcional2,
       periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
       //  archivo_id: null,
+      cod_paquete : conceptos[0].codigo,
       categoria_pago_id: conceptos[0].categoria_id,
     };
 

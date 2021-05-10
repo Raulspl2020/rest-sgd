@@ -139,6 +139,7 @@ export const getConceptosPaquete = async (codigo: any) => {
     )
     .select(
       "fin_paquete._id",
+      "fin_paquete.codigo",
       "fin_paquete.descripcion",
       "fin_paquete.categoria_id",
       "fin_paquete.tipo",
