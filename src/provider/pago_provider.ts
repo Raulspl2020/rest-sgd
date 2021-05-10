@@ -312,10 +312,10 @@ export const getCategriaDescuento = async (accion: any) => {
 
 
 //añade el codigo de barras a un pago ya creado
-export const updateCodigoBarras = async(codigo:string, id:number) => {
+export const updateCodigoBarras = async (codigo: string, id: number) => {
   return await conDB("fin_pago")
-      .where("fin_pago._id", id)
-      .update({ codigo_barras: codigo });
+    .where("fin_pago._id", id)
+    .update({ codigo_barras: codigo });
 };
 
 
@@ -326,13 +326,28 @@ export const getPagoByBarCOde = async (codigo: string) => {
     .from("fin_pago")
     .where({ 'codigo_barras': codigo });
 
-    if (result.length > 0) {
-      return result[0];
-    } else {
-      return false;
-    }
+  if (result.length > 0) {
+    return result[0];
+  } else {
+    return false;
+  }
 };
 
+
+//verificar si ya se genero un pago antes
+export const existePago = async (cod_paquete: string, matricula_id: string) => {
+  let result = await conDB
+    .select()
+    .from("fin_pago")
+    .where({ 'cod_paquete': cod_paquete, 'matricula_id': matricula_id })
+    .andWhere('estado_id', '<>', 1);
+
+  if (result.length > 0) {
+    return result[0];
+  } else {
+    return false;
+  }
+};
 
 
 

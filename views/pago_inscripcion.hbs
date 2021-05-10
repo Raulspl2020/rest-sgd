@@ -352,7 +352,38 @@
                     this.file = this.$refs.file.files[0];
                 },
 
+                existePago() {
+
+                    let data = {
+                        "cod_paquete": this.factura.cod_paquete, //codigo del paquete
+                        "cod_matricula": '{{ ID_MATRICULA }}',
+                    }
+
+
+                    fetch(`{{BASE_URL}}/transaccion/existepago`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        }
+                    )
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (!data.error) {
+                                console.log(data);
+                                return data.ref_pago;
+
+                            } else {
+                                return false;
+                            }
+                        });
+                },
+
                 consultarPersona() {
+
+
                     console.log("El evento onchange se ejecuta");
 
                     fetch(`{{BASE_URL}}/matricula/generarpagoinscripcion/{{ID_MATRICULA}}`)
@@ -445,6 +476,11 @@
                 },
 
                 continuarPagoEfectivo() {
+
+                    if (this.existePago() != false) {
+                        alert(" se ha encontrado un pago pendiendte");
+                    }
+
                     // this.formpago.activarBoton = false;
                     //  this.formpago.txtBoton = "Procesando...";
 
