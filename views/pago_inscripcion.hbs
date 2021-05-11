@@ -125,14 +125,14 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-2">
+                                    <div class="col-md-3">
                                         <div class="form-group">
-                                            <label for="">Codigo:</label>
-                                            <div type="text" class="form-control bg-light">0125</div>
+                                            <label for="">Estado:</label>
+                                            <div type="text" class="form-control bg-light text-primary"> <strong>{[pago.id]} - {[pago.estado]}</strong> </div>
                                         </div>
                                     </div>
 
-                                    <div class="col-md-10">
+                                    <div class="col-md-9">
                                         <div class="form-group">
                                             <label for="">Total en letras:</label>
                                             <div type="text" class="form-control bg-light text-success">
@@ -285,6 +285,11 @@
                         colorTextoAlert: "text-success",
                         cod_periodo: ''
                     },
+                    pago : {
+                        id : '',
+                        codigo: '',
+                        estado: 'SIN PAGO'
+                    },
                     factura: {
                         txtDescFactura: "",
                         txtTotalPagar: 0,
@@ -311,75 +316,6 @@
             },
             methods: {
 
-                enviarArchivo() {
-                    console.log("Enviar archivo file");
-
-
-                    let formData = new FormData();
-                    this.desactivarBotonSoporte = true;
-
-                    formData.append('archivo', this.file);
-
-                    formData.append('observacion', this.porcentaje.observacion);
-                    formData.append('porcentaje_categoria_id', this.porcentaje.categoria);
-                    formData.append('estudiante_id', this.matricula.txtId);
-                    formData.append('matricula_id', '{{ID_MATRICULA}}');
-                    formData.append('periodo_id', this.matricula.cod_periodo);
-                    formData.append('nom_periodo', this.matricula.txtPeriodo);
-                    formData.append('accion', '1');
-
-
-                    fetch('{{BASE_URL}}/transaccion/soporteDescuento',
-                        {
-                            method: 'POST',
-                            body: formData
-                        }
-                    ).then((response) => response.json())
-                        .then(function (data) {
-                            console.log('SUCCESS!!');
-                            this.consultarPersona();
-
-                        }.bind(this))
-                        .catch(function () {
-                            console.log('FAILURE!!');
-                            this.desactivarBotonSoporte = false;
-                        });
-
-
-
-                },
-                handleFileUpload() {
-                    this.file = this.$refs.file.files[0];
-                },
-
-                existePago() {
-
-                    let data = {
-                        "cod_paquete": this.factura.cod_paquete, //codigo del paquete
-                        "cod_matricula": '{{ ID_MATRICULA }}',
-                    }
-
-
-                    fetch(`{{BASE_URL}}/transaccion/existepago`,
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(data)
-                        }
-                    )
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (!data.error) {
-                                console.log(data);
-                                return data.ref_pago;
-
-                            } else {
-                                return false;
-                            }
-                        });
-                },
 
                 consultarPersona() {
 
@@ -390,6 +326,14 @@
                         .then((response) => response.json())
                         .then((data) => {
                             if (!data.error) {
+
+                                if(data.estadopago!=false){
+                                    this.pago.id = data.estadopago._id;
+                                    this.pago.codigo = data.estadopago.codigo;
+                                    this.pago.estado = data.estadopago.estado;
+                                }
+
+
                                 let matricula = data.matricula;
                                 this.categorias = data.categorias;
                                 let detalle_factura = data.detalle_factura;
@@ -477,9 +421,6 @@
 
                 continuarPagoEfectivo() {
 
-                    if (this.existePago() != false) {
-                        alert(" se ha encontrado un pago pendiendte");
-                    }
 
                     // this.formpago.activarBoton = false;
                     //  this.formpago.txtBoton = "Procesando...";
@@ -488,6 +429,10 @@
                     let data = {
                         "id_matricula": '{{ ID_MATRICULA }}',
                         "id_paquete": 6,
+                    }
+
+                    if(this.pago.id != ''){
+                        data.id_pago = this.pago.id;
                     }
 
                     this.activarBotonEf = false;

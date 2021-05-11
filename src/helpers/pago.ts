@@ -138,7 +138,7 @@ export const dataConfigPago = (infoPago: any) => {
           },
           {
             int_codigo: 109, //activa el campo editable
-            str_valor: "1",
+            str_valor: "0",
           },
           {
             int_codigo: 110,

@@ -1,5 +1,5 @@
 import { conDB } from "../config/database";
-
+import { parse, format } from 'date-format-parse';
 
 export const getInfoPago = async (codigoPago: string) => {
   const sql = `SELECT
@@ -173,6 +173,8 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
 
     .then((result: any) => {
       trx.commit();
+      console.log("aqui esta este id");
+      console.log(id);
       return id;
     })
     .catch((result: any) => {
@@ -181,6 +183,51 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
       return false;
     });
 };
+
+
+
+//actualiza los datos en fin_pago, borras los detalles de la factura y crea unos nuevos
+export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_id : any) => {
+  delete pago["codigo"];
+  let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss A');
+  pago.fecha_update = fechaActual;
+  const trx = await conDB.transaction();
+  return await trx("fin_detalle_factura")
+    .where("pago_id", pago_id)
+    .del()
+    .then((ids: any) => {
+      let detalle: any = det_pago;
+      return trx("fin_detalle_factura").insert(detalle);
+    })
+
+    .then((result: any) => {
+
+      console.log("se va a actualizar el pago");
+    
+
+     return trx("fin_pago")
+        .where("_id", pago_id)
+        .update(pago)
+        .then((result: any) => {
+          console.log(pago_id);
+          trx.commit();
+          let idArreglo =  [pago_id,0];
+          return idArreglo;
+        })
+
+
+
+
+    })
+    .catch((result: any) => {
+      console.log(result);
+      trx.rollback();
+      return false;
+    });
+};
+
+
+
 
 export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
@@ -337,8 +384,13 @@ export const getPagoByBarCOde = async (codigo: string) => {
 //verificar si ya se genero un pago antes
 export const existePago = async (cod_paquete: string, matricula_id: string) => {
   let result = await conDB
-    .select()
+    .select('fin_pago._id','fin_pago.codigo','fin_pago.valor','fin_estado_pago.descripcion as estado')
     .from("fin_pago")
+    .join(
+      "fin_estado_pago", "fin_pago.estado_id",
+      "=",
+      "fin_estado_pago._id"
+    )
     .where({ 'cod_paquete': cod_paquete, 'matricula_id': matricula_id })
     .andWhere('estado_id', '<>', 1);
 

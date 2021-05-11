@@ -1,4 +1,4 @@
-import { getInfoPago, getInfoFactura, getPaquete, getDescuento, getConfigPeriodo, guardarPagoyDetalle, getConceptosPaquete, updateCodigoBarras, getPagoByBarCOde, existePago } from "../provider/pago_provider";
+import { getInfoPago, getInfoFactura, getPaquete, getDescuento, getConfigPeriodo, guardarPagoyDetalle, getConceptosPaquete, updateCodigoBarras, getPagoByBarCOde, existePago, actualizarPagoyDetalleNew } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 
 import JsBarcode from "jsbarcode";
@@ -22,6 +22,8 @@ export const getInfoPagoFactura = async (req: any, res: any) => {
   try {
     let infopago = await getInfoPago(codigoPago);
     let infopagoFactuta = await getInfoFactura(codigoPago);
+
+
     return res.status(200).json({
       error: true,
       message: "info pago",
@@ -248,9 +250,11 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
   //validar valores obligatorios
   let id_matricula = req.body.id_matricula;
   let id_paquete = req.body.id_paquete;
+  let id_pago = req.body.id_pago;  
   let infoPago: any = {};
   let infoPago2: any = {};
   let tDetallePago: any = [];
+  let resultSavePago: any = [];
 
 
   try {
@@ -263,7 +267,6 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
     infoPago2 = infoPago.general;
 
 
-
     //buscamos un paquete por codigo
     let conceptos = await getConceptosPaquete(id_paquete);
 
@@ -271,7 +274,7 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 
       conceptos.forEach((concepto: any) => {
         tDetallePago.push({
-          pago_id: null,
+          pago_id:(id_pago) ? id_pago : null, // si se envia el id se lo asigna
           concepto_id: concepto.concepto_id,
           descuento: concepto.descuento,
           aumento: concepto.aumento,
@@ -292,14 +295,28 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
         estado_id: 200,
         estudiante_id: infoPago2.matricula.ide_persona,
         matricula_id: infoPago2.matricula.cod_matricula,
-        valor: infoPago2.total_a_pagar,
+        valor: infoPago.total_a_pagar,
         periodo_id: infoPago2.matricula.cod_periodo,
         cod_paquete: infoPago.det_factura[0].codigo,
         categoria_pago_id: conceptos[0].categoria_id,
       };
 
+      
+    //validar si se envia el codigo de pago, se debe actualiar
+    if(id_pago){
+      console.log('se debe actualizar el pago');
+
+      resultSavePago = await actualizarPagoyDetalleNew(tPago, tDetallePago, id_pago);
+
+    }else{
       //guardar el detalle de la factura
-      let resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+      resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+    }
+
+    console.log(resultSavePago);
+
+      
+
       infoPago.referencia = resultSavePago[0];
       if (resultSavePago != false) {
         //generamos codigo de barras
@@ -506,7 +523,7 @@ export const existePagoDB = async (req: any, res: any) => {
       res.json({
         error: false,
         message: "Se ha encontrado un pago sin finalizar",
-        ref_pago: resultDB._id,
+        data: resultDB,
       });
     } else {
       res.json({

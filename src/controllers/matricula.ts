@@ -1,5 +1,5 @@
 import { getInfoMatricula, getDetPeriodo } from "../provider/matricula_provider";
-import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula } from "../provider/pago_provider";
+import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 
@@ -65,9 +65,15 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
             throw new Error("No se encontró la inscripción");
         }
 
+
+        let estadoPago =  await existePago('6',id_matricula);
+
+
+
         return res.status(200).json({
             error: false,
             message: "Ejecución correcta",
+            estadopago: estadoPago,
             matricula: resultDB,
             detalle_factura: resultPaquete,
             total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
