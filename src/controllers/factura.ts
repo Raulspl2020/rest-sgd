@@ -1,5 +1,5 @@
 import { parse, format } from "date-format-parse";
-import { actualizarPagoyDetalle, consultaFacturaBanco } from "../provider/factura_provider";
+import { actualizarPagoyDetalle, consultaFacturaBanco, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 
 //====================
@@ -155,7 +155,7 @@ export const reversarPagoService = async (req: any, res: any) => {
   let Password = body.Password;
   let Id_Banco = body.Id_Banco;
   let Referencia_pago = parseInt(body.Referencia_pago);
-  let Fecha_pago = body.Fecha_pago;
+  let Fecha_reverso = body.Fecha_reverso;
   let Valor_pagado = body.Valor_pagado;
   let Id_transacción = body.Id_transacción;
   let Info_Adicional = body.Info_Adicional;
@@ -173,12 +173,11 @@ export const reversarPagoService = async (req: any, res: any) => {
       Id_Comercio === process.env.ZONAPAGOS_ID &&
       Password === process.env.ZONAPAGOS_PASS
     ) {
-      let detPago: any = [];
 
-            //aqui la consulta encargada de actualizar el pago
+      //aqui la consulta encargada de actualizar el pago
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
 
-      detPago.push({
+      let detPago: any = {
         '_id': uuidv4(),
         'pago_id': Referencia_pago,
         'valor_pago': Valor_pagado,
@@ -188,27 +187,30 @@ export const reversarPagoService = async (req: any, res: any) => {
         'forma_pago_id': 99,
         'nombre_banco': Id_Banco,
         'codigo_transaccion': Id_transacción,
-        'fecha': format(parse(Fecha_pago+" "+horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
-        'campo1': Info_Adicional,
-      });
+        'fecha': format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        'fecha_reverso': format(parse(Fecha_reverso + " " + horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
+        'campo1': (Info_Adicional) ?  Info_Adicional : null,
+      };
+
 
       //preparamos la data para guardar
       let tPago: any = {
         estado_id: 1,
-        fecha_update: format(parse(Fecha_pago+" "+horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
+        fecha_update: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
       };
 
-      let resultUpdatePago = await actualizarPagoyDetalle(Referencia_pago,tPago,detPago);
+      let resultUpdatePago = await reversarPagoyDetalle(Referencia_pago, tPago, detPago);
+      console.log(resultUpdatePago);
 
       if (resultUpdatePago != false) {
         responseData.Codigo_Estado = "0";
         responseData.Severidad = "I";
-        responseData.Descripcion ="Se realizó exitosamente la actualización del pago.";
+        responseData.Descripcion = "Se realizó exitosamente el reverso del pago";
         res.status(200).json(responseData);
       } else {
         responseData.Codigo_Estado = "1";
         responseData.Severidad = "W";
-        responseData.Descripción_estado ="No se pudo realizar la actualización del pago.";
+        responseData.Descripción_estado = "No se pudo realizar el reverso del pago.";
         res.status(200).json(responseData);
       }
     } else {
@@ -221,4 +223,3 @@ export const reversarPagoService = async (req: any, res: any) => {
     res.status(500).json(responseData);
   }
 };
-

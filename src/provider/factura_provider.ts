@@ -47,22 +47,79 @@ FROM
 
 
 
-export const actualizarPagoyDetalle = async (id: any, pago: any,dataInsert:any ) => {
-    const trx = await conDB.transaction();
-    return await trx("fin_pago")
+export const actualizarPagoyDetalle = async (id: any, pago: any, dataInsert: any) => {
+  const trx = await conDB.transaction();
+  return await trx("fin_pago")
     .where("fin_pago._id", id)
     .update(pago)
     .then((ids: any) => {
-    let detalle: any = dataInsert;
-    return trx("fin_detalle_pago").insert(detalle);
+      let detalle: any = dataInsert;
+      return trx("fin_detalle_pago").insert(detalle);
     })
     .then((result: any) => {
-    trx.commit();
-    return true;
+      trx.commit();
+      return true;
     })
     .catch((result: any) => {
-    console.log(result);
-    trx.rollback();
-    return false;
+      console.log(result);
+      trx.rollback();
+      return false;
     });
-  };
+};
+
+
+//permite corregir los pagos relizados, eliminando los pagos de una factura y creando unos nuevos
+export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) => {
+
+  //si el pago se borro o no existe de debe crear uno nuevo
+
+  //comprobar si existen pagos
+
+  let existePago: boolean = false;
+
+  let result = await conDB
+    .select()
+    .from("fin_detalle_pago")
+    .where({ "pago_id": id, 'estado_pago_id': 1 })
+  if (result.length > 0) {
+    existePago = true
+  }
+
+
+  const trx = await conDB.transaction();
+  return await trx("fin_pago")
+    .where("fin_pago._id", id)
+    .update(pago)
+    .then((ids: any) => {
+
+      if (existePago) {
+
+        let detalle = {
+          'valor_pago': dataInsert.Valor_pagado,
+          'total_pago': dataInsert.total_pago,
+          'estado_pago_id': dataInsert.estado_pago_id,
+          'forma_pago_id': dataInsert.forma_pago_id,
+          'nombre_banco': dataInsert.nombre_banco,
+          'codigo_transaccion': dataInsert.codigo_transaccion,
+          'fecha_reverso': dataInsert.fecha_reverso,
+          'campo1': dataInsert.campo1,
+        }
+
+        return trx("fin_detalle_pago")
+          .where({ "pago_id": id, 'estado_pago_id': 1 })
+          .update(detalle);
+      } else {
+        return trx("fin_detalle_pago").insert(dataInsert);
+      }
+
+    })
+    .then((result: any) => {
+      trx.commit();
+      return true;
+    })
+    .catch((result: any) => {
+      console.log(result);
+      trx.rollback();
+      return false;
+    });
+};
