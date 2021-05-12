@@ -44,3 +44,25 @@ FROM
     return false;
   }
 };
+
+
+
+export const actualizarPagoyDetalle = async (id: any, pago: any,dataInsert:any ) => {
+    const trx = await conDB.transaction();
+    return await trx("fin_pago")
+    .where("fin_pago._id", id)
+    .update(pago)
+    .then((ids: any) => {
+    let detalle: any = dataInsert;
+    return trx("fin_detalle_pago").insert(detalle);
+    })
+    .then((result: any) => {
+    trx.commit();
+    return true;
+    })
+    .catch((result: any) => {
+    console.log(result);
+    trx.rollback();
+    return false;
+    });
+  };
