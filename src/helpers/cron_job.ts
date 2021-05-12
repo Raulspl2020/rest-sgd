@@ -2,6 +2,9 @@ import fetch from "node-fetch";
 import { obtenerPagosPendientes } from "../provider/pago_provider";
 
 
+// pendiente borrar los pagos que lleven mas de 7 dias iniciados y no tengan detalle_pago
+
+
 export const verificaPagosPendientes = async () => {
     try {
         let result = await obtenerPagosPendientes(7, [29, 32]);

@@ -5,6 +5,7 @@ import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento } from 
 import { check } from 'express-validator';
 import { validarCampos, validatorCampos,validarIdPago } from '../middlewares/validar-campos';
 import { existePagoDB, getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
+import {consultaFacturaService } from '../controllers/factura';
 
 
 
@@ -49,4 +50,7 @@ router.post('/Existepago', existePagoDB);
 //RUTAS PARA LOS PAGOS REALIZADOS Y FACTURAS
 router.get('/informacionpago/:cod_pago', getInfoPagoFactura);
 
+
+//SERVICIOS QUE SON CONSUMIDOS POR EL BANCO EN EL PAGO CON CODIGO DE BARRAS
+router.post('/consultaFactura', consultaFacturaService);
 export default router;
