@@ -3,7 +3,7 @@ import cors from 'cors';
 const router = Router();
 import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento } from '../controllers/transaccion';
 import { check } from 'express-validator';
-import { validarCampos, validatorCampos,validarIdPago } from '../middlewares/validar-campos';
+import { validarCampos, validatorCampos,validarIdPago,consultaFacturaMid,registrarPagoMid,reversarPagoMid } from '../middlewares/validar-campos';
 import { existePagoDB, getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
 import {consultaFacturaService, registrarPagoService, reversarPagoService } from '../controllers/factura';
 
@@ -52,7 +52,7 @@ router.get('/informacionpago/:cod_pago', getInfoPagoFactura);
 
 
 //SERVICIOS QUE SON CONSUMIDOS POR EL BANCO EN EL PAGO CON CODIGO DE BARRAS
-router.post('/consultaFactura', consultaFacturaService);
-router.post('/registrarPagos', registrarPagoService);
-router.post('/reversarPagos', reversarPagoService);
+router.post('/consultaFactura',[consultaFacturaMid], consultaFacturaService);
+router.post('/registrarPagos',[registrarPagoMid], registrarPagoService);
+router.post('/reversarPagos',[reversarPagoMid], reversarPagoService);
 export default router;
