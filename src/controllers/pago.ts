@@ -1,12 +1,9 @@
 import { getInfoPago, getInfoFactura, getPaquete, getDescuento, getConfigPeriodo, guardarPagoyDetalle, getConceptosPaquete, updateCodigoBarras, getPagoByBarCOde, existePago, actualizarPagoyDetalleNew } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 
-import JsBarcode from "jsbarcode";
-
-import { DOMImplementation, XMLSerializer } from "xmldom";
 import { getDatePeriodo, getInfoMatricula } from "../provider/matricula_provider";
 import { generarHTMLPDF } from "../helpers/global";
-import { limpiarCampos } from "../helpers/pago";
+import { generarCodigoBarras, limpiarCampos } from "../helpers/pago";
 import cryptoRandomString from "crypto-random-string";
 import * as moneda from 'currency-formatter';
 
@@ -59,11 +56,7 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
 
   try {
 
-
-
     let resultDB = await getInfoEstudiante(id_matricula);
-
-
 
     if (resultDB !== false) {
       let resultConfig = await getConfigPeriodo();
@@ -106,8 +99,6 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
 
       //obtenemos el paquete a facturar
       let resultPaquete: any = null;
-
-
       //consular los descuentos y multas que un estudiante tiene asignados
       let resultDto = await getDescuento(resultDB.matricula.cod_matricula, resultDB.matricula.cod_periodo);
 
@@ -125,9 +116,6 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
         }
       });
 
-
-
-
       resultPaquete = await getPaquete(resultDB.matricula.cod_periodo, id_paquete);
       //validar si no se encuentra el paquete
 
@@ -135,14 +123,7 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
       if (resultPaquete != false) {
         descripcionFactura = "" + resultPaquete[0].paquete + auxDescripcion
 
-
-
-
-
         precios = resultPaquete;
-
-
-
 
         precios.forEach((element: any, index: number) => {
 
@@ -191,8 +172,6 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
 
           });
 
-
-
           //calcula el total sin descuento
           if (element.cantidad > 0) {
             total_a_pagar = total_a_pagar + (element.subtotal * element.cantidad);
@@ -217,10 +196,6 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
         throw new Error("No se encontraron precios configurados");
       }
 
-
-
-
-
       infoPago.general = resultDB;
       infoPago.total_a_pagar = moneda.unformat(moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' });
       infoPago.det_factura = precios;
@@ -228,9 +203,6 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
       infoPago.total_formateado = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
 
       return infoPago;
-
-
-
     }
 
 
@@ -266,7 +238,6 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
     }
     infoPago2 = infoPago.general;
 
-
     //buscamos un paquete por codigo
     let conceptos = await getConceptosPaquete(id_paquete);
 
@@ -286,7 +257,6 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
         });
       });
 
-
       //preparamos la data para guardar
       let tPago: any = {
         codigo: infoPago.str_id_pago,
@@ -301,29 +271,19 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
         categoria_pago_id: conceptos[0].categoria_id,
       };
 
-      
     //validar si se envia el codigo de pago, se debe actualiar
     if(id_pago){
-      console.log('se debe actualizar el pago');
-
       resultSavePago = await actualizarPagoyDetalleNew(tPago, tDetallePago, id_pago);
-
     }else{
       //guardar el detalle de la factura
       resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
     }
-
-    console.log(resultSavePago);
-
-      
 
       infoPago.referencia = resultSavePago[0];
       if (resultSavePago != false) {
         //generamos codigo de barras
 
         let [codigo, svgText] = await generarCodigoBarras(resultSavePago[0], infoPago.total_a_pagar, infoPago2.fecha_fin_ordinaria);
-
-
 
         //acualizar codigo de barras en la base de datos y el json con la referencia
         let respDB = await updateCodigoBarras(codigo, resultSavePago[0]);
@@ -366,14 +326,8 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 //=====================
 export const generarPagoCodigoBarras = async (req: any, res: any) => {
 
-
-
   let codigo_matricula = req.params.codigo;
-
-
   let data: any = await getPagoByBarCOde(codigo_matricula);
-
-
 
   try {
 
@@ -412,7 +366,7 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
 
 
 //obtiene la informacion necesaria para añador al pdf de codigo de barras
-const getInfoEstudiante = async (id_matricula: string) => {
+export const getInfoEstudiante = async (id_matricula: string) => {
 
   try {
     let fechaActual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
@@ -442,70 +396,6 @@ const getInfoEstudiante = async (id_matricula: string) => {
 
 
 
-
-
-
-
-
-
-export const generarCodigoBarras = async (referencia: string, valor: string, fecha: any) => {
-  const convenio415: string = "0000000025854";
-  let referencia8020: string = referencia.toString();
-
-  let valor390n: string = valor.toString();
-  let [dia, mes, año]: string = fecha.split('-');
-
-  const fecha96: string = año + mes + dia;
-
-  const length8020: number = 12;
-  const length390n: number = 10;
-
-  try {
-    if (referencia8020.length < length8020) {
-      let faltante = length8020 - referencia8020.length;
-      for (let i = 0; i < faltante; i++) {
-        referencia8020 = "0" + referencia8020;
-      }
-    } else if (referencia8020.length > length8020) {
-      throw new Error("El codigo de referencia supera el máximo permitido");
-    }
-
-    if (valor390n.length < length390n) {
-      let faltante = length390n - valor390n.length;
-      for (let i = 0; i < faltante; i++) {
-        valor390n = "0" + valor390n;
-      }
-    } else if (valor390n.length > length390n) {
-      throw new Error("El valor supera el máximo permitido");
-    }
-
-
-    let codigoBarras = "415" + convenio415 + "8020" + referencia8020 + "3900" + valor390n + "96" + fecha96;
-    let text = "(415)" + convenio415 + "(8020)" + referencia8020 + "(3900)" + valor390n + "(96)" + fecha96;
-
-    const xmlSerializer = new XMLSerializer();
-    const document = new DOMImplementation().createDocument("http://www.w3.org/1999/xhtml", "html", null);
-    const svgNode = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    JsBarcode(svgNode, codigoBarras, {
-      xmlDocument: document,
-      height: 50,
-      width: 1.13,
-      fontSize: 10,
-      text: text,
-      margin: 2,
-    });
-
-    const svgText = xmlSerializer.serializeToString(svgNode);
-
-    return [codigoBarras, svgText];
-  } catch (error) {
-
-  }
-};
-
-
-
 //====================
 //   /transaccion/existepago
 //=====================
@@ -532,9 +422,6 @@ export const existePagoDB = async (req: any, res: any) => {
         ref_pago: null,
       });
     }
-
-
-
 
   } catch (error) {
     res.status(500).json({

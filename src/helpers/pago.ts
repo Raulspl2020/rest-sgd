@@ -1,4 +1,8 @@
 import { ResponsePago } from "../models/ResponsePago";
+
+import JsBarcode from "jsbarcode";
+
+import { DOMImplementation, XMLSerializer } from "xmldom";
 export const decodeResPago = (cadena: string) => {
 
     let datos = cadena.split("|");
@@ -148,5 +152,88 @@ export const dataConfigPago = (infoPago: any) => {
       };
 
       return data;
+};
+
+
+export const generarCodigoBarrasText = async (referencia: string, valor: string, fecha: any) => {
+  const convenio415: string = "0000000025854";
+  let referencia8020: string = referencia.toString();
+
+  let valor390n: string = valor.toString();
+  let [dia, mes, año]: string = fecha.split('-');
+
+  const fecha96: string = año + mes + dia;
+
+  const length8020: number = 12;
+  const length390n: number = 10;
+
+  try {
+    if (referencia8020.length < length8020) {
+      let faltante = length8020 - referencia8020.length;
+      for (let i = 0; i < faltante; i++) {
+        referencia8020 = "0" + referencia8020;
+      }
+    } else if (referencia8020.length > length8020) {
+      throw new Error("El codigo de referencia supera el máximo permitido");
+    }
+
+    if (valor390n.length < length390n) {
+      let faltante = length390n - valor390n.length;
+      for (let i = 0; i < faltante; i++) {
+        valor390n = "0" + valor390n;
+      }
+    } else if (valor390n.length > length390n) {
+      throw new Error("El valor supera el máximo permitido");
+    }
+
+    let codigoBarras = "415" + convenio415 + "8020" + referencia8020 + "3900" + valor390n + "96" + fecha96;
+    let text = "(415)" + convenio415 + "(8020)" + referencia8020 + "(3900)" + valor390n + "(96)" + fecha96;
+    return [codigoBarras,text];
+    
+
+  }catch (error) {
+    return [null, null];
+  }
+  }
+
+export const dividirCodigoBarrasText = async (cadena:string) => {
+  let convenio415 = cadena.substr(0,16);
+  let referencia8020 = cadena.substr(16,16);
+  let valor3900 = cadena.substr(16+16,14);
+  let fecha96 = cadena.substr(16+16+14,10);
+  return [convenio415,
+    referencia8020,
+    valor3900,
+    fecha96];
+}
+
+
+export const generarCodigoBarras = async (referencia: string, valor: string, fecha: any) => {
+  try {
+    let [codigoBarras, text] = await generarCodigoBarrasText(referencia,valor,fecha);
+    const xmlSerializer = new XMLSerializer();
+    const document = new DOMImplementation().createDocument("http://www.w3.org/1999/xhtml", "html", null);
+    const svgNode = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+    JsBarcode(svgNode, codigoBarras, {
+      xmlDocument: document,
+      height: 50,
+      width: 1.13,
+      fontSize: 10,
+      text: text,
+      margin: 2,
+    });
+
+    const svgText = xmlSerializer.serializeToString(svgNode);
+
+    return [codigoBarras, svgText];
+
+
+    
+  }catch (error) {
+    return [null, null];
+  }
+
+
 };
 

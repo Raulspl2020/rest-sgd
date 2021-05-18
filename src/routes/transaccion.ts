@@ -6,6 +6,8 @@ import { check } from 'express-validator';
 import { validarCampos, validatorCampos,validarIdPago,consultaFacturaMid,registrarPagoMid,reversarPagoMid } from '../middlewares/validar-campos';
 import { existePagoDB, getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
 import {consultaFacturaService, registrarPagoService, reversarPagoService } from '../controllers/factura';
+import { generarPagoCodigoBarras, inicioPagoMatricua } from '../controllers/zonapagos';
+
 
 
 
@@ -55,4 +57,10 @@ router.get('/informacionpago/:cod_pago', getInfoPagoFactura);
 router.post('/consultaFactura',[consultaFacturaMid], consultaFacturaService);
 router.post('/registrarPagos',[registrarPagoMid], registrarPagoService);
 router.post('/reversarPagos',[reversarPagoMid], reversarPagoService);
+
+
+
+//rutas de prueba para los servicios de pago corregigos
+router.post('/InicioPagoMatricula', inicioPagoMatricua);
+router.get('/GenerarPagoCodigoBarras/:codigo', generarPagoCodigoBarras);
 export default router;

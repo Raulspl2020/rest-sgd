@@ -94,6 +94,8 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
     let fechaActual = format(new Date(), 'YYYY-MM-DD');
     //let token = req.body.token;
     let resultDB: any;
+    let descuentos = [];
+    let aumentos = [];
     let resultPaquete: any;
     let total = 0;
     let total_a_pagar = 0;
@@ -106,6 +108,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
     let precios: any;
     let periodo: any;
     id_matricula = id_matricula.trim();
+    let resultDescuentos:any = [];
     try {
         let result = await getInfoMatricula(id_matricula);
         console.log(result[0]);
@@ -119,16 +122,28 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
             //consular los descuentos y multas que un estudiante tiene asignados
             let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
             resultDto.forEach((row: any) => {
+
+
                 //si aplica descuento sino aplica aumento, si es 1 añade un descuento
                 if (row.accion == 1) {
+                    let registro = {
+                        'id' : row._id,
+                        'descripcion' : row.descripcion,
+                        'descuento': (row.porcentaje *100)
+                    };
+                    resultDescuentos.push(registro);
+
                     porcentaje_descuento = porcentaje_descuento + row.porcentaje;
-                    auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
+                    auxDescripcion =  auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + (row.observacion==null) ? row.descripcion +" " : row.observacion + " "; 
                 } else {
                     porcentaje_aumento = porcentaje_aumento + row.porcentaje;
-                    auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + row.observacion
+                    auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " +  (row.observacion==null) ? row.descripcion+ " " : row.observacion + " ";
                 }
-
             });
+
+
+
+
 
 
 
@@ -155,7 +170,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                 if (resultPaquete != false) {
 
-                    descripcionFactura = "" + resultPaquete[0].paquete + auxDescripcion
+                    descripcionFactura = "" + resultPaquete[0].paquete + " + " +auxDescripcion
 
                     precios = resultPaquete;
                     //recorrer los detalles de paquete
@@ -325,6 +340,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 message: "Ejecución correcta",
                 matricula: resultDB,
                 soportes: await getCategoriaPorcentajeByMatricula(id_matricula),
+                descuentos : resultDescuentos,
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
                 total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),

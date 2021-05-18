@@ -157,14 +157,10 @@ export const getConceptosPaquete = async (codigo: any) => {
 export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
   let id = 0;
   let detalle: any = tDetallePago;
-  console.log("Antes de guardar");
-  console.log(params);
-  console.log(tDetallePago);
   const trx = await conDB.transaction();
   return await trx("fin_pago")
     .insert(params)
     .then((ids: any) => {
-
 
       detalle.forEach((det: any) => (det.pago_id = ids[0]));
       id = ids;
@@ -173,13 +169,10 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
 
     .then((result: any) => {
       trx.commit();
-      console.log("aqui esta este id");
-      console.log(id);
       return id;
     })
     .catch((result: any) => {
       trx.rollback();
-      console.log(result);
       return false;
     });
 };
@@ -188,7 +181,8 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
 
 //actualiza los datos en fin_pago, borras los detalles de la factura y crea unos nuevos
 export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_id : any) => {
-  delete pago["codigo"];
+ // delete pago["codigo"];
+  console.log(det_pago);
   let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss A');
   pago.fecha_update = fechaActual;
   const trx = await conDB.transaction();
@@ -203,8 +197,6 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
     .then((result: any) => {
 
       console.log("se va a actualizar el pago");
-    
-
      return trx("fin_pago")
         .where("_id", pago_id)
         .update(pago)
@@ -214,10 +206,6 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
           let idArreglo =  [pago_id,0];
           return idArreglo;
         })
-
-
-
-
     })
     .catch((result: any) => {
       console.log(result);
@@ -306,6 +294,7 @@ export const getPaquete = async (id_periodo: any, codigo: any) => {
   let sql = `SELECT
   fin_paquete.codigo
   , fin_paquete.descripcion AS paquete
+  , fin_paquete.categoria_id
   , fin_concepto.descripcion AS concepto
   , fin_detalle_paquete.valor_unidad
   , fin_detalle_paquete.cantidad
@@ -341,8 +330,13 @@ FROM
 //consulta descuentos a un estudiante
 export const getDescuento = async (cod_matricula: any, periodo_id: any) => {
   let result = await conDB
-    .select()
+    .select('fin_porcentaje_soporte._id','fin_porcentaje_soporte.porcentaje','fin_porcentaje_soporte.accion','fin_porcentaje_soporte.observacion','fin_porcentaje_soporte.tipo','fin_porcentaje_soporte.json_file','fin_porcetaje_categoria.descripcion')
     .from("fin_porcentaje_soporte")
+    .join(
+      "fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id",
+      "=",
+      "fin_porcetaje_categoria._id"
+    )
     .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
   return result;
 };
@@ -365,6 +359,14 @@ export const updateCodigoBarras = async (codigo: string, id: number) => {
     .update({ codigo_barras: codigo });
 };
 
+//actualiza datos de un pago por id
+export const updateDataPago = async (data:any, id:number) => {
+  return await conDB("fin_pago")
+    .where("fin_pago._id", id)
+    .update(data);
+};
+
+
 
 //consulta pago por codigo de barras
 export const getPagoByBarCOde = async (codigo: string) => {
@@ -380,8 +382,23 @@ export const getPagoByBarCOde = async (codigo: string) => {
   }
 };
 
+//consulta pago por codigo de barras
+export const getPagoByID = async (id: number) => {
+  let result = await conDB
+    .select()
+    .from("fin_pago")
+    .where({ '_id': id });
 
-//verificar si ya se genero un pago antes
+  if (result.length > 0) {
+    return result[0];
+  } else {
+    return false;
+  }
+};
+
+
+
+//verificar si ya se genero un pago antes y no esta pagado
 export const existePago = async (cod_paquete: string, matricula_id: string) => {
   let result = await conDB
     .select('fin_pago._id','fin_pago.codigo','fin_pago.valor','fin_estado_pago.descripcion as estado')
@@ -391,8 +408,8 @@ export const existePago = async (cod_paquete: string, matricula_id: string) => {
       "=",
       "fin_estado_pago._id"
     )
-    .where({ 'cod_paquete': cod_paquete, 'matricula_id': matricula_id })
-    .andWhere('estado_id', '<>', 1);
+    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id })
+    .andWhere('fin_pago.estado_id', '<>', 1);
 
   if (result.length > 0) {
     return result[0];

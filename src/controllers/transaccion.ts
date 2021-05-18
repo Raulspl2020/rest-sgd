@@ -336,6 +336,7 @@ export const inicioPago = async (req: any, res = response) => {
 
       //verificar si es un pago de matricula, si lo es consultar el valor a pagar
       let conceptos = await getConceptosPaquete(infoPago.str_opcional1);
+      
       if (conceptos.length > 0 && conceptos[0].categoria_id == 1 && infoPago.str_opcional3 != "") {
         pagoMat = await consultarpagoMatricula(infoPago.str_opcional3);
         infoPago.flt_total_con_iva = pagoMat.total_a_pagar_int
