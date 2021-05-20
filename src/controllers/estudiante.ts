@@ -1,5 +1,6 @@
 import { response } from "express";
 import * as estudianteProvider from '../provider/estudiante_provider';
+import {getEstMatriculados, getMateriasEstudiante} from '../provider/estudiante_provider';
 
 //====================
 //   /estudiante/programas 
@@ -72,3 +73,48 @@ export const getMatriculaEstudainte = async (req: any, res: any) => {
     }
 }
 
+
+
+
+export const getMateriasPerdidasEst = async (req: any, res: any) => {
+
+
+    try {
+        
+        
+        let  resultDB:any = await getEstMatriculados();
+
+
+        let cont = 0;
+        for (const row of resultDB){
+           
+            let res:any =  await  getMateriasEstudiante(row.cod_periodo,row.id_programa_persona, row.NUM_DOCUMENTO);
+            resultDB[cont].perdidas =  (res==false) ? 0 : res[0].perdidas;
+            cont++;
+       
+           
+
+        }
+
+        // resultDB.asyncForEach([1, 2, 3], async (num) => {
+        //     let res =  await  getMateriasEstudiante(row.cod_periodo,row.id_programa_persona, row.NUM_DOCUMENTO);
+        //   });
+
+
+
+
+        res.json(resultDB);
+        
+    } catch (error) {
+        console.log(error);
+        res.json({
+            error: true,
+            message: error.message,
+  
+        });
+        
+    }
+
+
+
+}

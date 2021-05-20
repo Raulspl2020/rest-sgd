@@ -1,6 +1,6 @@
 import { Router } from 'express';
 const router = Router();
-import { getProgramaEstudainte, getMatriculaEstudainte } from '../controllers/estudiante';
+import { getProgramaEstudainte, getMatriculaEstudainte, getMateriasPerdidasEst } from '../controllers/estudiante';
 
 //====================
 //   /estudiante 
@@ -9,6 +9,7 @@ import { getProgramaEstudainte, getMatriculaEstudainte } from '../controllers/es
 
 router.get('/programas', getProgramaEstudainte);
 router.get('/matriculas', getMatriculaEstudainte);
+router.get('/reporte', getMateriasPerdidasEst);
 
 
 
