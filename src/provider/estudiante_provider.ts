@@ -2,7 +2,7 @@ import { conDB } from "../config/database";
 
 
 export const getPrograma = async (ide: number) => {
-  let sql = `SELECT
+    let sql = `SELECT
     col_persona.ide_persona
     , col_persona.ape1_persona
     , col_persona.ape2_persona
@@ -29,11 +29,11 @@ FROM
         ON (tec_institucion_programa.cod_nivel_educativo = col_nivel_educacion.cod_nivel_educativo)
         WHERE col_persona.ide_persona=?`;
 
-  return await conDB.raw(sql, [ide]);
+    return await conDB.raw(sql, [ide]);
 };
 
 export const getMatricula = async (idEstudiante: number, idPrograma: number) => {
-  let sql = `SELECT
+    let sql = `SELECT
     col_matricula.cod_matricula
     ,col_matricula.fecha_matricula
     , col_persona.ide_persona
@@ -61,14 +61,14 @@ FROM
         ON (col_matricula.cod_curso = col_curso.cod_curso)
          WHERE col_matricula.ide_estudiante=? AND col_matricula.id_programa_persona=?
          ORDER BY col_periodo.nom_periodo DESC `;
-  return await conDB.raw(sql, [idEstudiante, idPrograma]);
+    return await conDB.raw(sql, [idEstudiante, idPrograma]);
 };
 
 export const getCorreoEstudiante = async (idEstudiate: number) => {
-  return await conDB
-  .where({ 'ide_persona': idEstudiate })
-  .select('ide_persona', 'email_institucion', 'email_persona')
-  .from("col_persona").first();
+    return await conDB
+        .where({ 'ide_persona': idEstudiate })
+        .select('ide_persona', 'email_institucion', 'email_persona')
+        .from("col_persona").first();
 
 };
 
@@ -123,18 +123,18 @@ FROM
 WHERE (col_colegio_periodo.cod_periodo IN (36,37,38)  AND tec_programa_persona.cod_estadoinscripcion NOT IN (3) AND col_matricula.cod_estadomatricula = '3' ) 
 ORDER BY col_nivel_educacion.cod_nivel_edu ASC, col_nivel_educacion.cod_nivel_educativo, col_curso.cod_curso ASC`;
 
-let result =  await conDB.raw(sql);
-if (result[0].length > 0) {
-    return result[0];
-  } else {
-    return false;
-  }
-  };
+    let result = await conDB.raw(sql);
+    if (result[0].length > 0) {
+        return result[0];
+    } else {
+        return false;
+    }
+};
 
 
 
-  
-export const getMateriasEstudiante = async (periodo:any,programa_per:any, ide_per:any) => {
+
+export const getMateriasEstudiante = async (periodo: any, programa_per: any, ide_per: any) => {
     let sql = `SELECT materias.*, COUNT(materias.nom_asignatura) AS perdidas FROM (SELECT
         col_matricula.cod_matricula
         , col_matricula.ide_estudiante
@@ -192,14 +192,78 @@ export const getMateriasEstudiante = async (periodo:any,programa_per:any, ide_pe
             ORDER BY COUNT(materias.nom_asignatura) DESC
             LIMIT 1`;
 
-        let result =  await conDB.raw(sql, [ide_per, programa_per, periodo]);
-        if (result[0].length > 0) {
-            return result[0];
-        } else {
-            return false;
-        }
-  };
+    let result = await conDB.raw(sql, [ide_per, programa_per, periodo]);
+    if (result[0].length > 0) {
+        return result[0];
+    } else {
+        return false;
+    }
+};
 
 
 
+export const getInfoEstudianteProv = async (ide_per: any) => {
+
+let sql = `SELECT
+col_persona.ide_persona
+, col_tipodoc.siglas AS tipo_documento
+, col_persona.fec_expedicion_doc
+, col_persona.ape1_persona
+, col_persona.ape2_persona
+, col_persona.nom1_persona
+, col_persona.nom2_persona
+, col_persona.fech_nac_persona
+, col_municipios.nom_municipio munucipio_expedicion
+, col_periodo.nom_periodo AS periodo
+, col_colegio.siglas_colegio AS sede
+,col_genero.nom_genero
+, col_persona.dir_persona
+, col_persona.tel_persona
+, col_persona.cel_persona
+, col_persona.email_persona
+, col_persona.email_institucion
+, col_nivel_educacion.nom_nivel_educativo AS programa
+, tec_institucion_programa.cod_snies
+, col_curso.nom_curso AS semestre
+, tec_estadomatricula.nom_estadomatricula
+, tec_estadoinscripcion.nom_estadoinscripcion
+, col_matricula.cod_matricula
+, col_matricula.fecha_matricula
+FROM
+col_matricula
+INNER JOIN col_persona
+ON (col_matricula.ide_estudiante = col_persona.ide_persona)
+LEFT JOIN col_tipodoc 
+   ON (col_persona.tipo_doc = col_tipodoc.tipo_doc)
+LEFT JOIN col_municipios 
+   ON (col_persona.cod_mun_exp = col_municipios.cod_municipio)
+INNER JOIN col_genero 
+   ON (col_persona.ide_genero = col_genero.ide_genero)
+INNER JOIN col_curso 
+   ON (col_matricula.cod_curso = col_curso.cod_curso)
+INNER JOIN tec_programa_persona 
+   ON (col_matricula.id_programa_persona = tec_programa_persona.id_programa_persona)
+INNER JOIN tec_estadomatricula 
+   ON (col_matricula.cod_estadomatricula = tec_estadomatricula.cod_estadomatricula)
+INNER JOIN col_colegio_periodo 
+   ON (col_matricula.cod_colegio_periodo = col_colegio_periodo.cod_colegio_periodo)
+INNER JOIN tec_institucion_programa 
+   ON (tec_programa_persona.cod_colegio_programa = tec_institucion_programa.cod_colegio_programa)
+INNER JOIN tec_estadoinscripcion 
+   ON (tec_programa_persona.cod_estadoinscripcion = tec_estadoinscripcion.cod_estadoinscripcion)
+INNER JOIN col_nivel_educacion 
+   ON (tec_institucion_programa.cod_nivel_educativo = col_nivel_educacion.cod_nivel_educativo)
+INNER JOIN col_periodo 
+   ON (col_colegio_periodo.cod_periodo = col_periodo.cod_periodo)
+INNER JOIN col_colegio 
+   ON (col_colegio_periodo.cod_colegio = col_colegio.cod_colegio)
+     WHERE col_matricula.ide_estudiante=?
+     GROUP BY col_matricula.cod_matricula`;
+     let result = await conDB.raw(sql, [ide_per]);
+     if (result[0].length > 0) {
+         return result[0];
+     } else {
+         return false;
+     }
+}
 

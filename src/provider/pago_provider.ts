@@ -164,6 +164,7 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
 
       detalle.forEach((det: any) => (det.pago_id = ids[0]));
       id = ids;
+      
       return trx("fin_detalle_factura").insert(detalle);
     })
 
@@ -290,7 +291,7 @@ export const guardarProcentajeSoporte = async (data: any) => {
 };
 
 //obtiene el detalle de un paquete
-export const getPaquete = async (id_periodo: any, codigo: any) => {
+export const getPaquete = async ( codigo: any) => {
   let sql = `SELECT
   fin_paquete.codigo
   , fin_paquete.descripcion AS paquete
@@ -312,13 +313,12 @@ FROM
       ON (fin_detalle_paquete.paquete_id = fin_paquete._id)
   INNER JOIN fin_concepto 
       ON (fin_detalle_paquete.concepto_id = fin_concepto._id)
-      WHERE fin_paquete.periodo_id=?
-      AND fin_paquete.codigo=?
+      WHERE fin_paquete.codigo=?
       GROUP BY fin_detalle_paquete._id
       `;
 
 
-  let result = await conDB.raw(sql, [id_periodo, codigo]);
+  let result = await conDB.raw(sql, [ codigo]);
   if (result[0].length > 0) {
     return result[0];
   } else {

@@ -44,3 +44,30 @@ export const contactoUsuatio = async (idUsuario:string) => {
     return await conDB.raw(sql, [idUsuario, idUsuario]);
 };
 
+
+//consulta la informacion basica de un estudiante 
+export const getInfoUsuario = async (id: any) => {
+    let result = await conDB
+        .select("col_persona.ide_persona","col_tipodoc.siglas","col_persona.ape1_persona","col_persona.ape2_persona","col_persona.nom1_persona","col_persona.nom2_persona","col_persona.fech_nac_persona","col_persona.fec_expedicion_doc")
+        .from("col_persona")
+        .join(
+            "col_tipodoc", "col_persona.tipo_doc",
+            "=",
+            "col_tipodoc.nom_doc"
+        )
+        .join(
+            "col_municipios", "col_persona.cod_mun_exp",
+            "=",
+            "col_municipios.cod_municipio"
+        )
+        .where({ "col_persona.ide_persona": id });
+    if (result.length > 0) {
+        return result[0];
+    } else {
+        return false;
+    }
+
+}
+
+
+

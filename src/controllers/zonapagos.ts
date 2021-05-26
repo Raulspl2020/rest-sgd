@@ -4,23 +4,24 @@ import { dataConfigPago, dividirCodigoBarrasText, generarCodigoBarras, generarCo
 import { Pago } from "../models/Pago";
 import { consultarpagoMatricula } from "./matricula";
 import fetch from "node-fetch";
-import { actualizarPagoyDetalleNew, existePago, getConfigPeriodo, getPagoByID, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
+import { actualizarPagoyDetalleNew, existePago, getConfigPeriodo, getPagoByID, getPaquete, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
 import { getInfoEstudiante } from "./pago";
 import * as moneda from 'currency-formatter';
 import { generarHTMLPDF } from "../helpers/global";
+import { format } from "date-format-parse";
 
-export const inicioPagoMatricua = async (req: any, res: any) => {
+export const inicioPagoMatricula = async (req: any, res: any) => {
   let body = req.body;
 
   try {
     let dataBody: any = req.body;
     let tDetallePago: any = [];
-    let new_detalle:any = [];
+    let new_detalle: any = [];
     let id_pago: number = null;
     let resultSavePago: any = {};
-    let isPagoOnline :boolean = false; //0 efectivo 1 pago en linea
-    let responseDataZonaPagos:any = {};
-    let str_url ="";
+    let isPagoOnline: boolean = (body.isPagoOnline != true) ? false : true;
+    let responseDataZonaPagos: any = {};
+    let str_url = "";
 
     let result: any = await consultarpagoMatricula(body.cod_matricula);
     let matricula = result.matricula;
@@ -88,8 +89,8 @@ export const inicioPagoMatricua = async (req: any, res: any) => {
           cantidad: concepto.cantidad,
         });
       });
- 
-      resultSavePago = await actualizarPagoyDetalleNew(tPago,tDetallePago,id_pago);
+
+      resultSavePago = await actualizarPagoyDetalleNew(tPago, tDetallePago, id_pago);
       if (resultSavePago != false) {
         id_pago = resultSavePago[0];
       } else {
@@ -120,41 +121,41 @@ export const inicioPagoMatricua = async (req: any, res: any) => {
 
     //recortamos el tamaño de la descripcion
     let finpago2: Pago = new Pago(infoPago);
-    finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0,-(finpago2.str_descripcion_pago.length - 70));
+    finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
 
     let bodyZonapagos = dataConfigPago(finpago2);
 
     //INICAMOS EL PAGO CON ZONAPAGOS
 
-    if(isPagoOnline){
-       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
-    }else{
+    if (isPagoOnline) {
+      responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
+    } else {
       let infoEstudiante = await getInfoEstudiante(matricula.cod_matricula);
 
-     let infoPagoDB :any = {};
-     infoPagoDB.general = infoEstudiante;
-     infoPagoDB.total_a_pagar = moneda.unformat(moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' });
-     infoPagoDB.det_factura = detalle_factura;
-     infoPagoDB.str_id_pago = codigoFactura;
-     infoPagoDB.descuentos = descuentos;
-     infoPagoDB.total_formateado = moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim();
+      let infoPagoDB: any = {};
+      infoPagoDB.general = infoEstudiante;
+      infoPagoDB.total_a_pagar = moneda.unformat(moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' });
+      infoPagoDB.det_factura = detalle_factura;
+      infoPagoDB.str_id_pago = codigoFactura;
+      infoPagoDB.descuentos = descuentos;
+      infoPagoDB.total_formateado = moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim();
 
 
 
-    let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], result.total_a_pagar_int, infoEstudiante.fecha_fin_ordinaria);
+      let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], result.total_a_pagar_int, infoEstudiante.fecha_fin_ordinaria);
       //acualizar codigo de barras en la base de datos y el json con la referencia
       let dataPagoUpdate = {
-        'codigo_barras' : codigo1,
-        'json_response' : JSON.stringify(infoPagoDB)
+        'codigo_barras': codigo1,
+        'json_response': JSON.stringify(infoPagoDB)
       };
-     let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
-     str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarras/' + codigo1;
-     responseDataZonaPagos = {
-      "int_codigo": 1,
-      "str_cod_error": "",
-      "str_descripcion_error": "",
-      "str_url": str_url,
-     }
+      let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+      str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarras/' + codigo1;
+      responseDataZonaPagos = {
+        "int_codigo": 1,
+        "str_cod_error": "",
+        "str_descripcion_error": "",
+        "str_url": str_url,
+      }
     }
 
     //si todo esta bien, procedemos a guardar
@@ -167,7 +168,7 @@ export const inicioPagoMatricua = async (req: any, res: any) => {
       new_detalle
     });
 
-    
+
   } catch (error) {
     return res.status(500).json({
       error: true,
@@ -185,8 +186,8 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
 
   let codigo_barras = req.params.codigo;
 
-  let [convenio415,referencia8020] = await dividirCodigoBarrasText(codigo_barras);
-  let id_pago =  parseInt(referencia8020.substr(3))
+  let [convenio415, referencia8020] = await dividirCodigoBarrasText(codigo_barras);
+  let id_pago = parseInt(referencia8020.substr(3))
   let data: any = await getPagoByID(id_pago);
   console.log("aqui va el id_pago");
   console.log(id_pago);
@@ -204,27 +205,27 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
     let porcentaje_ex = (resultConfig.porcentaje_ext) ? resultConfig.porcentaje_ext : 0.1;
     console.log(porcentaje_ex);
 
-    let new_detalle = await quitarAumentoDetalle(jsonDB.det_factura,0);
+    let new_detalle = await quitarAumentoDetalle(jsonDB.det_factura, 0);
     console.log(new_detalle);
 
     let new_total_ordinario = await calculaTotalaPagar(new_detalle);
 
-    let new_det2 = await quitarAumentoDetalle(jsonDB.det_factura,porcentaje_ex);
+    let new_det2 = await quitarAumentoDetalle(jsonDB.det_factura, porcentaje_ex);
 
     let new_total_extraordianrio = await calculaTotalaPagar(new_det2);
 
     // es un pago en efectivo
-   let [codigo1, svgText1] = await generarCodigoBarras(data._id, new_total_ordinario.toString(), general.fecha_fin_ordinaria);
-   let [codigo2, svgText2] = await generarCodigoBarras(data._id, new_total_extraordianrio.toString(), general.fecha_fin_extraordinaria);
+    let [codigo1, svgText1] = await generarCodigoBarras(data._id, new_total_ordinario.toString(), general.fecha_fin_ordinaria);
+    let [codigo2, svgText2] = await generarCodigoBarras(data._id, new_total_extraordianrio.toString(), general.fecha_fin_extraordinaria);
 
 
     general.codigo1 = svgText1;
     general.codigo2 = svgText2;
-    general.det_factura =  await quitarAumentoDetalle(jsonDB.det_factura,0);
+    general.det_factura = await quitarAumentoDetalle(jsonDB.det_factura, 0);
     general.referencia = data._id;
     general.total_ordi_formateado = moneda.format(new_total_ordinario, { locale: 'es-CO' }).replace('$', '').trim();
     general.total_extra_formateado = moneda.format(new_total_extraordianrio, { locale: 'es-CO' }).replace('$', '').trim();
-    general.descuentos =  jsonDB.descuentos;
+    general.descuentos = jsonDB.descuentos;
     general.BASE_URL = process.env.BASE_URL.toString();
 
     res.render("pdf_pago_matricula", general, async (err: any, html: any) => {
@@ -236,7 +237,7 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
 
   } catch (error) {
     console.log("Error algo paso");
-    res.json({
+    res.status(500).json({
       error: true,
       message: "El servicio no esta disponible " + error.message,
     });
@@ -244,25 +245,25 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
 };
 
 
-const calculaTotalaPagar = async (precios:any)=>{
-  let total_a_pagar =  0;
+const calculaTotalaPagar = async (precios: any) => {
+  let total_a_pagar = 0;
   precios.forEach((element: any, index: number) => {
     total_a_pagar = element.subtotal + total_a_pagar;
   });
 
-return total_a_pagar;
+  return total_a_pagar;
 }
 
 //esto solo puede funcionar si el aumento solo corresponde a la matricula extraordinaria
-const quitarAumentoDetalle = async(detalle:any,newAumento:number) =>{
-  let auxDetalle:any = [];
+const quitarAumentoDetalle = async (detalle: any, newAumento: number) => {
+  let auxDetalle: any = [];
   detalle.forEach((row: any) => {
     let registro = row;
     registro.aumento = newAumento;
 
     let subtotal = (registro.valor_unidad * registro.cantidad);
     registro.subtotal = (subtotal + (subtotal * registro.aumento)) - (subtotal * registro.descuento);
-    registro.descuento2 =  registro.descuento * 100;
+    registro.descuento2 = registro.descuento * 100;
     auxDetalle.push(registro);
   });
 
@@ -273,7 +274,7 @@ const quitarAumentoDetalle = async(detalle:any,newAumento:number) =>{
 }
 
 
-const inicarPagoZonaPagos = async (body:string) => {
+const inicarPagoZonaPagos = async (body: string) => {
   //INICAMOS EL PAGO CON ZONAPAGOS
   let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
     method: "POST",
@@ -284,7 +285,7 @@ const inicarPagoZonaPagos = async (body:string) => {
   //si el int_codigo es igual a 1 todo salio bien
   if (responseData.int_codigo != 1) {
     throw new Error("Parámetros enviados de forma incorrecta");
-  }else{
+  } else {
     return responseData;
   }
 };
@@ -322,4 +323,145 @@ const generarCodigoFactura = async (cadena: string) => {
   return codigoFactura;
 };
 
-export const inicioPagoInscripcion = async (req: any, res: any) => {};
+export const inicioPagoInscripcion = async (req: any, res: any) => { };
+
+
+export const inicioPagoGeneral = async (req: any, res: any) => {
+
+  let fechaActual = new Date();
+  fechaActual.setMonth(fechaActual.getMonth() + 12);
+  let fechaLimitepago = format(fechaActual, 'YYYY-MM-DD');
+  console.log(fechaLimitepago);
+
+  let body = req.body;
+  let responseDataZonaPagos: any = {};
+  let isPagoOnline: boolean = (body.isPagoOnline != true) ? false : true;
+  let resultSavePago: any = {};
+  let tDetallePago: any = [];
+  let id_pago: number = null;
+  let str_url = "";
+
+  try {
+
+    let cadenaCodigo = body.nombres + body.apellidos + body.id_cliente;
+    let codigoFactura = await generarCodigoFactura(cadenaCodigo.toUpperCase().trim());
+
+    let resultPaquete = await getPaquete(0);
+
+    if (resultPaquete == false) {
+      throw new Error("No se encontraron paquetes configurados");
+    }
+
+
+    //preparamos los datos para enviar a zonapagos
+    let infoPago = new Pago({
+      flt_total_con_iva: parseInt(body.total),
+      flt_valor_iva: 0,
+      str_id_pago: codigoFactura,
+      str_descripcion_pago: body.des_concepto,
+      str_email: body.email_persona,
+      str_id_cliente: body.id_persona,
+      str_tipo_id: body.tipo_id,
+      str_nombre_cliente: body.nombres,
+      str_apellido_cliente: body.apellidos,
+      str_telefono_cliente: body.cel_persona,
+      str_opcional1: "0", //codigo paquete
+      str_opcional2: "", //valor en letras
+      str_opcional3: "", //matricula
+      str_opcional4: "", //periodo
+      str_opcional5: "",
+    });
+
+    //recortamos el tamaño de la descripcion
+    let finpago2: Pago = new Pago(infoPago);
+    finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
+
+    let bodyZonapagos = dataConfigPago(finpago2);
+
+    //GUARDAR EL PAGO EN LA DB
+    let tPago: any = {
+      codigo: codigoFactura,
+      descripcion: resultPaquete[0].paquete,
+      json_response: null,
+      estado_id: 200,
+      estudiante_id: body.ide_persona,
+      // matricula_id: matricula.cod_matricula,
+      valor: body.total,
+      // periodo_id: matricula.cod_periodo,
+      cod_paquete: resultPaquete[0].codigo,
+      categoria_pago_id: resultPaquete[0].categoria_id,
+    };
+
+
+    //crear un nuevo pago
+    resultPaquete.forEach((concepto: any) => {
+      tDetallePago.push({
+        pago_id: null, // si se envia el id se lo asigna
+        concepto_id: concepto.concepto_id,
+        descuento: concepto.descuento,
+        aumento: concepto.aumento,
+        valor_unidad: concepto.valor_unidad + body.total,
+        cantidad: concepto.cantidad,
+      });
+    });
+
+
+    //preparamos la data para guardar
+    resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+    console.log(resultSavePago);
+    //   no se guardó exitosamente
+    if (resultSavePago == false) {
+      throw new Error("No se ha podido guardar el pago");
+    }
+    id_pago = resultSavePago[0];
+
+    //INICAMOS EL PAGO CON ZONAPAGOS
+    if (isPagoOnline) {
+      responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
+    } else {
+
+      //llenamos el idpago al detalle
+      resultPaquete.forEach((det: any) => (det.valor_unidad = parseInt(body.total)));
+
+      let json_detalle = {
+        "general": body,
+        "total_a_pagar": body.total,
+        "total_formateado": moneda.format(body.total, { locale: 'es-CO' }).replace('$', '').trim(),
+        'det_factura': resultPaquete
+      };
+
+      let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], body.total, fechaLimitepago);
+      //acualizar codigo de barras en la base de datos y el json con la referencia
+      let dataPagoUpdate = {
+        'codigo_barras': codigo1,
+        'json_response': JSON.stringify(json_detalle)
+      };
+      let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+      str_url = process.env.BASE_URL + '/transaccion/GenerarPagoPerzonalizadoCodigoBarras/' + codigo1;
+      responseDataZonaPagos = {
+        "int_codigo": 1,
+        "str_cod_error": "",
+        "str_descripcion_error": "",
+        "str_url": str_url,
+      }
+
+    }
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Ejecucion correcta",
+      error: false,
+      pago_id: id_pago,
+      data: responseDataZonaPagos
+    });
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: true,
+      message: "El servicio no esta disponible: " + error.message,
+    });
+  }
+};
+

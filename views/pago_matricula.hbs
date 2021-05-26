@@ -11,7 +11,7 @@
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
 
-    <title>Inicio</title>
+    <title>Detalle matricula</title>
 </head>
 
 <body class="bg-dark">
@@ -226,7 +226,22 @@
                                         {{!-- <div><strong>Esado transaccion: </strong> PENDIENTE</div> --}}
                                         <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong> </h4>
                                     </div>
-                                    <div class="col-6">
+
+
+
+                                    <div class="col-3">
+                                        <div style="text-align: right" class="float-right">
+                                            {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
+                                            </h4> --}}
+                                            <button class="btn btn-outline-info" data-bs-toggle="tooltip"
+                                                @click="continuarPagoEfectivo" data-bs-placement="top"
+                                                :disabled="!activarBotonEf" title="Genera PDF para pago en efectivo">
+                                                <i class="fa fa-barcode"></i> {[txtBotonEf]}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3">
                                         <div style="text-align: right" class="float-right">
                                             {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
                                             </h4> --}}
@@ -443,6 +458,8 @@
                     numeroLetras: "CERO PESOS",
                     activarBoton: true,
                     txtBoton: "Confirmar pago",
+                    activarBotonEf: true,
+                    txtBotonEf: "Pagar en efectivo",
                     msjResp: "",
                     mostrarAlert: false,
                     file: '',
@@ -490,6 +507,44 @@
                 },
                 handleFileUpload() {
                     this.file = this.$refs.file.files[0];
+                },
+                continuarPagoEfectivo() {
+
+
+                    // this.formpago.activarBoton = false;
+                    //  this.formpago.txtBoton = "Procesando...";
+
+
+                    let data = {
+                        "cod_matricula": '{{ ID_MATRICULA }}',
+                        "isPagoOnline": false,
+                    }
+
+
+                    this.activarBotonEf = false;
+                    this.txtBotonEf = "Procesando...";
+                    fetch(
+                        `{{BASE_URL}}/transaccion/InicioPagoMatricula`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.error) {
+                                alert(data.message);
+                            } else {
+                                this.activarBotonEf = false;
+                                this.txtBotonEf = "Redireccionando...";
+                                window.location = data.data.str_url;
+
+                            }
+
+                        }).catch((err) => {
+                            console.log(err);
+                        });
                 },
 
                 consultarPersona() {

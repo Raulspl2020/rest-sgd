@@ -116,7 +116,7 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
         }
       });
 
-      resultPaquete = await getPaquete(resultDB.matricula.cod_periodo, id_paquete);
+      resultPaquete = await getPaquete(id_paquete);
       //validar si no se encuentra el paquete
 
 

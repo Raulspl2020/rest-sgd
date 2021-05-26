@@ -28,7 +28,7 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
         resultDB = result[0][0];
 
         if (result[0].length > 0) {
-            resultPaquete = await getPaquete(resultDB.cod_periodo, 6);
+            resultPaquete = await getPaquete(6);
             if (resultPaquete.length < 1) {
                 throw new Error("No se encontraron precios configurados");
             }
@@ -155,17 +155,17 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 1);
+                    resultPaquete = await getPaquete( 1);
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 4);
+                    resultPaquete = await getPaquete( 4);
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 5);
+                    resultPaquete = await getPaquete( 5);
                 }
 
 
 
 
-                // resultPaquete = await getPaquete(resultDB.cod_periodo, 1);
+                // resultPaquete = await getPaquete( 1);
 
 
                 if (resultPaquete != false) {
@@ -265,11 +265,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 2);
+                    resultPaquete = await getPaquete( 2);
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 3);
+                    resultPaquete = await getPaquete( 3);
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 5);
+                    resultPaquete = await getPaquete( 5);
                 }
 
                 if (resultPaquete != false) {
@@ -423,15 +423,15 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
 
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 1);
+                    resultPaquete = await getPaquete( 1);
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 4);
+                    resultPaquete = await getPaquete( 4);
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 5);
+                    resultPaquete = await getPaquete( 5);
                 }
 
 
-                // resultPaquete = await getPaquete(resultDB.cod_periodo, 1);
+                // resultPaquete = await getPaquete( 1);
 
 
                 if (resultPaquete != false) {
@@ -510,11 +510,11 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
 
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 2);
+                    resultPaquete = await getPaquete(2);
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 3);
+                    resultPaquete = await getPaquete(3);
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete(resultDB.cod_periodo, 5);
+                    resultPaquete = await getPaquete(5);
                 }
 
                 if (resultPaquete != false) {

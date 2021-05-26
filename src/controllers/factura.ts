@@ -24,8 +24,8 @@ export const consultaFacturaService = async (req: any, res: any) => {
 
   try {
     if (
-      Id_Comercio === process.env.ZONAPAGOS_ID &&
-      Password === process.env.ZONAPAGOS_PASS
+      Id_Comercio === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
+      Password === process.env.ZONAPAGOS_CAJA_PASS
     ) {
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
 
@@ -86,8 +86,8 @@ export const registrarPagoService = async (req: any, res: any) => {
 
   try {
     if (
-      Id_Comercio === process.env.ZONAPAGOS_ID &&
-      Password === process.env.ZONAPAGOS_PASS
+      Id_Comercio === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
+      Password === process.env.ZONAPAGOS_CAJA_PASS
     ) {
       let detPago: any = [];
 
@@ -170,8 +170,8 @@ export const reversarPagoService = async (req: any, res: any) => {
 
   try {
     if (
-      Id_Comercio === process.env.ZONAPAGOS_ID &&
-      Password === process.env.ZONAPAGOS_PASS
+      Id_Comercio === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
+      Password === process.env.ZONAPAGOS_CAJA_PASS
     ) {
 
       //aqui la consulta encargada de actualizar el pago
