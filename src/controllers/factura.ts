@@ -9,9 +9,9 @@ export const consultaFacturaService = async (req: any, res: any) => {
   //pendiente validar campos obligatorios
   let body = req.body;
 
-  let Id_Comercio = body.Id_Comercio;
+  let Id_Comercio = parseInt(body.Id_Comercio);
   let Password = body.Password;
-  let Id_Banco = body.Id_Banco;
+  let Id_Banco = parseInt(body.Id_Banco);
   let Referencia_pago = parseInt(body.Referencia_pago);
   let Info_Adicional = body.Info_Adicional;
   let responseData: any = {
@@ -24,7 +24,7 @@ export const consultaFacturaService = async (req: any, res: any) => {
 
   try {
     if (
-      Id_Comercio === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
+      Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
       Password === process.env.ZONAPAGOS_CAJA_PASS
     ) {
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
@@ -66,10 +66,9 @@ export const consultaFacturaService = async (req: any, res: any) => {
 export const registrarPagoService = async (req: any, res: any) => {
   //pendiente validar campos obligatorios
   let body = req.body;
-
-  let Id_Comercio = body.Id_Comercio;
+  let Id_Comercio = parseInt(body.Id_Comercio);
   let Password = body.Password;
-  let Id_Banco = body.Id_Banco;
+  let Id_Banco = parseInt(body.Id_Banco);
   let Referencia_pago = parseInt(body.Referencia_pago);
   let Fecha_pago = body.Fecha_pago;
   let Valor_pagado = body.Valor_pagado;
@@ -86,7 +85,7 @@ export const registrarPagoService = async (req: any, res: any) => {
 
   try {
     if (
-      Id_Comercio === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
+      Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
       Password === process.env.ZONAPAGOS_CAJA_PASS
     ) {
       let detPago: any = [];
@@ -151,9 +150,9 @@ export const reversarPagoService = async (req: any, res: any) => {
   //pendiente validar campos obligatorios
   let body = req.body;
 
-  let Id_Comercio = body.Id_Comercio;
+  let Id_Comercio = parseInt(body.Id_Comercio);
   let Password = body.Password;
-  let Id_Banco = body.Id_Banco;
+  let Id_Banco = parseInt(body.Id_Banco);
   let Referencia_pago = parseInt(body.Referencia_pago);
   let Fecha_reverso = body.Fecha_reverso;
   let Valor_pagado = body.Valor_pagado;
@@ -170,7 +169,7 @@ export const reversarPagoService = async (req: any, res: any) => {
 
   try {
     if (
-      Id_Comercio === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
+      Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
       Password === process.env.ZONAPAGOS_CAJA_PASS
     ) {
 
