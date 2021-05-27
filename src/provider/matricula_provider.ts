@@ -77,7 +77,7 @@ export const getDetPeriodo = async (cod_colegio: any, cod_periodo: any, fechaAct
 export const getDatePeriodo = async (cod_colegio: any, cod_periodo: any) => {
     // let fechaActual='2021-03-29';
     let result = await conDB
-        .select("cod_colegio_periodo", "fec_inicio", "fec_fin", "cod_estado", "fec_ini_matordinaria", "fec_fin_matordinaria", "fec_ini_matextraord", "fec_fin_matextraord")
+        .select("cod_colegio_periodo", "fec_inicio", "fec_fin", "cod_estado", "fec_ini_matordinaria", "fec_fin_matordinaria", "fec_ini_matextraord", "fec_fin_matextraord", "fec_ini_ins_nuevos", "fec_fin_ins_nuevos")
         .from("col_colegio_periodo")
         .where({
             'cod_colegio': cod_colegio,

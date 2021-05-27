@@ -57,6 +57,9 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
   try {
 
     let resultDB = await getInfoEstudiante(id_matricula);
+    console.log("imprimor la consul");
+
+    console.log(resultDB);
 
     if (resultDB !== false) {
       let resultConfig = await getConfigPeriodo();
@@ -102,7 +105,6 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
       //consular los descuentos y multas que un estudiante tiene asignados
       let resultDto = await getDescuento(resultDB.matricula.cod_matricula, resultDB.matricula.cod_periodo);
 
-      console.log(resultDto);
 
 
       resultDto.forEach((row: any) => {
@@ -231,7 +233,6 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 
   try {
     infoPago = await consultaDatosInscripcion(id_matricula, id_paquete);
-    console.log(infoPago);
 
     if (!infoPago) {
       throw new Error("no se ha podido consultar la informacion solicitada");
@@ -377,6 +378,9 @@ export const getInfoEstudiante = async (id_matricula: string) => {
 
     if (result[0].length > 0) {
       let periodo = await getDatePeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
+      if(periodo.fec_fin_matordinaria==null || periodo.fec_fin_matextraord==null || periodo.fec_ini_ins_nuevos==null || periodo.fec_fin_ins_nuevos==null){
+        throw new Error("Las fechas del periodo actual deben estar configuradas");
+      }
       data.fecha_actual = fechaActual;
       data.fecha_fin_ordinaria = format(periodo.fec_fin_matordinaria, 'DD-MM-YYYY');
       data.fecha_fin_extraordinaria = format(periodo.fec_fin_matextraord, 'DD-MM-YYYY')
