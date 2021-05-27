@@ -593,27 +593,15 @@
 
 
                     let data = {
-                        "flt_total_con_iva": this.factura.txtTotalPagarInt,
-                        "flt_valor_iva": 0,
-                        "str_id_pago": "",//enviar vacio
-                        "str_descripcion_pago": this.factura.txtDescFactura,
-                        "str_email": this.matricula.email_persona,
-                        "str_id_cliente": this.matricula.txtId,
-                        "str_tipo_id": this.matricula.codTipoID,
-                        "str_nombre_cliente": this.matricula.txtNombre,
-                        "str_apellido_cliente": this.matricula.txtApellido,
-                        "str_telefono_cliente": this.matricula.cel_persona,
-                        "str_opcional1": this.factura.cod_paquete, //codigo del paquete
-                        "str_opcional2": this.numeroLetras,
-                        "str_opcional3": '{{ ID_MATRICULA }}',
-                        "observacion_factura": this.factura.txtDescFactura,
+                        "cod_matricula": '{{ ID_MATRICULA }}',
+                        "isPagoOnline": true,
                     }
 
 
                     this.activarBoton = false;
                     this.txtBoton = "Procesando...";
                     fetch(
-                        `{{BASE_URL}}/transaccion/InicioPago`, {
+                        `{{BASE_URL}}/transaccion/InicioPagoMatricula`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

@@ -11,7 +11,7 @@
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
 
-    <title>Inicio</title>
+    <title>Pago personalizado</title>
 </head>
 
 <body class="bg-dark">
@@ -148,16 +148,20 @@
 
                             <div class="row mt-2">
                                 <div class="col-md-8">
-
+                                            <button class="btn btn-outline-info" data-bs-toggle="tooltip"
+                                                @click="inicarPago(false)" data-bs-placement="top"
+                                                :disabled="!activarBotonEf" title="Genera PDF para pago en efectivo">
+                                                <i class="fa fa-barcode"></i> {[txtBotonEf]}
+                                            </button>
                                 </div>
                                 <div class="col-md-4 ">
                                     <div style="float: right;">
                                         <button type="submit" :disabled="!formpago.activarBoton"
-                                            class="btn btn-success " @click="continuarPago">
+                                            class="btn btn-success " @click="inicarPago(true)">
                                             <i id="icon" v-if="!formpago.activarBoton"
                                                 class="fa fa-spinner fa-pulse"></i>
 
-                                            {[ formpago.txtBoton ]}
+                                            {[ formpago.txtBoton ]}  <i class="fa fa-credit-card"></i> 
                                         </button>
                                     </div>
 
@@ -198,10 +202,13 @@
                         txtFile: "",
                         txtTotal: 0,
                         activarBoton: true,
-                        txtBoton: "Confirmar pago",
+                        txtBoton: "Pago en linea",
                         colorTextoAlert: "text-success"
                     },
                     numeroLetras: "CERO PESOS",
+                    activarBotonEf: true,
+                    txtBotonEf: "Pagar en efectivo",
+                    txtBoton: "Pago en linea"
                 };
             },
             methods: {
@@ -228,6 +235,79 @@
                             }
                         });
                 },
+
+                inicarPago(isPagoOnline=true) {
+                    if (this.formpago.txtTotal < 1000) {
+                        this.numeroLetras = "Ingrese un valor mayor que 1000";
+                        this.formpago.colorTextoAlert = "text-danger";
+                    } else {
+                        this.activarBotonEf = false;
+                        this.formpago.activarBoton = false;
+
+                        if(isPagoOnline){
+                            this.formpago.activarBoton = false;
+                            this.formpago.txtBoton = "Procesando...";
+                        }else{
+                            this.activarBotonEf = false;
+                            this.txtBotonEf = "Procesando...";
+                        }
+
+
+
+                        let data = {
+                            "isPagoOnline" : isPagoOnline,
+                            "total": this.formpago.txtTotal,
+                            "flt_valor_iva": 0,
+                            "str_id_pago": "",//enviar vacio
+                            "des_concepto": this.formpago.txtConcepto,
+                            "email_persona": this.formpago.txtEmail,
+                            "id_persona": this.formpago.txtId,
+                            "tipo_id": this.formpago.selTipoIde,
+                            "nombres": this.formpago.txtNombre,
+                            "apellidos": this.formpago.txtApellido,
+                            "cel_persona": this.formpago.txtCelular,
+                            "str_opcional1": "0", //codigo del paquete
+                            "str_opcional2": this.numeroLetras,
+
+                        };
+
+                        fetch(
+                            `{{BASE_URL}}/transaccion/InicioPagoGeneral`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                if (data.error) {
+                                    this.formpago.colorTextoAlert = "text-danger";
+                                    this.numeroLetras = data.message;
+                                    this.formpago.activarBoton = true;
+                                    this.formpago.txtBoton = "Pago en linea";
+                                    this.activarBotonEf = true;
+                                    this.txtBotonEf ="Pago en efectivo";
+                                } else {
+
+                                    if(isPagoOnline){
+                                        this.formpago.activarBoton = false;
+                                        this.formpago.txtBoton = "Redireccionando...";
+                                    }else{
+                                        this.activarBotonEf = false;
+                                        this.txtBotonEf ="Redireccionando...";
+                                    }
+                                    window.location = data.data.str_url;
+
+                                }
+
+                            }).catch((err)=>{
+                                console.log(err);
+                            });
+                    }
+                },
+
+
                 continuarPago() {
                     if (this.formpago.txtTotal < 1000) {
                         this.numeroLetras = "Ingrese un valor mayor que 1000";

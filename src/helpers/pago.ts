@@ -227,8 +227,6 @@ export const generarCodigoBarras = async (referencia: string, valor: string, fec
     const svgText = xmlSerializer.serializeToString(svgNode);
 
     return [codigoBarras, svgText];
-
-
     
   }catch (error) {
     return [null, null];
@@ -236,4 +234,6 @@ export const generarCodigoBarras = async (referencia: string, valor: string, fec
 
 
 };
+
+
 

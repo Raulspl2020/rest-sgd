@@ -56,7 +56,7 @@
 
         .table-border th {
             border: 1px solid #000000;
-            background: #80d8ff;
+            background: #b2ebf2;
             padding: 2px;
 
         }
@@ -137,15 +137,15 @@
                 <td>Mocoa, Putumayo - Colombia</td>
             </tr>
             <tr>
-                <td>Periodo: {{matricula.nom_periodo}}</td>
+                <td></td>
             </tr>
         </table>
 
 
         <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
             <tr>
-                <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
-                <th rowspan="2">REF: {{referencia}}</th>
+                <td colspan="2">INSTITUTO TECNOLOGICO DEL PUTUMAYO</td>
+                <th rowspan="4">REF: {{referencia}}</th>
                 <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
                     <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
                         <strong>ESTUDIANTE</strong>
@@ -156,16 +156,14 @@
                 <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
             </tr>
             <tr>
-                <td colspan="2">Nombre: {{matricula.ape1_persona }} {{ matricula.ape2_persona }} {{
-                    matricula.nom1_persona }} {{ matricula.nom2_persona}}</td>
-                <td>Pago ordinario hasta : <strong style="float: right;">{{fecha_fin_ordinaria}}</strong></td>
+                <td colspan="1">Nombre: {{apellidos }} {{ nombres }} </td>
+               <td>Identificación: {{id_persona}}</td>
             </tr>
 
             <tr>
-                <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
-                <td>Código matrícula: {{matricula.cod_matricula}}</td>
-                <td>
-                </td>
+                <td>Celular: {{cel_persona}}</td>
+                <td>Email: {{email_persona}} </td>
+             
             </tr>
             <tr>
                 <th colspan="2">CONCEPTO FACTURA</th>
@@ -176,8 +174,9 @@
                     <ul>
 
                         {{#each  det_factura }}
-                        <ul style="font-size: 8px;">{{ paquete }}</ul>
+                        <span style="font-size: 8px;">{{ concepto }} : </span>
                         {{/each}}
+                        <span style="font-size: 8px;">{{des_pago}}</span>
 
 
                     </ul>
@@ -191,7 +190,7 @@
                         esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
                         en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
                 </td>
-                <td style="background: #8bc34a;"> Pago ordinario : <Strong  style="float: right;">$ {{ total_ordi_formateado }}</Strong> </td>
+                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_a_pagar }}</Strong> </td>
 
             </tr>
 
@@ -206,100 +205,6 @@
     <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
 
     <hr>
-
-
-    <div class="">
-
-        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
-            <tr>
-                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 120px;"
-                        class="img img-fluid">
-                </td>
-                <td><strong style="font-size: 10px;">
-                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
-                        <br>NIT. 800.247.940-1
-                    </strong></td>
-                <td style="text-align: right">
-                  
-                </td>
-            </tr>
-            <tr>
-                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
-                <td rowspan="3" style="text-align: right; margin: 0px;">
-                    {{{codigo}}}
-                </td>
-            </tr>
-            <tr>
-                <td>Mocoa, Putumayo - Colombia</td>
-            </tr>
-            <tr>
-                <td>Periodo: {{matricula.nom_periodo}}</td>
-            </tr>
-        </table>
-
-
-        <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
-            <tr>
-                <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
-                <th rowspan="2">REF: {{referencia}}</th>
-                <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
-                    <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
-                        <strong>UNIVERSIDAD</strong>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
-            </tr>
-            <tr>
-                <td colspan="2">Nombre: {{matricula.ape1_persona }} {{ matricula.ape2_persona }} {{
-                    matricula.nom1_persona }} {{ matricula.nom2_persona}}</td>
-                <td>Pago ordinario hasta : <strong style="float: right;">{{fecha_fin_ordinaria}}</strong></td>
-            </tr>
-
-            <tr>
-                <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
-                <td>Código matrícula: {{matricula.cod_matricula}}</td>
-                <td>
-                </td>
-            </tr>
-            <tr>
-                <th colspan="2">CONCEPTO FACTURA</th>
-                <th>DESCUENTOS</th>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <ul>
-                        {{#each  det_factura }}
-                        <ul style="font-size: 8px;">{{ paquete }}</ul>
-                        {{/each}}
-
-                    </ul>
-                </td>
-                <td style="text-align: center;">0%</td>
-            </tr>
-            <tr>
-                <td rowspan="2" colspan="2" style="width: 70%;">
-                    <small style="font-size: 10px; ">Páguese en efectivo en el banco <strong>BBVA</strong> o
-                        <strong>SuperGiros</strong>. Exija en
-                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
-                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
-                </td>
-                <td style="background: #8bc34a;"> Pago ordinario : <Strong style="float: right;">$ {{total_ordi_formateado}}</Strong> </td>
-
-            </tr>
-
-            <tr>
-             
-            </tr>
-
-        </table>
-
-
-    </div>
-    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
-    <hr>
-
 
     <div class="">
 
@@ -326,15 +231,110 @@
                 <td>Mocoa, Putumayo - Colombia</td>
             </tr>
             <tr>
-                <td>Periodo: {{matricula.nom_periodo}}</td>
+                <td></td>
             </tr>
         </table>
 
 
         <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
             <tr>
-                <td colspan="2">Sede: {{ matricula.siglas_colegio }}</td>
-                <th rowspan="2">REF: {{referencia}}</th>
+                <td colspan="2">INSTITUTO TECNOLOGICO DEL PUTUMAYO</td>
+                <th rowspan="4">REF: {{referencia}}</th>
+                <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
+                    <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
+                        <strong>UNIVERSIDAD</strong>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
+            </tr>
+            <tr>
+                <td colspan="1">Nombre: {{apellidos }} {{ nombres }} </td>
+               <td>Identificación: {{id_persona}}</td>
+            </tr>
+
+            <tr>
+                <td>Celular: {{cel_persona}}</td>
+                <td>Email: {{email_persona}} </td>
+             
+            </tr>
+            <tr>
+                <th colspan="2">CONCEPTO FACTURA</th>
+                <th>DESCUENTOS</th>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <ul>
+
+                        {{#each  det_factura }}
+                        <span style="font-size: 8px;">{{ concepto }} : </span>
+                        {{/each}}
+                        <span style="font-size: 8px;">{{des_pago}}</span>
+
+
+                    </ul>
+                </td>
+                <td style="text-align: center;">0%</td>
+            </tr>
+            <tr>
+                <td rowspan="2" colspan="2" style="width: 70%;">
+                    <small style="font-size: 10px; ">Páguese en efectivo en el banco <strong>BBVA</strong> o
+                        <strong>SuperGiros</strong>. Exija en
+                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
+                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
+                </td>
+                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_a_pagar }}</Strong> </td>
+
+            </tr>
+
+            <tr>
+              
+            </tr>
+
+        </table>
+
+
+    </div>
+    <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
+ <hr>
+
+
+ 
+    <div class="">
+
+        <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
+            <tr>
+                <td rowspan="4"><img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 120px;"
+                        class="img img-fluid">
+                </td>
+                <td><strong style="font-size: 10px;">
+                        INSTITUTO TECNOLOGICO DEL PUTUMAYO
+                        <br>NIT. 800.247.940-1
+                    </strong></td>
+                <td style="text-align: right">
+                   
+                </td>
+            </tr>
+            <tr>
+                <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
+                <td rowspan="3" style="text-align: right; margin: 0px;">
+                    {{{codigo}}}
+                </td>
+            </tr>
+            <tr>
+                <td>Mocoa, Putumayo - Colombia</td>
+            </tr>
+            <tr>
+                <td></td>
+            </tr>
+        </table>
+
+
+        <table style="width: 100%; font-size: 10px;" class="table-border" cellpadding="0" cellspacing="0">
+            <tr>
+                <td colspan="2">INSTITUTO TECNOLOGICO DEL PUTUMAYO</td>
+                <th rowspan="4">REF: {{referencia}}</th>
                 <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
                     <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
                         <strong>BANCO</strong>
@@ -345,36 +345,41 @@
                 <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
             </tr>
             <tr>
-                <td colspan="2">Nombre: {{matricula.ape1_persona }} {{ matricula.ape2_persona }} {{
-                    matricula.nom1_persona }} {{ matricula.nom2_persona}}</td>
-                <td>Pago ordinario hasta : <strong style="float: right;">{{fecha_fin_ordinaria}}</strong></td>
+                <td colspan="1">Nombre: {{apellidos }} {{ nombres }} </td>
+               <td>Identificación: {{id_persona}}</td>
             </tr>
 
             <tr>
-                <td>Identificación: {{matricula.tipo_doc}}-{{matricula.ide_persona}}</td>
-                <td>Código matrícula: {{matricula.cod_matricula}}</td>
-                <td>
-                </td>
+                <td>Celular: {{cel_persona}}</td>
+                <td>Email: {{email_persona}} </td>
+             
             </tr>
-            {{!-- <tr>
+            <tr>
                 <th colspan="2">CONCEPTO FACTURA</th>
                 <th>DESCUENTOS</th>
-            </tr> --}}
-            {{!-- <tr>
+            </tr>
+            <tr>
                 <td colspan="2">
                     <ul>
-                        <li>punto uno</li>
-                        <li>punto dos</li>
-                        <li>punto tres</li>
+
+                        {{#each  det_factura }}
+                        <span style="font-size: 8px;">{{ concepto }} : </span>
+                        {{/each}}
+                        <span style="font-size: 8px;">{{des_pago}}</span>
+
+
                     </ul>
                 </td>
                 <td style="text-align: center;">0%</td>
-            </tr> --}}
+            </tr>
             <tr>
-                <td rowspan="2" colspan="2" style="width: 70%; border: 0px;">
-
+                <td rowspan="2" colspan="2" style="width: 70%;">
+                    <small style="font-size: 10px; ">Páguese en efectivo en el banco <strong>BBVA</strong> o
+                        <strong>SuperGiros</strong>. Exija en
+                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
+                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
                 </td>
-                <td style="background: #8bc34a;"> Pago ordinario : <Strong style="float: right;">$ {{total_ordi_formateado}}</Strong> </td>
+                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_a_pagar }}</Strong> </td>
 
             </tr>
 
