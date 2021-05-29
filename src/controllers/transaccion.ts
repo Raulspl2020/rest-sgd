@@ -9,6 +9,7 @@ import { ListResponsePago } from "../models/ResponsePago";
 import { parse, format } from 'date-format-parse';
 import { consultarpagoMatricula } from "../controllers/matricula";
 import { subirArchivo } from '../helpers/subir-archivo';
+import { guardarLog } from "../provider/log_provider";
 import {
   guardarPago,
   guardarPagoyDetalle,
@@ -104,6 +105,7 @@ export const soporteDescuento = async (req: any, res = response) => {
 //====================
 //   /transaccion/estado
 //=====================
+//este servicio es consumido con ZONA pagos para la notificacion de un pago
 export const actualizarTransaccion = async (req: any, res = response) => {
 
   let codigo_pago = req.query.id_pago;
@@ -199,12 +201,23 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
 
       if (resDb2) {
-        res.status(200).json({
-          message: "Pago actualizado exitosamente",
-          error: false,
-          data: pagoDecoded,
-          data_server: responseData.str_res_pago,
-        });
+      let response = {
+        message: "Pago actualizado exitosamente",
+        error: false,
+        data: pagoDecoded,
+        data_server: responseData.str_res_pago,
+      };
+      
+      guardarLog({
+        'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+        'json_body' :  JSON.stringify(req.query),
+        'json_response': JSON.stringify(response),
+        'estado' :  1,
+        'message': "OK",
+        'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      });
+
+        res.status(200).json(response);
       } else {
         throw new Error("No se ha podido insertar los detalle de pago");
       }
@@ -214,11 +227,23 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
 
   } catch (error) {
-    res.status(500).json({
+
+    let response = {
       message: "Servicio no disponible temporalmente",
       error: true,
       det_error: error.message
+    };
+
+    guardarLog({
+      'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+      'json_body' :  JSON.stringify(req.query),
+      'json_response': JSON.stringify(response),
+      'estado' :  0,
+      'message': error.message,
+      'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
     });
+
+    res.status(500).json(response);
   }
 
 
@@ -443,7 +468,7 @@ const savePago = async (infoPago: any, responseData: any, dataMatricula: any) =>
     let tPago: any = {
       codigo: infoPago.str_id_pago,
       descripcion: infoPago.str_descripcion_pago,
-      json_response: responseData,
+     // json_response: responseData,
       estado_id: 200,
       estudiante_id: infoPago.str_id_cliente,
       matricula_id: (infoPago.str_opcional3 == "") ? null : infoPago.str_opcional3,

@@ -75,6 +75,8 @@ export const validatorCampos = (req: any, res: any, next: any) => {
 //metodos para validar los datos pago en efectivo consumidos por el banco
 
 export const consultaFacturaMid = (req: any, res: any, next: any) => {
+  console.log("Disparando middleware");
+  console.log(req.body);
   const validationRule = {
     Id_Comercio: "required|numeric",
     Password: "required",
@@ -98,6 +100,8 @@ export const consultaFacturaMid = (req: any, res: any, next: any) => {
 };
 
 export const registrarPagoMid = (req: any, res: any, next: any) => {
+  console.log("Disparando middleware");
+  console.log(req.body);
   const validationRule = {
     Id_Comercio: "required|numeric",
     Password: "required",
@@ -124,6 +128,8 @@ export const registrarPagoMid = (req: any, res: any, next: any) => {
 };
 
 export const reversarPagoMid = (req: any, res: any, next: any) => {
+  console.log("Disparando middleware");
+  console.log(req.body);
   const validationRule = {
     Id_Comercio: "required|numeric",
     Password: "required",
@@ -148,3 +154,31 @@ export const reversarPagoMid = (req: any, res: any, next: any) => {
     });
   }
 };
+
+
+
+
+// validar servicio consumido por zonapagos para actualizar el estado de un pago
+
+export const actualizarPago = (req: any, res: any, next: any) => {
+  console.log("Disparando middleware");
+  console.log(req.query);
+  const validationRule = {
+    id_pago: "required|string",
+    id_comercio: "string|present",
+  };
+
+
+  let validation = new Validator(req.query, validationRule);
+
+  if (validation.passes()) {
+    next();
+  } else {
+    res.status(412).send({
+      error: true,
+      message: "Hay campos obligatorios sin completar",
+      errors: validation.errors.all(),
+    });
+  }
+};
+

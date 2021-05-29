@@ -1,12 +1,13 @@
 import { parse, format } from "date-format-parse";
 import { actualizarPagoyDetalle, consultaFacturaBanco, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
+import { guardarLog } from "../provider/log_provider";
 
 //====================
 //   /transaccion/consultaFactura
 //=====================
 export const consultaFacturaService = async (req: any, res: any) => {
-  //pendiente validar campos obligatorios
+
   let body = req.body;
 
   let Id_Comercio = parseInt(body.Id_Comercio);
@@ -23,30 +24,37 @@ export const consultaFacturaService = async (req: any, res: any) => {
   };
 
   try {
-    if (
-      Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
-      Password === process.env.ZONAPAGOS_CAJA_PASS
-    ) {
+    if (Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO && Password === process.env.ZONAPAGOS_CAJA_PASS) {
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
 
       if (resultObjectDB != false) {
         let jsonResponse = JSON.parse(resultObjectDB.data[0].json_response);
 
-        responseData.Fecha_limite_pago = format(
-          parse(jsonResponse.general.fecha_fin_extraordinaria, "DD-MM-YYYY"),
-          "DD/MM/YYYY"
-        );
+        let fechaLim1 = format(parse(jsonResponse.general.fecha_fin_extraordinaria, "DD-MM-YYYY"),"DD/MM/YYYY");
+        let fechaLim2 = format(parse(jsonResponse.fecha_limite_pago, "DD-MM-YYYY"),"DD/MM/YYYY");
+  
+        let fechaLimitePago = (jsonResponse.general.fecha_fin_extraordinaria==undefined) ? jsonResponse.fecha_limite_pago : jsonResponse.general.fecha_fin_extraordinaria;
+
+        responseData.Fecha_limite_pago = format(parse(fechaLimitePago, "DD-MM-YYYY"),"DD/MM/YYYY");
         responseData.Valor_factura = resultObjectDB.total;
         responseData.Codigo_Estado = "0";
         responseData.Descripción_estado = "Exitoso";
-
-        res.status(200).json(responseData);
       } else {
         responseData.Codigo_Estado = "1";
-        responseData.Descripción_estado =
-          "Factura no disponible para pago / Cliente no Existe";
-        res.status(200).json(responseData);
+        responseData.Descripción_estado = "Factura no disponible para pago / Cliente no Existe";
       }
+
+      guardarLog({
+        'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+        'json_body' :  JSON.stringify(body),
+        'json_response': JSON.stringify(responseData),
+        'estado' :  1,
+        'message': "OK",
+        'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      });
+
+      res.status(200).json(responseData);
+
     } else {
       throw new Error("Usuario o contraseña incorrectos");
     }
@@ -54,8 +62,15 @@ export const consultaFacturaService = async (req: any, res: any) => {
     console.log(error.message);
 
     responseData.Codigo_Estado = "2";
-    responseData.Descripción_estado =
-      "Ocurrió un error inesperado en la operación";
+    responseData.Descripción_estado = "Ocurrió un error inesperado en la operación";
+    guardarLog({
+      'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+      'json_body' :  JSON.stringify(body),
+      'json_response': JSON.stringify(responseData),
+      'estado' :  0,
+      'message': error.message,
+      'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+    });
     res.status(500).json(responseData);
   }
 };
@@ -84,10 +99,7 @@ export const registrarPagoService = async (req: any, res: any) => {
   };
 
   try {
-    if (
-      Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
-      Password === process.env.ZONAPAGOS_CAJA_PASS
-    ) {
+    if (Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO && Password === process.env.ZONAPAGOS_CAJA_PASS) {
       let detPago: any = [];
 
             //aqui la consulta encargada de actualizar el pago
@@ -119,13 +131,24 @@ export const registrarPagoService = async (req: any, res: any) => {
         responseData.Codigo_Estado = "0";
         responseData.Severidad = "I";
         responseData.Descripcion ="Se realizó exitosamente la actualización del pago.";
-        res.status(200).json(responseData);
       } else {
         responseData.Codigo_Estado = "1";
         responseData.Severidad = "W";
         responseData.Descripción_estado ="No se pudo realizar la actualización del pago.";
-        res.status(200).json(responseData);
       }
+
+
+      guardarLog({
+        'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+        'json_body' :  JSON.stringify(body),
+        'json_response': JSON.stringify(responseData),
+        'estado' :  1,
+        'message': "OK",
+        'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      });
+      res.status(200).json(responseData);
+
+
     } else {
       throw new Error("Usuario o contraseña incorrectos");
     }
@@ -133,6 +156,15 @@ export const registrarPagoService = async (req: any, res: any) => {
     responseData.Codigo_Estado = "2";
     responseData.Severidad = "E";
     responseData.Descripcion = "Ocurrió un error inesperado en la operación: ";
+    guardarLog({
+      'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+      'json_body' :  JSON.stringify(body),
+      'json_response': JSON.stringify(responseData),
+      'estado' :  0,
+      'message': error.message,
+      'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+    });
+
     res.status(500).json(responseData);
   }
 };
@@ -205,13 +237,23 @@ export const reversarPagoService = async (req: any, res: any) => {
         responseData.Codigo_Estado = "0";
         responseData.Severidad = "I";
         responseData.Descripcion = "Se realizó exitosamente el reverso del pago";
-        res.status(200).json(responseData);
       } else {
         responseData.Codigo_Estado = "1";
         responseData.Severidad = "W";
         responseData.Descripción_estado = "No se pudo realizar el reverso del pago.";
-        res.status(200).json(responseData);
       }
+
+      guardarLog({
+        'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+        'json_body' :  JSON.stringify(body),
+        'json_response': JSON.stringify(responseData),
+        'estado' :  1,
+        'message': "OK",
+        'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      });
+      res.status(200).json(responseData);
+      
+
     } else {
       throw new Error("Usuario o contraseña incorrectos");
     }
@@ -219,6 +261,14 @@ export const reversarPagoService = async (req: any, res: any) => {
     responseData.Codigo_Estado = "2";
     responseData.Severidad = "E";
     responseData.Descripcion = "Ocurrió un error inesperado en la operación: ";
+    guardarLog({
+      'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+      'json_body' :  JSON.stringify(body),
+      'json_response': JSON.stringify(responseData),
+      'estado' :  0,
+      'message': error.message,
+      'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+    });
     res.status(500).json(responseData);
   }
 };

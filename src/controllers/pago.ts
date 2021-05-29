@@ -262,7 +262,7 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
       let tPago: any = {
         codigo: infoPago.str_id_pago,
         descripcion: infoPago.det_factura[0].paquete,
-        json_response: JSON.stringify(infoPago),
+       // json_response: JSON.stringify(infoPago),
         estado_id: 200,
         estudiante_id: infoPago2.matricula.ide_persona,
         matricula_id: infoPago2.matricula.cod_matricula,
