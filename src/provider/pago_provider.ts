@@ -408,8 +408,7 @@ export const existePago = async (cod_paquete: string, matricula_id: string) => {
       "=",
       "fin_estado_pago._id"
     )
-    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id })
-    .andWhere('fin_pago.estado_id', '<>', 1);
+    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id });
 
   if (result.length > 0) {
     return result[0];
