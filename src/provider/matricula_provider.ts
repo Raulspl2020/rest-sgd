@@ -73,6 +73,25 @@ export const getDetPeriodo = async (cod_colegio: any, cod_periodo: any, fechaAct
 };
 
 
+//obtiene las fechas configuradas en cada sede: col_colegio_periodo
+export const getFechasPeriodo = async (cod_colegio: any, cod_periodo: any) => {
+    // let fechaActual='2021-03-29';
+    let result = await conDB
+        .select()
+        .from("col_colegio_periodo")
+        .where({
+            'cod_colegio': cod_colegio,
+            'cod_periodo': cod_periodo
+        });
+    if (result.length > 0) {
+        return result[0];
+    } else {
+        return false;
+    }
+};
+
+
+
 //consultas las fechas de un periodo
 export const getDatePeriodo = async (cod_colegio: any, cod_periodo: any) => {
     // let fechaActual='2021-03-29';

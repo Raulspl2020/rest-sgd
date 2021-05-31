@@ -15,6 +15,9 @@ export const consultaFacturaBanco = async (id: any) => {
     , fin_detalle_factura.aumento
     , fin_detalle_factura.valor_unidad
     , fin_detalle_factura.cantidad
+    , fin_pago.categoria_pago_id
+    , fin_pago.periodo_id
+    , fin_pago.matricula_id
 FROM
     fin_detalle_factura
     INNER JOIN fin_pago 

@@ -2,6 +2,9 @@ import { parse, format } from "date-format-parse";
 import { actualizarPagoyDetalle, consultaFacturaBanco, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { guardarLog } from "../provider/log_provider";
+import { getConfigPeriodo } from "../provider/pago_provider";
+import { consultarpagoMatricula } from "./matricula";
+import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provider";
 
 //====================
 //   /transaccion/consultaFactura
@@ -11,6 +14,12 @@ export const consultaFacturaService = async (req: any, res: any) => {
   let body = req.body;
 
   //pendiente validar los pagos de metricula extraordinaria
+  let fechaActual =new Date();
+      fechaActual.setHours(0,0,0,0);
+
+  let fechaLimitePago:string  = format(new Date(),"DD/MM/YYYY");
+  let totalaPagar = 0;
+
 
   let Id_Comercio = parseInt(body.Id_Comercio);
   let Password = body.Password;
@@ -29,17 +38,59 @@ export const consultaFacturaService = async (req: any, res: any) => {
     if (Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO && Password === process.env.ZONAPAGOS_CAJA_PASS) {
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
 
+      console.log(resultObjectDB);
+
+     // console.log(JSON.stringify(resultObjectDB));
+
+
+
       if (resultObjectDB != false) {
         let jsonResponse = JSON.parse(resultObjectDB.data[0].json_response);
+        let categoria_id = resultObjectDB.data[0].categoria_pago_id;
+      //  let categoria_id = 0;
+
+        //verificamos si es un pago de matricula
+        if(categoria_id==1){
+        let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
+
+        let resultMatricula = await getInfoMatricula(matricula_id);
+        let resultDB = resultMatricula[0][0];
+
+
+        console.log("El resultado de la base de datos es");
+        console.log(resultDB);
+
+
+        let  periodo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
+        let finOrdianria =  new Date(periodo.fec_fin_matordinaria);
+        let iniOrdianria =  new Date(periodo.fec_ini_matordinaria);
+
+          //si no es matricula ordinaria
+          if(fechaActual.getTime() > finOrdianria.getTime()){
+            fechaLimitePago =  format(new Date(periodo.fec_fin_matextraord),"DD/MM/YYYY");
+          }else if(fechaActual.getTime() <= finOrdianria.getTime() &&  fechaActual.getTime() >= iniOrdianria.getTime() ){
+            fechaLimitePago =  format(new Date(periodo.fec_fin_matordinaria),"DD/MM/YYYY");
+          }
+          
+        }
+
+        if(categoria_id==5){
+          let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
+  
+          let resultMatricula = await getInfoMatricula(matricula_id);
+          let resultDB = resultMatricula[0][0];
+  
+          let  periodo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
+          let finInscripcion =  new Date(periodo.fec_fin_ins_nuevos);
+
+          fechaLimitePago =  format(finInscripcion,"DD/MM/YYYY");
+            
+          }
+  
 
         //si existe fecha extra-ordinaria se debe cobrar el 10% mas
-
-        let fechaLim1 = format(parse(jsonResponse.general.fecha_fin_extraordinaria, "DD-MM-YYYY"),"DD/MM/YYYY");
-        let fechaLim2 = format(parse(jsonResponse.fecha_limite_pago, "DD-MM-YYYY"),"DD/MM/YYYY");
   
-        let fechaLimitePago = (jsonResponse.general.fecha_fin_extraordinaria==undefined) ? jsonResponse.fecha_limite_pago : jsonResponse.general.fecha_fin_extraordinaria;
-
-        responseData.Fecha_limite_pago = format(parse(fechaLimitePago, "DD-MM-YYYY"),"DD/MM/YYYY");
+        responseData.Fecha_limite_pago = fechaLimitePago;
         responseData.Valor_factura = resultObjectDB.total;
         responseData.Codigo_Estado = "0";
         responseData.Descripción_estado = "Exitoso";
