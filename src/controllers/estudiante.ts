@@ -116,6 +116,7 @@ export const getMateriasPerdidasEst = async (req: any, res: any) => {
 
 
 export const getInfoEstudiante = async (req: any, res: any) => {
+    let serviceName ="estudiante.detalle";
     let ide_estuduante = req.params.ide;
     let fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
     console.log(fullUrl);

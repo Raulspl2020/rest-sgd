@@ -10,6 +10,8 @@ export const consultaFacturaService = async (req: any, res: any) => {
 
   let body = req.body;
 
+  //pendiente validar los pagos de metricula extraordinaria
+
   let Id_Comercio = parseInt(body.Id_Comercio);
   let Password = body.Password;
   let Id_Banco = parseInt(body.Id_Banco);
@@ -30,6 +32,8 @@ export const consultaFacturaService = async (req: any, res: any) => {
       if (resultObjectDB != false) {
         let jsonResponse = JSON.parse(resultObjectDB.data[0].json_response);
 
+        //si existe fecha extra-ordinaria se debe cobrar el 10% mas
+
         let fechaLim1 = format(parse(jsonResponse.general.fecha_fin_extraordinaria, "DD-MM-YYYY"),"DD/MM/YYYY");
         let fechaLim2 = format(parse(jsonResponse.fecha_limite_pago, "DD-MM-YYYY"),"DD/MM/YYYY");
   
@@ -39,9 +43,19 @@ export const consultaFacturaService = async (req: any, res: any) => {
         responseData.Valor_factura = resultObjectDB.total;
         responseData.Codigo_Estado = "0";
         responseData.Descripción_estado = "Exitoso";
+
+
+        if(resultObjectDB.data[0].estado_id==1){
+          responseData.Codigo_Estado = "1";
+          responseData.Descripción_estado = "Factura no disponible para pago / Cliente no Existe";
+          responseData.Info_Adicional="La factura "+Referencia_pago+" ya ha sido pagada";
+        }
+
+
       } else {
         responseData.Codigo_Estado = "1";
         responseData.Descripción_estado = "Factura no disponible para pago / Cliente no Existe";
+        responseData.Info_Adicional="No se encontro la factura "+Referencia_pago;
       }
 
       guardarLog({
@@ -87,7 +101,7 @@ export const registrarPagoService = async (req: any, res: any) => {
   let Referencia_pago = parseInt(body.Referencia_pago);
   let Fecha_pago = body.Fecha_pago;
   let Valor_pagado = body.Valor_pagado;
-  let Id_transacción = body.Id_transacción;
+  let Id_transaccion = body.Id_transacción;
   let Info_Adicional = body.Info_Adicional;
 
   let horaActual = format(new Date(),'HH:mm:ss');
@@ -105,6 +119,14 @@ export const registrarPagoService = async (req: any, res: any) => {
             //aqui la consulta encargada de actualizar el pago
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
 
+      if(resultObjectDB==false){
+        throw new Error("No se ecnontro la factura "+Referencia_pago);
+      }
+
+      if(resultObjectDB.data[0].estado_id==1){
+        throw new Error("La factura "+Referencia_pago+" ya se encuentra pagada");
+      }
+
       detPago.push({
         '_id': uuidv4(),
         'pago_id': Referencia_pago,
@@ -114,9 +136,9 @@ export const registrarPagoService = async (req: any, res: any) => {
         'estado_pago_id': 1,
         'forma_pago_id': 99,
         'nombre_banco': Id_Banco,
-        'codigo_transaccion': Id_transacción,
+        'codigo_transaccion': Id_transaccion,
         'fecha': format(parse(Fecha_pago+" "+horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
-        'campo1': Info_Adicional,
+        'campo1': (Info_Adicional) ?  Info_Adicional : null,
       });
 
       //preparamos la data para guardar
@@ -153,6 +175,7 @@ export const registrarPagoService = async (req: any, res: any) => {
       throw new Error("Usuario o contraseña incorrectos");
     }
   } catch (error) {
+    console.log(error.message);
     responseData.Codigo_Estado = "2";
     responseData.Severidad = "E";
     responseData.Descripcion = "Ocurrió un error inesperado en la operación: ";
@@ -188,7 +211,7 @@ export const reversarPagoService = async (req: any, res: any) => {
   let Referencia_pago = parseInt(body.Referencia_pago);
   let Fecha_reverso = body.Fecha_reverso;
   let Valor_pagado = body.Valor_pagado;
-  let Id_transacción = body.Id_transacción;
+  let Id_transaccion = body.Id_transacción;
   let Info_Adicional = body.Info_Adicional;
 
   let horaActual = format(new Date(),'HH:mm:ss');
@@ -201,33 +224,38 @@ export const reversarPagoService = async (req: any, res: any) => {
 
   try {
     if (
-      Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO &&
-      Password === process.env.ZONAPAGOS_CAJA_PASS
-    ) {
+      Id_Comercio.toString() === process.env.ZONAPAGOS_CAJA_IDCOMERCIO && Password === process.env.ZONAPAGOS_CAJA_PASS) {
+
+        //comprobamos si existe el pago en la DB
 
       //aqui la consulta encargada de actualizar el pago
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
 
+      if(resultObjectDB==false){
+        throw new Error("No se encontro la factura: "+ Referencia_pago);
+      }
+
+      if(resultObjectDB.data[0].estado_id!=1){
+        throw new Error("No se encontraron facturas pagadas para reverso");
+      }
+
+
       let detPago: any = {
-        '_id': uuidv4(),
         'pago_id': Referencia_pago,
         'valor_pago': Valor_pagado,
         'total_pago': resultObjectDB.total,
-        'valor_iva_pago': 0,
-        'estado_pago_id': 1,
-        'forma_pago_id': 99,
+        'estado_pago_id': 200,
         'nombre_banco': Id_Banco,
-        'codigo_transaccion': Id_transacción,
-        'fecha': format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
-        'fecha_reverso': format(parse(Fecha_reverso + " " + horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
-        'campo1': (Info_Adicional) ?  Info_Adicional : null,
+        'codigo_transaccion': Id_transaccion,
       };
 
 
       //preparamos la data para guardar
       let tPago: any = {
-        estado_id: 1,
-        fecha_update: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        'estado_id': 200,
+        'fecha_update': format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        'fecha_reverso': format(parse(Fecha_reverso + " " + horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
+        'valor_reverso' : Valor_pagado,
       };
 
       let resultUpdatePago = await reversarPagoyDetalle(Referencia_pago, tPago, detPago);
@@ -258,6 +286,7 @@ export const reversarPagoService = async (req: any, res: any) => {
       throw new Error("Usuario o contraseña incorrectos");
     }
   } catch (error) {
+    console.log(error.message);
     responseData.Codigo_Estado = "2";
     responseData.Severidad = "E";
     responseData.Descripcion = "Ocurrió un error inesperado en la operación: ";
