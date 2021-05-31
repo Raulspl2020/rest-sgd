@@ -1,5 +1,5 @@
 import { parse, format } from "date-format-parse";
-import { actualizarPagoyDetalle, consultaFacturaBanco, reversarPagoyDetalle } from "../provider/factura_provider";
+import { actualizarPagoyDetalle, consultaFacturaBanco, consultarPagoFactura, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { guardarLog } from "../provider/log_provider";
 import { getConfigPeriodo } from "../provider/pago_provider";
@@ -15,9 +15,14 @@ export const consultaFacturaService = async (req: any, res: any) => {
 
   //pendiente validar los pagos de metricula extraordinaria
   let fechaActual =new Date();
-      fechaActual.setHours(0,0,0,0);
+  fechaActual.setHours(0,0,0,0);
+  let fechaActual2 =new Date();
+  fechaActual2.setMonth(fechaActual2.getMonth() + 12);
 
-  let fechaLimitePago:string  = format(new Date(),"DD/MM/YYYY");
+
+
+
+  let fechaLimitePago:string  = format(fechaActual2,"DD/MM/YYYY");
   let totalaPagar = 0;
 
 
@@ -82,7 +87,6 @@ export const consultaFacturaService = async (req: any, res: any) => {
   
           let  periodo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
           let finInscripcion =  new Date(periodo.fec_fin_ins_nuevos);
-
           fechaLimitePago =  format(finInscripcion,"DD/MM/YYYY");
             
           }
@@ -177,6 +181,7 @@ export const registrarPagoService = async (req: any, res: any) => {
       if(resultObjectDB.data[0].estado_id==1){
         throw new Error("La factura "+Referencia_pago+" ya se encuentra pagada");
       }
+
 
       detPago.push({
         '_id': uuidv4(),
@@ -289,6 +294,21 @@ export const reversarPagoService = async (req: any, res: any) => {
       if(resultObjectDB.data[0].estado_id!=1){
         throw new Error("No se encontraron facturas pagadas para reverso");
       }
+
+
+
+      //verificar si existen pagos
+      let resultDBPago = await consultarPagoFactura(
+        {
+          'codigo_transaccion': Id_transaccion,
+          'pago_id': Referencia_pago,
+          'valor_pago': Valor_pagado
+        }
+      );
+      if(!resultDBPago){
+        throw new Error("No se encontraron pagos realizadon para la factura "+ Referencia_pago);
+      }
+
 
 
       let detPago: any = {

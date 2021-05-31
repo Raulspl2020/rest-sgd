@@ -58,7 +58,7 @@ export const existeDetPago = async (where: any) => {
     .where(where)
   if (result.length > 0) {
     return result[0];
-  }else{
+  } else {
     return false;
   }
 
@@ -87,10 +87,30 @@ export const actualizarPagoyDetalle = async (id: any, pago: any, dataInsert: any
 };
 
 
+
+export const consultarPagoFactura = async (where: any) => {
+  let result = await conDB
+    .select()
+    .from("fin_pago")
+    .join(
+      "fin_detalle_pago", "fin_pago._id",
+      "=",
+      "fin_detalle_pago.pago_id"
+    )
+    .where(where);
+
+  if (result.length > 0) {
+    return result;
+  } else {
+    return false;
+  }
+}
+
+
 //permite corregir los pagos relizados, eliminando los pagos de una factura y creando unos nuevos
 export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) => {
 
-  
+
   const trx = await conDB.transaction();
   return await trx("fin_pago")
     .where("fin_pago._id", id)
@@ -99,17 +119,17 @@ export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) 
 
       //eliminar todos los pagos de la factua
       return conDB("fin_detalle_pago")
-      .where({
-        'nombre_banco':dataInsert.nombre_banco,
-        'codigo_transaccion':dataInsert.codigo_transaccion,
-        'pago_id': dataInsert.pago_id,
-        'valor_pago':dataInsert.valor_pago
-      })
-      .del();    
+        .where({
+          'codigo_transaccion': dataInsert.codigo_transaccion,
+          'pago_id': dataInsert.pago_id,
+          'valor_pago': dataInsert.valor_pago
+        })
+        .del();
 
     })
     .then((result: any) => {
       trx.commit();
+      console.log(result);
       return true;
     })
     .catch((result: any) => {
