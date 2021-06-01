@@ -82,7 +82,7 @@ export const consultaFacturaMid = (req: any, res: any, next: any) => {
     Password: "required",
     Id_Banco: "required",
     Referencia_pago: "required|numeric",
-    Info_Adicional: "string|present",
+    Info_adicional: "string|present",
   };
 
 
@@ -109,8 +109,8 @@ export const registrarPagoMid = (req: any, res: any, next: any) => {
     Referencia_pago: "required|numeric",
     Fecha_pago: "required|string",
     Valor_pagado: "required|numeric",
-    Id_transacción: "required|numeric",
-    Info_Adicional: "string|present",
+    Id_transaccion: "required|numeric",
+    Info_adicional: "string|present",
   };
 
 
@@ -137,8 +137,8 @@ export const reversarPagoMid = (req: any, res: any, next: any) => {
     Referencia_pago: "required|numeric",
     Fecha_reverso: "required|string",
     Valor_pagado: "required|numeric",
-    Id_transacción: "required|numeric",
-    Info_Adicional: "string|present",
+    Id_transaccion: "required|numeric",
+    Info_adicional: "string|present",
   };
 
 
