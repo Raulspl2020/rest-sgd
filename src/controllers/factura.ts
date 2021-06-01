@@ -30,7 +30,7 @@ export const consultaFacturaService = async (req: any, res: any) => {
   let Password = body.Password;
   let Id_Banco = parseInt(body.Id_Banco);
   let Referencia_pago = parseInt(body.Referencia_pago);
-  let Info_Adicional = body.Info_adicional;
+  let Info_Adicional = body.Info_Adicional;
 
   let responseData: any = {
     Fecha_limite_pago: "",

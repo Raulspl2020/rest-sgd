@@ -82,7 +82,7 @@ export const consultaFacturaMid = (req: any, res: any, next: any) => {
     Password: "required",
     Id_Banco: "required",
     Referencia_pago: "required|numeric",
-    Info_adicional: "string|present",
+    Info_Adicional: "string|present",
   };
 
 
