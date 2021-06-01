@@ -30,7 +30,8 @@ export const consultaFacturaService = async (req: any, res: any) => {
   let Password = body.Password;
   let Id_Banco = parseInt(body.Id_Banco);
   let Referencia_pago = parseInt(body.Referencia_pago);
-  let Info_Adicional = body.Info_Adicional;
+  let Info_Adicional = body.Info_adicional;
+
   let responseData: any = {
     Fecha_limite_pago: "",
     Valor_factura: "0",
@@ -156,8 +157,8 @@ export const registrarPagoService = async (req: any, res: any) => {
   let Referencia_pago = parseInt(body.Referencia_pago);
   let Fecha_pago = body.Fecha_pago;
   let Valor_pagado = body.Valor_pagado;
-  let Id_transaccion = body.Id_transacción;
-  let Info_Adicional = body.Info_Adicional;
+  let Id_transaccion = body.Id_transaccion;
+  let Info_Adicional = body.Info_adicional;
 
   let horaActual = format(new Date(),'HH:mm:ss');
 
@@ -267,8 +268,8 @@ export const reversarPagoService = async (req: any, res: any) => {
   let Referencia_pago = parseInt(body.Referencia_pago);
   let Fecha_reverso = body.Fecha_reverso;
   let Valor_pagado = body.Valor_pagado;
-  let Id_transaccion = body.Id_transacción;
-  let Info_Adicional = body.Info_Adicional;
+  let Id_transaccion = body.Id_transaccion;
+  let Info_Adicional = body.Info_adicional;
 
   let horaActual = format(new Date(),'HH:mm:ss');
 
@@ -306,7 +307,7 @@ export const reversarPagoService = async (req: any, res: any) => {
         }
       );
       if(!resultDBPago){
-        throw new Error("No se encontraron pagos realizadon para la factura "+ Referencia_pago);
+        throw new Error("No se encontraron pagos realizados para la factura "+ Referencia_pago);
       }
 
 
