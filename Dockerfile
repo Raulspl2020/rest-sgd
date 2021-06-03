@@ -31,7 +31,6 @@ RUN  apt-get update \
     && chmod +x /usr/sbin/wait-for-it.sh
 
 
-ENV NODE_ENV='pro'
 WORKDIR /app
 COPY package*.json ./
 RUN npm install

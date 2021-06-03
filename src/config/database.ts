@@ -2,36 +2,36 @@ import Knex from 'knex';
 
 const db: any = {
   desarrollo: {
-    host: "10.10.13.13",
-    user: "dvn",
-    password: "duvan07+",
-    database: "sigedin_ies",
+    host: process.env.MYSQL_DEV_SGD_HOST,
+    user: process.env.MYSQL_DEV_SGD_USER,
+    password: process.env.MYSQL_DEV_SGD_PASS,
+    database: process.env.MYSQL_DEV_SGD_DATABASE,
     port: 3306,
   },
 
   produccion: {
-    host: process.env.MYSQL_DB_HOST,
-    user: process.env.MYSQL_DB_USER,
-    password: process.env.MYSQL_DB_PASS,
-    database: process.env.MYSQL_DB_DATABASE,
+    host: process.env.MYSQL_PROD_SGD_HOST,
+    user: process.env.MYSQL_PROD_SGD_USER,
+    password: process.env.MYSQL_PROD_SGD_PASS,
+    database: process.env.MYSQL_PROD_SGD_DATABASE,
     port: 3306,
   },
 };
 
 const auth: any = {
   desarrollo: {
-    host: "10.10.13.13",
-    user: "dvn",
-    password: "duvan07+",
-    database: "sigedin_seguridad",
+    host: process.env.MYSQL_DEV_AUTH_HOST,
+    user: process.env.MYSQL_DEV_AUTH_USER,
+    password: process.env.MYSQL_DEV_AUTH_PASS,
+    database:  process.env.MYSQL_DEV_AUTH_DATABASE,
     port: 3306,
   },
 
   produccion: {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASS,
-    database: process.env.MYSQL_DATABASE,
+    host: process.env.MYSQL_PROD_AUTH_HOST,
+    user: process.env.MYSQL_PROD_AUTH_USER,
+    password: process.env.MYSQL_PROD_AUTH_PASS,
+    database: process.env.MYSQL_PROD_AUTH_DATABASE,
     port: 3306,
   },
 };
