@@ -4,11 +4,12 @@ import { dataConfigPago, dividirCodigoBarrasText, generarCodigoBarras, generarCo
 import { Pago } from "../models/Pago";
 import { consultarpagoMatricula } from "./matricula";
 import fetch from "node-fetch";
-import { actualizarPagoyDetalleNew, existePago, getConfigPeriodo, getPagoByID, getPaquete, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
+import { actualizarPagoyDetalleNew, existePago, getConfigPeriodo, getDescuento, getPagoByID, getPaquete, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
 import { getInfoEstudiante } from "./pago";
 import * as moneda from 'currency-formatter';
 import { generarHTMLPDF } from "../helpers/global";
 import { format } from "date-format-parse";
+import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provider";
 
 
 //=================================
@@ -373,7 +374,136 @@ const generarCodigoFactura = async (cadena: string) => {
   return codigoFactura;
 };
 
-export const inicioPagoInscripcion = async (req: any, res: any) => { };
+
+
+
+
+//====================
+//   /page/InicioPagoInscripcion
+//=====================
+export const inicioPagoInscripcion = async (req: any, res: any) => {
+
+  let resultDB: any;
+  let body = req.body;
+  let resultPaquete: any;
+  let total = 0;
+  let total_a_pagar = 0;
+  let total_sin_descuento = 0;
+  let porcentaje_descuento = 0;
+  let porcentaje_aumento = 0;
+  let auxDescripcion = "";
+  let id_matricula = body.cod_matricula;
+  let fechaActualString = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
+
+
+  try {
+    let result = await getInfoMatricula(id_matricula);
+
+    resultDB = result[0][0];
+
+
+    if (result[0].length > 0) {
+        resultPaquete = await getPaquete(6);
+        if (resultPaquete.length < 1) {
+            throw new Error("No se encontraron precios configurados");
+        }
+        //consular los descuentos y multas que un estudiante tiene asignados
+        let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+        console.log(resultDto);
+        resultDto.forEach((row: any) => {
+            //si aplica descuento sino aplica aumento, si es 1 añade un descuento
+            if (row.accion == 1) {
+                porcentaje_descuento = porcentaje_descuento + row.porcentaje;
+                auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
+            } else {
+                porcentaje_aumento = porcentaje_aumento + row.porcentaje;
+                auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + row.observacion
+            }
+        });
+
+        console.log(porcentaje_descuento);
+        console.log(porcentaje_aumento);
+
+        resultPaquete.forEach((element: any, index: number) => {
+
+            //calcula el total sin descuento
+            if (element.cantidad > 0) {
+                total_a_pagar = total_a_pagar + (element.subtotal * element.cantidad);
+            } else {
+                total = element.subtotal * Number(resultDB.nro_creditos);
+                total_a_pagar = total_a_pagar + total;
+            }
+            total_sin_descuento = total_a_pagar;
+
+
+
+        });
+
+
+    } else {
+        throw new Error("No se encontró la inscripción");
+    }
+
+
+    let estadoPago =  await existePago('6',id_matricula);
+
+    let periodoInfo = await getFechasPeriodo(resultDB.cod_colegio,resultDB.cod_periodo );
+    
+
+
+    let arrayDB:any = {};
+
+    arrayDB.general = {
+      fecha_actual: fechaActualString,
+      fecha_fin_ordinaria : periodoInfo.fec_fin_matordinaria,
+      fecha_fin_extraordinaria: periodoInfo.fec_fin_matextraord,
+      fecha_fin_ins_nuevos: periodoInfo.fec_fin_ins_nuevos,
+      fecha_limite_pago: ""
+    };
+    arrayDB.info_cliente = resultDB;
+    arrayDB.det_factura =resultPaquete;
+    arrayDB.descuantos = [];
+    arrayDB.cod_pago = "20AA1RVVIR",
+    arrayDB.total_a_pagar_f = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
+    arrayDB.total_a_pagar_i = moneda.unformat(moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' });
+    
+
+
+
+
+    // return res.status(200).json({
+    //     error: false,
+    //     message: "Ejecución correcta",
+    //     estadopago: estadoPago,
+    //     matricula: resultDB,
+    //     periodoInfo,
+    //     detalle_factura: resultPaquete,
+    //     total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
+    //     total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),
+    //     total_a_pagar_int: moneda.unformat(moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' })
+    // });
+
+
+    return res.status(200).json(arrayDB);
+} catch (error) {
+    return res.status(500).json({
+        error: true,
+        message: error.message
+    });
+}
+
+
+
+
+
+      //si todo esta bien, procedemos a guardar
+      return res.status(200).json({
+        statusCode: 200,
+        message: "Ejecucion Inscripcion",
+        error: false,
+      });
+
+ };
 
 
 //===================================
