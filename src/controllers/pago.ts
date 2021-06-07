@@ -217,7 +217,7 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
 
 
 //====================
-//   /transaccion/InicioPagoCodigoBarras
+//   /transaccion/InicioPagoCodigoBarras : se usa para el pago de inscripcion (BORRAR)
 //=====================
 export const InicioPagoCodigoBarras = async (req: any, res: any) => {
 
@@ -289,21 +289,15 @@ export const InicioPagoCodigoBarras = async (req: any, res: any) => {
         //acualizar codigo de barras en la base de datos y el json con la referencia
         let respDB = await updateCodigoBarras(codigo, resultSavePago[0]);
 
-        console.log("repsuestaDB");
-        console.log(respDB);
-
         res.json({
           error: false,
           pfd_url: process.env.BASE_URL + '/page/GenerarPagoCodigoBarras/' + codigo,
           message: "Pago generado con exito"
         });
 
-
-
       } else {
         throw new Error("no se encontraron los conceptos");
       }
-
 
     } else {
       throw new Error("No se encontro el paquete...");
