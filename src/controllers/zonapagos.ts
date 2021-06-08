@@ -357,7 +357,7 @@ const calculaTotalaPagar = async (precios: any) => {
     total_a_pagar = element.subtotal + total_a_pagar;
   });
 
-  return total_a_pagar;
+  return Math.round(total_a_pagar);
 }
 
 //esto solo puede funcionar si el aumento solo corresponde a la matricula extraordinaria
