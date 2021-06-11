@@ -1,7 +1,7 @@
 import express, { Application } from 'express';
 import Routes from '../routes';
 
-import { verificaPagosPendientes, verificaPagosPendientesEfectivo } from "../helpers/cron_job";
+import { verificaPagosPendientes, verificaPagosPendientesOnline } from "../helpers/cron_job";
 
 
 
@@ -32,17 +32,17 @@ class Server {
 
         // cron.schedule('*/15 * * * *', () => {
         cron.schedule('* * * * *', () => {
-            verificaPagosPendientes().then((result) => {
+            verificaPagosPendientesOnline().then((result) => {
                 // console.log(result);
             });
         });
 
-        cron.schedule('* * * * *', () => {
-            //cron.schedule('*/60 * * * *', () => {
-            verificaPagosPendientesEfectivo().then((result) => {
-                //console.log(result);
-            });
-        });
+        // cron.schedule('* * * * *', () => {
+        //     //cron.schedule('*/60 * * * *', () => {
+        //     verificaPagosPendientesEfectivo().then((result) => {
+        //         //console.log(result);
+        //     });
+        // });
     }
 
     middlewares() {

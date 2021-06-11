@@ -104,6 +104,24 @@ export const obtenerPagosPendientes = async (
 
 };
 
+
+export const getPagosOnlinePendientes = async (minutos: number) => {
+  const sql = `SELECT fin_pago._id, fin_pago.codigo FROM fin_pago  WHERE fin_pago.estado_id <> 1
+  AND TIMESTAMPDIFF(MINUTE,fin_pago.fecha,NOW()) >= ?
+  AND ( fin_pago.is_online='1' OR fin_pago.is_online IS NULL )`;
+
+  let result = await conDB.raw(sql, [minutos]);
+  if (result[0].length > 0) {
+    return result[0];
+  } {
+    return false;
+  }
+
+};
+
+
+
+
 export const detIdPagoByCodigo = async (codigo: any) => {
   let result = await conDB
     .select("_id")

@@ -132,6 +132,16 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     });
     let responseData = await response.json();
 
+    //no se encontraron pago online
+    if(responseData.int_estado ==1 && responseData.int_cantidad_pagos==0){
+
+      let data = {
+        'is_online' : 0
+      }
+      let resultDB = actualizarEstadoPago(data,id_pago);
+    }
+
+
     if (responseData.int_error == 0) {
       const resss = new ListResponsePago();
       let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
@@ -167,6 +177,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       let data: any = {
         'json_detalle': responseData.str_res_pago,
         'estado_id': pagoDecoded[0].int_pago_terminado,
+        'is_online': 1,
         'fecha_update': format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss')
       };
 
@@ -222,6 +233,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         throw new Error("No se ha podido insertar los detalle de pago");
       }
     } else {
+
       throw new Error("Error de comunicacion con zonapagos o código no encontrado");
     }
 

@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { obtenerPagosPendientes } from "../provider/pago_provider";
+import { getPagosOnlinePendientes, obtenerPagosPendientes } from "../provider/pago_provider";
 
 
 // pendiente borrar los pagos que lleven mas de 7 dias iniciados y no tengan detalle_pago
@@ -32,11 +32,12 @@ export const verificaPagosPendientes = async () => {
 
 
 }
-export const verificaPagosPendientesEfectivo = async () => {
+export const verificaPagosPendientesOnline = async () => {
     try {
-        let result = await obtenerPagosPendientes(60, [41, 42]);
+        let result = await getPagosOnlinePendientes(7);
         if (result != false) {
             result.forEach((row: any) => {
+                
                 fetch(`${process.env.BASE_URL}/transaccion/estado?id_pago=${row.codigo}`)
                     .then(response => response.json())
                     .then((responseData) => {
@@ -49,6 +50,7 @@ export const verificaPagosPendientesEfectivo = async () => {
             return null;
         }
     } catch (error) {
+        console.log("Error de SONDA");
         console.log(error);
         return false;
     }
