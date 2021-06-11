@@ -182,3 +182,38 @@ export const actualizarPago = (req: any, res: any, next: any) => {
   }
 };
 
+
+
+//valida los campos enviados desde el formualrio de pago personalizado
+export const pagoPersonalizadoMid = (req: any, res: any, next: any) => {
+  console.log("Disparando middleware");
+  console.log(req.body);
+  const validationRule = {
+    isPagoOnline : "required|boolean",
+    total : "required|numeric",
+    des_concepto :  "string|present",
+    email_persona : "required|string|email",
+    id_persona:  "required|string",
+    tipo_id: "required|numeric",
+    tipo_id_text: "present|string",
+    nombre1 : "required|string",
+    nombre2 : "present|string",
+    apellido1: "required|string",
+    apellido2 :  "present|string",
+    cel_persona : "required|string",
+    str_opcional2 : "present|string",
+  };
+
+
+  let validation = new Validator(req.body, validationRule);
+
+  if (validation.passes()) {
+    next();
+  } else {
+    res.status(412).send({
+      error: true,
+      message: "Hay campos obligatorios sin completar",
+      errors: validation.errors.all(),
+    });
+  }
+};

@@ -130,7 +130,7 @@
             <tr>
                 <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
                 <td rowspan="3" style="text-align: right; margin: 0px;">
-                    {{{codigo}}}
+                    {{{codigo4}}}
                 </td>
             </tr>
             <tr>
@@ -148,7 +148,7 @@
                 <th rowspan="4">REF: {{referencia}}</th>
                 <td rowspan="9" style="border: 0px; padding-left: 8px; font-size: 12px; align-items: center;">
                     <div style="-webkit-transform: rotate(-90deg); width: 10px; text-align: center;">
-                        <strong>ESTUDIANTE</strong>
+                        <strong>UNIVERSIDAD</strong>
                     </div>
                 </td>
             </tr>
@@ -156,13 +156,13 @@
                 <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
             </tr>
             <tr>
-                <td colspan="1">Nombre: {{apellidos }} {{ nombres }} </td>
-               <td>Identificación: {{id_persona}}</td>
+                <td colspan="1">Nombre: {{matricula.nom1_persona }} {{ matricula.nom2_persona }}  {{matricula.ape1_persona }} {{ matricula.ape2_persona }}</td>
+               <td>Identificación: {{matricula.ide_persona}}</td>
             </tr>
 
             <tr>
-                <td>Celular: {{cel_persona}}</td>
-                <td>Email: {{email_persona}} </td>
+                <td>Celular: {{matricula.cel_persona}}</td>
+                <td>Email: {{matricula.email_persona}} </td>
              
             </tr>
             <tr>
@@ -190,7 +190,7 @@
                         esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
                         en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
                 </td>
-                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_a_pagar }}</Strong> </td>
+                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_formateado }}</Strong> </td>
 
             </tr>
 
@@ -224,7 +224,7 @@
             <tr>
                 <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
                 <td rowspan="3" style="text-align: right; margin: 0px;">
-                    {{{codigo}}}
+                    {{{codigo4}}}
                 </td>
             </tr>
             <tr>
@@ -250,13 +250,13 @@
                 <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
             </tr>
             <tr>
-                <td colspan="1">Nombre: {{apellidos }} {{ nombres }} </td>
-               <td>Identificación: {{id_persona}}</td>
+                <td colspan="1">Nombre: {{matricula.nom1_persona }} {{ matricula.nom2_persona }}  {{matricula.ape1_persona }} {{ matricula.ape2_persona }}</td>
+               <td>Identificación: {{matricula.ide_persona}}</td>
             </tr>
 
             <tr>
-                <td>Celular: {{cel_persona}}</td>
-                <td>Email: {{email_persona}} </td>
+                <td>Celular: {{matricula.cel_persona}}</td>
+                <td>Email: {{matricula.email_persona}} </td>
              
             </tr>
             <tr>
@@ -284,7 +284,7 @@
                         esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
                         en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
                 </td>
-                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_a_pagar }}</Strong> </td>
+                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_formateado }}</Strong> </td>
 
             </tr>
 
@@ -297,11 +297,11 @@
 
     </div>
     <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
- <hr>
+
+    <hr>
 
 
- 
-    <div class="">
+        <div class="">
 
         <table border="0" cellpadding="1" cellspacing="1" style="width: 100%; font-size: 10px;">
             <tr>
@@ -319,7 +319,7 @@
             <tr>
                 <td>Sede Principal: "Aire Libre" Barrio Luis Carlos Galán Teléfonos 3138052807 - 3103310083</td>
                 <td rowspan="3" style="text-align: right; margin: 0px;">
-                    {{{codigo}}}
+                    {{{codigo4}}}
                 </td>
             </tr>
             <tr>
@@ -345,13 +345,13 @@
                 <td colspan="2">Programa: {{matricula.nom_nivel_educativo}}</td>
             </tr>
             <tr>
-                <td colspan="1">Nombre: {{apellidos }} {{ nombres }} </td>
-               <td>Identificación: {{id_persona}}</td>
+                <td colspan="1">Nombre: {{matricula.nom1_persona }} {{ matricula.nom2_persona }}  {{matricula.ape1_persona }} {{ matricula.ape2_persona }}</td>
+               <td>Identificación: {{matricula.ide_persona}}</td>
             </tr>
 
             <tr>
-                <td>Celular: {{cel_persona}}</td>
-                <td>Email: {{email_persona}} </td>
+                <td>Celular: {{matricula.cel_persona}}</td>
+                <td>Email: {{matricula.email_persona}} </td>
              
             </tr>
             <tr>
@@ -379,7 +379,7 @@
                         esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
                         en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
                 </td>
-                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_a_pagar }}</Strong> </td>
+                <td style="background: #f4ff81;"> Total a pagar : <Strong  style="float: right; font-size: 12px;">$ {{ total_formateado }}</Strong> </td>
 
             </tr>
 
@@ -392,7 +392,6 @@
 
     </div>
     <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
-
 
 
 

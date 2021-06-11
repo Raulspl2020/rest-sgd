@@ -36,15 +36,14 @@ const auth: any = {
   },
 };
 
-if (process.env.NODE_ENV == "dev") {
-  db.default = db.desarrollo;
-  auth.default = auth.desarrollo;
-} else {
-  console.log("El entorno es: " + process.env.NODE_ENV);
-
+if (process.env.NODE_ENV == "pro") {
   db.default = db.produccion;
   auth.default = auth.produccion;
+} else {
+  db.default = db.desarrollo;
+  auth.default = auth.desarrollo;
 }
+
 
 let conDB: any = Knex({
   client: "mysql",

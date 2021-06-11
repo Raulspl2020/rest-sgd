@@ -144,25 +144,25 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
     if (isPagoOnline) {
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
     } else {
-     // let infoEstudiante = await getInfoEstudiante(matricula.cod_matricula);
+      // let infoEstudiante = await getInfoEstudiante(matricula.cod_matricula);
 
-    
+
       let resultM = await getInfoMatricula(matricula.cod_matricula);
       let resultDB = resultM[0][0];
 
-      let periodoInfo = await getFechasPeriodo(resultDB.cod_colegio,resultDB.cod_periodo );
+      let periodoInfo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
       console.log(periodoInfo);
-      if(periodoInfo==false){
+      if (periodoInfo == false) {
         throw new Error("No se encontró periodo y sede configurados");
       }
 
       let infoPagoDB: any = {};
-      infoPagoDB.general  = {
+      infoPagoDB.general = {
         fecha_actual: fechaActualString,
-        fecha_fin_ordinaria : format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY') ,
-        fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY') ,
-        fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY') , 
-        fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),  
+        fecha_fin_ordinaria: format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'),
+        fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY'),
+        fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY'),
+        fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
       };
       infoPagoDB.info_cliente = resultDB;
       infoPagoDB.det_factura = detalle_factura;
@@ -170,7 +170,7 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       infoPagoDB.descuentos = descuentos;
       infoPagoDB.total_a_pagar_s = moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim();
       infoPagoDB.total_a_pagar_i = moneda.unformat(moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' });
-      
+
       let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], result.total_a_pagar_int, format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'));
       //acualizar codigo de barras en la base de datos y el json con la referencia
       let dataPagoUpdate = {
@@ -249,7 +249,7 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
     general.codigo2 = svgText2;
     general.codigo3 = svgText3;
     general.codigo4 = svgText4;
-    general.matricula =  jsonDB.info_cliente;
+    general.matricula = jsonDB.info_cliente;
     general.det_factura = await quitarAumentoDetalle(jsonDB.det_factura, 0);
     general.referencia = data._id;
     general.total_ordi_formateado = moneda.format(new_total_ordinario, { locale: 'es-CO' }).replace('$', '').trim();
@@ -270,10 +270,10 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
         vista_pago = "pdf_pago_matricula";
         break;
       case 0:
-        vista_pago = "pago_general";
+        vista_pago = "pdf_pago_general";
         break;
       default:
-        vista_pago = "pago_general";
+        vista_pago = "pdf_pago_general";
         break;
 
     }
@@ -325,15 +325,15 @@ export const generarPagoCodigoBarrasGeneral = async (req: any, res: any) => {
 
     general.codigo = svgText;
     general.referencia = data._id;
-    general.fecha_actual =  jsonDB.fecha_actual;
-    general.det_factura =  jsonDB.det_factura;
-    general.des_pago =  data.descripcion;
+    general.fecha_actual = jsonDB.fecha_actual;
+    general.det_factura = jsonDB.det_factura;
+    general.des_pago = data.descripcion;
     general.total_a_pagar = moneda.format(jsonDB.total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
     general.BASE_URL = process.env.BASE_URL.toString();
 
     console.log(general);
 
- 
+
 
     res.render("pdf_pago_general", general, async (err: any, html: any) => {
       let pdf = await generarHTMLPDF(html);
@@ -438,14 +438,14 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
   let body = req.body;
   let id_matricula = body.cod_matricula;
   let fechaActualString = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
-  let descuentos:any = [];
+  let descuentos: any = [];
   let tDetallePago: any = [];
   let resultSavePago: any = {};
   let isPagoOnline: boolean = (body.isPagoOnline != true) ? false : true;
   let responseDataZonaPagos: any = {};
   let str_url = "";
 
-  let id_pago = req.body.id_pago;  
+  let id_pago = req.body.id_pago;
 
   let fecha_limite_pago = new Date();
   fecha_limite_pago.setMonth(fecha_limite_pago.getMonth() + 12);
@@ -458,7 +458,7 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
     }
 
     let conceptos = resultMatricula.det_factura;
-    let matricula =  resultMatricula.info_cliente;
+    let matricula = resultMatricula.info_cliente;
 
     let cadenaCodigo =
       matricula.ide_persona +
@@ -471,7 +471,7 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
 
     conceptos.forEach((concepto: any) => {
       tDetallePago.push({
-        pago_id:(id_pago) ? id_pago : null, // si se envia el id se lo asigna
+        pago_id: (id_pago) ? id_pago : null, // si se envia el id se lo asigna
         concepto_id: concepto.concepto_id,
         descuento: concepto.descuento,
         aumento: concepto.aumento,
@@ -480,54 +480,54 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
       });
     });
 
-       //preparamos la data para guardar
-       let tPago: any = {
-        codigo: codigoFactura,
-        descripcion: conceptos[0].paquete,
-        json_response: JSON.stringify(resultMatricula),
-        estado_id: 200,
-        estudiante_id: matricula.ide_persona,
-        matricula_id: matricula.cod_matricula,
-        valor: resultMatricula.total_a_pagar_i,
-        periodo_id: matricula.cod_periodo,
-        cod_paquete: conceptos[0].codigo,
-        categoria_pago_id: conceptos[0].categoria_id,
-      };
+    //preparamos la data para guardar
+    let tPago: any = {
+      codigo: codigoFactura,
+      descripcion: conceptos[0].paquete,
+      json_response: JSON.stringify(resultMatricula),
+      estado_id: 200,
+      estudiante_id: matricula.ide_persona,
+      matricula_id: matricula.cod_matricula,
+      valor: resultMatricula.total_a_pagar_i,
+      periodo_id: matricula.cod_periodo,
+      cod_paquete: conceptos[0].codigo,
+      categoria_pago_id: conceptos[0].categoria_id,
+    };
 
 
-          //validar si se envia el codigo de pago, se debe actualiar
-        if(id_pago){
-          resultSavePago = await actualizarPagoyDetalleNew(tPago, tDetallePago, id_pago);
-        }else{
-          //guardar el detalle de la factura
-          resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
-        }
+    //validar si se envia el codigo de pago, se debe actualiar
+    if (id_pago) {
+      resultSavePago = await actualizarPagoyDetalleNew(tPago, tDetallePago, id_pago);
+    } else {
+      //guardar el detalle de la factura
+      resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+    }
 
-        //preparamos los datos para enviar a zonapagos
-        let infoPago = new Pago({
-          flt_total_con_iva: resultMatricula.total_a_pagar_i,
-          flt_valor_iva: 0,
-          str_id_pago: codigoFactura,
-          str_descripcion_pago: conceptos[0].paquete,
-          str_email: matricula.email_persona,
-          str_id_cliente: matricula.ide_persona,
-          str_tipo_id: matricula.cod_doc,
-          str_nombre_cliente: matricula.nom1_persona + " " + matricula.nom2_persona,
-          str_apellido_cliente: matricula.ape1_persona + " " + matricula.ape2_persona,
-          str_telefono_cliente: matricula.cel_persona,
-          str_opcional1: conceptos[0].codigo, //codigo paquete
-          str_opcional2: "", //valor en letras
-          str_opcional3: matricula.cod_matricula, //matricula
-          str_opcional4: matricula.cod_periodo, //periodo
-          str_opcional5: "",
-        });
-    
-        //recortamos el tamaño de la descripcion
-        let finpago2: Pago = new Pago(infoPago);
-        finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
-    
-        let bodyZonapagos = dataConfigPago(finpago2);
-    
+    //preparamos los datos para enviar a zonapagos
+    let infoPago = new Pago({
+      flt_total_con_iva: resultMatricula.total_a_pagar_i,
+      flt_valor_iva: 0,
+      str_id_pago: codigoFactura,
+      str_descripcion_pago: conceptos[0].paquete,
+      str_email: matricula.email_persona,
+      str_id_cliente: matricula.ide_persona,
+      str_tipo_id: matricula.cod_doc,
+      str_nombre_cliente: matricula.nom1_persona + " " + matricula.nom2_persona,
+      str_apellido_cliente: matricula.ape1_persona + " " + matricula.ape2_persona,
+      str_telefono_cliente: matricula.cel_persona,
+      str_opcional1: conceptos[0].codigo, //codigo paquete
+      str_opcional2: "", //valor en letras
+      str_opcional3: matricula.cod_matricula, //matricula
+      str_opcional4: matricula.cod_periodo, //periodo
+      str_opcional5: "",
+    });
+
+    //recortamos el tamaño de la descripcion
+    let finpago2: Pago = new Pago(infoPago);
+    finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
+
+    let bodyZonapagos = dataConfigPago(finpago2);
+
 
 
 
@@ -559,12 +559,12 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
       pago_id: id_pago,
       data: responseDataZonaPagos
     });
-} catch (error) {
+  } catch (error) {
     return res.status(500).json({
-        error: true,
-        message: error.message
+      error: true,
+      message: error.message
     });
-}
+  }
 
 
 };
@@ -586,16 +586,38 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
   let tDetallePago: any = [];
   let id_pago: number = null;
   let str_url = "";
+  let info_cliente: any = {};
 
   try {
 
-    let cadenaCodigo = body.nombres + body.apellidos + body.id_cliente;
+    let cadenaCodigo = body.nombre1+ body.nombre2 + body.apellido1 + body.apellido2 + body.id_cliente;
     let codigoFactura = await generarCodigoFactura(cadenaCodigo.toUpperCase().trim());
 
     let resultPaquete = await getPaquete(0);
 
     if (resultPaquete == false) {
       throw new Error("No se encontraron paquetes configurados");
+    }
+
+    info_cliente = {
+      "cod_matricula": null,
+      "cod_doc": body.tipo_id,
+      "tipo_doc": (body.tipo_id_text=='')? 'CC': body.tipo_id_text,
+      "nom_estadomatricula": null,
+      "ide_persona": body.id_persona,
+      "ape1_persona": body.nombre1,
+      "ape2_persona": body.nombre2,
+      "nom1_persona": body.apellido1,
+      "nom2_persona": body.apellido2,
+      "email_persona": body.email_persona,
+      "cel_persona": body.cel_persona,
+      "siglas_colegio": null,
+      "cod_colegio": null,
+      "nom_periodo": null,
+      "cod_periodo": null,
+      "nom_nivel_educativo": null,
+      "cod_nivel_edu": null,
+      "nro_creditos": null
     }
 
 
@@ -608,8 +630,8 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
       str_email: body.email_persona,
       str_id_cliente: body.id_persona,
       str_tipo_id: body.tipo_id,
-      str_nombre_cliente: body.nombres,
-      str_apellido_cliente: body.apellidos,
+      str_nombre_cliente: body.nombre1 + " " + body.nombre2,
+      str_apellido_cliente: body.apellido1 + " " + body.apellido2,
       str_telefono_cliente: body.cel_persona,
       str_opcional1: "0", //codigo paquete
       str_opcional2: "", //valor en letras
@@ -627,10 +649,10 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
     //GUARDAR EL PAGO EN LA DB
     let tPago: any = {
       codigo: codigoFactura,
-      descripcion:  body.des_concepto,
+      descripcion: body.des_concepto,
       json_response: null,
       estado_id: 200,
-      estudiante_id: body.ide_persona,
+      estudiante_id: body.id_persona,
       // matricula_id: matricula.cod_matricula,
       valor: body.total,
       // periodo_id: matricula.cod_periodo,
@@ -668,13 +690,21 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
       //llenamos el idpago al detalle
       resultPaquete.forEach((det: any) => (det.valor_unidad = parseInt(body.total)));
 
-      let json_detalle = {
-        "general": body,
-        "total_a_pagar": body.total,
-        "total_formateado": moneda.format(body.total, { locale: 'es-CO' }).replace('$', '').trim(),
-        "fecha_limite_pago": fechaLimitepago,
-        "fecha_actual":  format(new Date(), 'DD-MM-YYYY hh:mm:ss A'),
-        'det_factura': resultPaquete
+      let json_detalle:any = {
+        "general": {
+          "fecha_limite_pago": fechaLimitepago,
+          "fecha_actual": format(new Date(), 'DD-MM-YYYY hh:mm:ss A'),
+          "fecha_fin_ordinaria": fechaLimitepago,
+          "fecha_fin_extraordinaria": fechaLimitepago,
+          "des_pago": body.des_concepto
+        },
+        "info_cliente": info_cliente,
+        'det_factura': resultPaquete,
+        "descuentos" : [],
+        "cod_pago": codigoFactura,
+        "total_a_pagar_s": moneda.format(body.total, { locale: 'es-CO' }).replace('$', '').trim(),
+        "total_a_pagar_i": parseInt(Math.round(body.total).toString())
+
       };
 
       let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], body.total, fechaLimitepago);
@@ -684,7 +714,7 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
         'json_response': JSON.stringify(json_detalle)
       };
       let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
-      str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarrasGeneral/' + codigo1;
+      str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarras/' + codigo1;
       responseDataZonaPagos = {
         "int_codigo": 1,
         "str_cod_error": "",
@@ -715,8 +745,8 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
 
 
 //consulta datos para pago inscripcion
-export const consultarDatosInscripcion = async (id_matricula:any) => {
-let resultDB: any;
+export const consultarDatosInscripcion = async (id_matricula: any) => {
+  let resultDB: any;
   let resultPaquete: any;
   let total = 0;
   let total_a_pagar = 0;
@@ -725,7 +755,7 @@ let resultDB: any;
   let porcentaje_aumento = 0;
   let auxDescripcion = "";
   let fechaActualString = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
-  let descuentos:any = [];
+  let descuentos: any = [];
 
   let fecha_limite_pago = new Date();
   fecha_limite_pago.setMonth(fecha_limite_pago.getMonth() + 12);
@@ -738,91 +768,91 @@ let resultDB: any;
 
 
     if (result[0].length > 0) {
-        resultPaquete = await getPaquete(6);
-        if (resultPaquete.length < 1) {
-            throw new Error("No se encontraron precios configurados");
-        }
-        //consular los descuentos y multas que un estudiante tiene asignados
-        let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
-        console.log(resultDto);
-
-   
-
-        resultDto.forEach((row: any) => {
-            //si aplica descuento sino aplica aumento, si es 1 añade un descuento
-
-            //si se puede aplicar a todos los tipos de concepto. Trae los descuentos segun el tipo
-            if(row.tipo=='1'){
-              descuentos.push(row);
-                if (row.accion == 1) {
-                  porcentaje_descuento = porcentaje_descuento + row.porcentaje;
-                  auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
-              } else {
-                  porcentaje_aumento = porcentaje_aumento + row.porcentaje;
-                  auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + row.observacion
-              }
-            }
-
-        });
-
-      
-
-        //agregar descuentos y aumentos encontrados
-        resultPaquete.forEach((element: any, index: number) => {
-          if(element.descuento_ext =='1'){
-            console.log(porcentaje_descuento);
-            element.descuento = porcentaje_descuento;
-            element.aumento = porcentaje_aumento;
-
-            let subTotal =  (element.valor_unidad * element.cantidad ) + ((element.valor_unidad * element.cantidad )  * element.aumento) - ((element.valor_unidad * element.cantidad )  * element.descuento);
-            element.subtotal =  subTotal;
-
-            total_a_pagar = total_a_pagar + subTotal;
+      resultPaquete = await getPaquete(6);
+      if (resultPaquete.length < 1) {
+        throw new Error("No se encontraron precios configurados");
+      }
+      //consular los descuentos y multas que un estudiante tiene asignados
+      let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+      console.log(resultDto);
 
 
+
+      resultDto.forEach((row: any) => {
+        //si aplica descuento sino aplica aumento, si es 1 añade un descuento
+
+        //si se puede aplicar a todos los tipos de concepto. Trae los descuentos segun el tipo
+        if (row.tipo == '1') {
+          descuentos.push(row);
+          if (row.accion == 1) {
+            porcentaje_descuento = porcentaje_descuento + row.porcentaje;
+            auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + row.observacion
+          } else {
+            porcentaje_aumento = porcentaje_aumento + row.porcentaje;
+            auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + row.observacion
           }
+        }
+
+      });
 
 
-        });
+
+      //agregar descuentos y aumentos encontrados
+      resultPaquete.forEach((element: any, index: number) => {
+        if (element.descuento_ext == '1') {
+          console.log(porcentaje_descuento);
+          element.descuento = porcentaje_descuento;
+          element.aumento = porcentaje_aumento;
+
+          let subTotal = (element.valor_unidad * element.cantidad) + ((element.valor_unidad * element.cantidad) * element.aumento) - ((element.valor_unidad * element.cantidad) * element.descuento);
+          element.subtotal = subTotal;
+
+          total_a_pagar = total_a_pagar + subTotal;
+
+
+        }
+
+
+      });
 
 
     } else {
-        throw new Error("No se encontró la inscripción");
+      throw new Error("No se encontró la inscripción");
     }
 
 
-    let estadoPago =  await existePago('6',id_matricula);
+    let estadoPago = await existePago('6', id_matricula);
 
-    let periodoInfo = await getFechasPeriodo(resultDB.cod_colegio,resultDB.cod_periodo );
-    if(periodoInfo==false){
+    let periodoInfo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
+    if (periodoInfo == false) {
       throw new Error("No se encontró periodo y sede configurados");
     }
-    
 
 
-    let arrayDB:any = {};
+
+    let arrayDB: any = {};
 
     arrayDB.general = {
       fecha_actual: fechaActualString,
-      fecha_fin_ordinaria : format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY') ,
-      fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY') ,
-      fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY') , 
-      fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),  
+      fecha_fin_ordinaria: format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'),
+      fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY'),
+      fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY'),
+      fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
     };
     arrayDB.info_cliente = resultDB;
-    arrayDB.det_factura =resultPaquete;
+    arrayDB.det_factura = resultPaquete;
     arrayDB.descuentos = descuentos
     arrayDB.cod_pago = "",
-    arrayDB.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
-    arrayDB.total_a_pagar_i =  Math.round(total_a_pagar);
+      arrayDB.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
+    arrayDB.total_a_pagar_i = Math.round(total_a_pagar);
 
     return arrayDB;
 
   } catch (error) {
     throw new Error(error.message);
   }
-  
 
-  }
+
+}
 
 

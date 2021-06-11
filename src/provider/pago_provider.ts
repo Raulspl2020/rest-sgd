@@ -173,6 +173,7 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
       return id;
     })
     .catch((result: any) => {
+      console.log(result)
       trx.rollback();
       return false;
     });
