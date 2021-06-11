@@ -122,9 +122,6 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
   try {
     let id_pago = await detIdPagoByCodigo(codigo_pago);
-
-
-    console.log("inicia la consulta");
     let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
       method: "POST",
       body: JSON.stringify(data),
@@ -134,11 +131,12 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
     //no se encontraron pago online
     if(responseData.int_estado ==1 && responseData.int_cantidad_pagos==0){
-
-      let data = {
-        'is_online' : 0
-      }
-      let resultDB = actualizarEstadoPago(data,id_pago);
+      console.log("No se encontro el pago online");
+      let data:any = {
+        'is_online' : '0'
+      };
+      let resultDB = await actualizarEstadoPago(data,codigo_pago);
+      console.log(resultDB);
     }
 
 
@@ -177,24 +175,32 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       let data: any = {
         'json_detalle': responseData.str_res_pago,
         'estado_id': pagoDecoded[0].int_pago_terminado,
-        'is_online': 1,
+        'is_online': '1',
         'fecha_update': format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss')
       };
 
       let detPago: any = [];
       pagoDecoded.forEach((det: any) => {
 
+        let fechaInsert:any = fechaUpdate;
+
+        if(det.dat_fecha==''){
+          fechaInsert = format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss');
+        }else{
+          fechaInsert = format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss');
+        }
+
         detPago.push({
           '_id': uuidv4(),
           'pago_id': id_pago,
-          'valor_pago': det.dbl_valor_pagado,
-          'total_pago': det.dbl_total_pago,
-          'valor_iva_pago': det.dbl_valor_iva_pagado,
+          'valor_pago': (det.dbl_valor_pagado=='') ? 0 : det.dbl_valor_pagado,
+          'total_pago': (det.dbl_total_pago=='') ? 0 : det.dbl_total_pago,
+          'valor_iva_pago': (det.dbl_valor_iva_pagado=='') ? 0 : det.dbl_valor_iva_pagado ,
           'estado_pago_id': (det.int_estado_pago == '') ? null : det.int_estado_pago,
           'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago,
           'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco,
           'codigo_transaccion': (det.str_codigo_transacción == '') ? null : det.str_codigo_transacción,
-          'fecha': format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss'),
+          'fecha': fechaInsert,
           'ticketID': (det.str_ticketID == '') ? null : det.str_ticketID,
           'numero_tarjeta': (det.int_numero_tarjeta == '') ? null : det.int_numero_tarjeta,
           'franquicia': (det.str_franquicia == '') ? null : det.str_franquicia,
@@ -204,12 +210,12 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
       });
 
+
       //actualiza la fecha y el estado de un pago en la DB
       let resDB = await actualizarEstadoPago(data, codigo_pago);
 
       //borra y crea los detalles pago: true-false
       let resDb2 = await actualizarPagoyDetalle(id_pago, detPago);
-
 
       if (resDb2) {
       let response = {
@@ -222,7 +228,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       guardarLog({
         'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
         'json_body' :  JSON.stringify(req.query),
-        'json_response': JSON.stringify(response),
+        //'json_response': JSON.stringify(response),
         'estado' :  1,
         'message': "OK",
         'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
@@ -239,6 +245,8 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
 
   } catch (error) {
+
+    console.log(error);
 
     let response = {
       message: "Servicio no disponible temporalmente",

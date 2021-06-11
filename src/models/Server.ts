@@ -30,8 +30,10 @@ class Server {
 
     async cronJob() {
 
-        // cron.schedule('*/15 * * * *', () => {
-        cron.schedule('* * * * *', () => {
+
+
+        cron.schedule('*/15 * * * *', () => {
+        //cron.schedule('* * * * *', () => {
             verificaPagosPendientesOnline().then((result) => {
                 // console.log(result);
             });

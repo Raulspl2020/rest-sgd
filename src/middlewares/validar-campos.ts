@@ -164,8 +164,7 @@ export const actualizarPago = (req: any, res: any, next: any) => {
   console.log("Disparando middleware");
   console.log(req.query);
   const validationRule = {
-    id_pago: "required|string",
-    id_comercio: "string|present",
+    id_pago: "required|string"
   };
 
 
