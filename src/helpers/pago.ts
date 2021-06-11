@@ -102,7 +102,8 @@ export const dataConfigPago = (infoPago: any) => {
         AdicionalesConfiguracion: [
           {
             int_codigo: 50,
-            str_valor: "2701",
+            //str_valor: "2701", para desarrollo
+            str_valor: "1001", // para produccion
           },
           {
             int_codigo: 100,

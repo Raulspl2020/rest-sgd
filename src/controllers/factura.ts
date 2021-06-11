@@ -19,9 +19,6 @@ export const consultaFacturaService = async (req: any, res: any) => {
   let fechaActual2 =new Date();
   fechaActual2.setMonth(fechaActual2.getMonth() + 12);
 
-
-
-
   let fechaLimitePago:string  = format(fechaActual2,"DD/MM/YYYY");
   let totalaPagar = 0;
 
