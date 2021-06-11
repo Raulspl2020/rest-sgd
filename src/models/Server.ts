@@ -33,7 +33,7 @@ class Server {
 
 
         cron.schedule('*/15 * * * *', () => {
-        //cron.schedule('* * * * *', () => {
+       // cron.schedule('* * * * *', () => {
             verificaPagosPendientesOnline().then((result) => {
                 // console.log(result);
             });
