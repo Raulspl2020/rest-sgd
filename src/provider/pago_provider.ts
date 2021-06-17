@@ -116,9 +116,8 @@ export const getPagosOnlinePendientes = async (minutos: number) => {
     ON (fin_pago._id = fin_detalle_pago.pago_id)
      WHERE  TIMESTAMPDIFF(MINUTE,fin_pago.fecha,NOW()) >= ?
      AND ( fin_pago.is_online='1' OR fin_pago.is_online IS NULL )
-     ORDER BY fin_pago.fecha ASC
-     LIMIT 5) AS tabla
-     WHERE (tabla.estado_pago_id NOT IN (1,1000,1002,4000) OR tabla.estado_pago_id IS NULL)`;
+     ORDER BY fin_pago.fecha ASC) AS tabla
+     WHERE (tabla.estado_pago_id NOT IN (1,1000,1002,4000) OR tabla.estado_pago_id IS NULL)  LIMIT 5`;
 
   let result = await conDB.raw(sql, [minutos]);
   if (result[0].length > 0) {
