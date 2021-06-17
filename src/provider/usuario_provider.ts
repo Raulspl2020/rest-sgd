@@ -27,18 +27,17 @@ export const auditoria = async(id:string) => {
 
 export const contactoUsuatio = async (idUsuario:string) => {
     let  sql = `
-    (SELECT col_persona.ide_persona, col_persona.tipo_doc, CONCAT_WS(' ',col_persona.nom1_persona,col_persona.nom2_persona) AS nombres,
-    CONCAT_WS(' ',col_persona.ape1_persona,col_persona.ape2_persona) AS apellidos, col_persona.email_persona, col_persona.cel_persona
-    FROM col_persona
-    WHERE col_persona.ide_persona = ?) UNION (
-    SELECT col_persona.acud_identificacion AS ide_persona, COALESCE(col_persona.acud_tipo_doc,0 ) AS  tipo_doc,
-     SUBSTRING_INDEX(SUBSTRING_INDEX( col_persona.acud_apellnombres, ' ', 1), ' ', -1) AS nombres,
-      SUBSTRING_INDEX(SUBSTRING_INDEX( col_persona.acud_apellnombres, ' ', 3), ' ', -1) AS apellidos,
-    col_persona.email_persona, col_persona.acud_movil AS cel_persona
-    FROM col_persona
-    WHERE col_persona.acud_identificacion =?
-    )
-    LIMIT 1
+    (SELECT col_persona.ide_persona, col_persona.tipo_doc, col_persona.nom1_persona AS nombre1,col_persona.nom2_persona AS nombre2,
+        col_persona.ape1_persona AS apellido1,col_persona.ape2_persona AS apellido2, col_persona.email_persona, col_persona.cel_persona
+        FROM col_persona
+        WHERE col_persona.ide_persona = ?) UNION (
+        SELECT col_persona.acud_identificacion AS ide_persona, COALESCE(col_persona.acud_tipo_doc,0 ) AS  tipo_doc,
+         SUBSTRING_INDEX(SUBSTRING_INDEX( col_persona.acud_apellnombres, ' ', 1), ' ', -1) AS nombre11, "" AS nombre2,
+          SUBSTRING_INDEX(SUBSTRING_INDEX( col_persona.acud_apellnombres, ' ', 3), ' ', -1) AS apellido1, "" AS apellido2,
+        col_persona.email_persona, col_persona.acud_movil AS cel_persona
+        FROM col_persona
+        WHERE col_persona.acud_identificacion = ?
+    )LIMIT 1
     `;
 
     return await conDB.raw(sql, [idUsuario, idUsuario]);

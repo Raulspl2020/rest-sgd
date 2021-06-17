@@ -241,8 +241,10 @@
                         .then((data) => {
                             if (!data.error) {
                                 let user = data.data;
-                                this.formpago.txtNom1 = user.nombres;
-                                this.formpago.txtApe1 = user.apellidos;
+                                this.formpago.txtNom1 = user.nombre1;
+                                  this.formpago.txtNom2 = user.nombre2;
+                                this.formpago.txtApe1 = user.apellido1;
+                                this.formpago.txtApe2 = user.apellido2;
                                 this.formpago.txtEmail = user.email_persona;
                                 this.formpago.txtCelular = user.cel_persona;
                                 this.formpago.selTipoIde = user.tipo_doc;
