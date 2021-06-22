@@ -139,46 +139,49 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
 
     let bodyZonapagos = dataConfigPago(finpago2);
 
-    //INICAMOS EL PAGO CON ZONAPAGOS
 
+
+    //actualizamos los datos de la factua en la db
+    let resultM = await getInfoMatricula(matricula.cod_matricula);
+    let resultDB = resultM[0][0];
+
+    let periodoInfo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
+    console.log(periodoInfo);
+    if (periodoInfo == false) {
+      throw new Error("No se encontró periodo y sede configurados");
+    }
+
+    let infoPagoDB: any = {};
+    infoPagoDB.general = {
+      fecha_actual: fechaActualString,
+      fecha_fin_ordinaria: format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'),
+      fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY'),
+      fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY'),
+      fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
+    };
+    infoPagoDB.info_cliente = resultDB;
+    infoPagoDB.det_factura = detalle_factura;
+    infoPagoDB.cod_pago = codigoFactura;
+    infoPagoDB.descuentos = descuentos;
+    infoPagoDB.total_a_pagar_s = moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim();
+    infoPagoDB.total_a_pagar_i = moneda.unformat(moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' });
+
+    let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], result.total_a_pagar_int, format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'));
+    //acualizar codigo de barras en la base de datos y el json con la referencia
+    let dataPagoUpdate = {
+      'codigo_barras': codigo1,
+      'json_response': JSON.stringify(infoPagoDB)
+    };
+    console.log("hasta aqui todo bien");
+    let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+
+
+    //INICAMOS EL PAGO CON ZONAPAGOS
     if (isPagoOnline) {
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
     } else {
       // let infoEstudiante = await getInfoEstudiante(matricula.cod_matricula);
 
-
-      let resultM = await getInfoMatricula(matricula.cod_matricula);
-      let resultDB = resultM[0][0];
-
-      let periodoInfo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
-      console.log(periodoInfo);
-      if (periodoInfo == false) {
-        throw new Error("No se encontró periodo y sede configurados");
-      }
-
-      let infoPagoDB: any = {};
-      infoPagoDB.general = {
-        fecha_actual: fechaActualString,
-        fecha_fin_ordinaria: format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'),
-        fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY'),
-        fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY'),
-        fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
-      };
-      infoPagoDB.info_cliente = resultDB;
-      infoPagoDB.det_factura = detalle_factura;
-      infoPagoDB.cod_pago = codigoFactura;
-      infoPagoDB.descuentos = descuentos;
-      infoPagoDB.total_a_pagar_s = moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim();
-      infoPagoDB.total_a_pagar_i = moneda.unformat(moneda.format(result.total_a_pagar_int, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' });
-
-      let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], result.total_a_pagar_int, format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'));
-      //acualizar codigo de barras en la base de datos y el json con la referencia
-      let dataPagoUpdate = {
-        'codigo_barras': codigo1,
-        'json_response': JSON.stringify(infoPagoDB)
-      };
-      console.log("hasta aqui todo bien");
-      let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
       str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarras/' + codigo1;
       responseDataZonaPagos = {
         "int_codigo": 1,
@@ -529,19 +532,21 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
     let bodyZonapagos = dataConfigPago(finpago2);
 
 
+    //actualizamos el los datos en la DB
+    let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], resultMatricula.total_a_pagar_i, resultMatricula.general.fecha_fin_ordinaria);
+    //acualizar codigo de barras en la base de datos y el json con la referencia
+    let dataPagoUpdate = {
+      'codigo_barras': codigo1,
+      'json_response': JSON.stringify(resultMatricula)
+    };
+    let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
 
 
 
     if (isPagoOnline) {
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
     } else {
-      let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], resultMatricula.total_a_pagar_i, resultMatricula.general.fecha_fin_ordinaria);
-      //acualizar codigo de barras en la base de datos y el json con la referencia
-      let dataPagoUpdate = {
-        'codigo_barras': codigo1,
-        'json_response': JSON.stringify(resultMatricula)
-      };
-      let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+
       str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarras/' + codigo1;
       responseDataZonaPagos = {
         "int_codigo": 1,
@@ -682,6 +687,38 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
     }
     id_pago = resultSavePago[0];
 
+
+
+
+
+    //actualizamos los datos en la DB
+    let json_detalle:any = {
+      "general": {
+        "fecha_limite_pago": fechaLimitepago,
+        "fecha_actual": format(new Date(), 'DD-MM-YYYY hh:mm:ss A'),
+        "fecha_fin_ordinaria": fechaLimitepago,
+        "fecha_fin_extraordinaria": fechaLimitepago,
+        "des_pago": body.des_concepto
+      },
+      "info_cliente": info_cliente,
+      'det_factura': resultPaquete,
+      "descuentos" : [],
+      "cod_pago": codigoFactura,
+      "total_a_pagar_s": moneda.format(body.total, { locale: 'es-CO' }).replace('$', '').trim(),
+      "total_a_pagar_i": parseInt(Math.round(body.total).toString())
+
+    };
+
+    let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], body.total, fechaLimitepago);
+    //acualizar codigo de barras en la base de datos y el json con la referencia
+    let dataPagoUpdate = {
+      'codigo_barras': codigo1,
+      'json_response': JSON.stringify(json_detalle)
+    };
+    let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+
+
+
     //INICAMOS EL PAGO CON ZONAPAGOS
     if (isPagoOnline) {
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
@@ -690,30 +727,7 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
       //llenamos el idpago al detalle
       resultPaquete.forEach((det: any) => (det.valor_unidad = parseInt(body.total)));
 
-      let json_detalle:any = {
-        "general": {
-          "fecha_limite_pago": fechaLimitepago,
-          "fecha_actual": format(new Date(), 'DD-MM-YYYY hh:mm:ss A'),
-          "fecha_fin_ordinaria": fechaLimitepago,
-          "fecha_fin_extraordinaria": fechaLimitepago,
-          "des_pago": body.des_concepto
-        },
-        "info_cliente": info_cliente,
-        'det_factura': resultPaquete,
-        "descuentos" : [],
-        "cod_pago": codigoFactura,
-        "total_a_pagar_s": moneda.format(body.total, { locale: 'es-CO' }).replace('$', '').trim(),
-        "total_a_pagar_i": parseInt(Math.round(body.total).toString())
 
-      };
-
-      let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], body.total, fechaLimitepago);
-      //acualizar codigo de barras en la base de datos y el json con la referencia
-      let dataPagoUpdate = {
-        'codigo_barras': codigo1,
-        'json_response': JSON.stringify(json_detalle)
-      };
-      let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
       str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarras/' + codigo1;
       responseDataZonaPagos = {
         "int_codigo": 1,

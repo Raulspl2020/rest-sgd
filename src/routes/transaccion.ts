@@ -5,7 +5,7 @@ import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento } from 
 import { check } from 'express-validator';
 import { validarCampos, validatorCampos,validarIdPago,consultaFacturaMid,registrarPagoMid,reversarPagoMid,actualizarPago, pagoPersonalizadoMid } from '../middlewares/validar-campos';
 import { existePagoDB, getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
-import {consultaFacturaService, registrarPagoService, reversarPagoService } from '../controllers/factura';
+import {consultaEstadoFactura, consultaFacturaService, registrarPagoService, reversarPagoService } from '../controllers/factura';
 import { generarPagoCodigoBarras, generarPagoCodigoBarrasGeneral, inicioPagoGeneral, inicioPagoInscripcion, inicioPagoMatricula } from '../controllers/zonapagos';
 
 
@@ -57,6 +57,9 @@ router.get('/informacionpago/:cod_pago', getInfoPagoFactura);
 router.post('/consultaFactura',[consultaFacturaMid], consultaFacturaService);
 router.post('/registrarPagos',[registrarPagoMid], registrarPagoService);
 router.post('/reversarPagos',[reversarPagoMid], reversarPagoService);
+
+//SERVICIO PARA CONSULTAR FACTURAS
+router.post('/ConsultaEstadoFactura', consultaEstadoFactura);
 
 
 

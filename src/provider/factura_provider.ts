@@ -138,3 +138,74 @@ export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) 
       return false;
     });
 };
+
+
+//metodos para consultar estados de facturas y pagos
+
+export const consultaFacturaCliente = async (id_cliente: any) => {
+
+  let sql = `SELECT
+  fin_pago._id
+  , fin_pago.codigo
+  , fin_pago.descripcion
+  , fin_pago.json_response
+  , fin_pago.fecha
+  , fin_pago.valor
+  , fin_categoria_pago.descripcion
+  , fin_concepto.descripcion as concepto
+  , fin_detalle_factura.descuento
+  , fin_detalle_factura.aumento
+  , fin_detalle_factura.valor_unidad
+  , fin_detalle_factura.cantidad
+FROM
+  fin_detalle_factura
+  INNER JOIN fin_pago 
+      ON (fin_detalle_factura.pago_id = fin_pago._id)
+  INNER JOIN fin_categoria_pago 
+      ON (fin_pago.categoria_pago_id = fin_categoria_pago._id)
+  INNER JOIN fin_concepto 
+      ON (fin_detalle_factura.concepto_id = fin_concepto._id)
+              WHERE fin_pago.estudiante_id = ?
+      GROUP BY fin_detalle_factura._id
+      ORDER BY fin_pago._id DESC`;
+
+  let result = await conDB.raw(sql, [id_cliente]);
+  if (result[0].length > 0) {
+    return result[0];
+  } else {
+    return [];
+  }
+};
+export const consultaPagoFacturaCliente = async (id_factura: any) => {
+
+  let sql = `SELECT
+  fin_detalle_pago._id as id
+  , fin_detalle_pago.pago_id
+  , fin_detalle_pago.valor_pago
+  , fin_detalle_pago.total_pago
+  , fin_detalle_pago.fecha
+  , fin_estado_pago.descripcion AS estado
+  , fin_estado_pago._id as estado_pago_id
+  , fin_forma_pago.descripcion AS forma_pago
+  , fin_detalle_pago.nombre_banco
+  , fin_detalle_pago.codigo_transaccion
+  , fin_detalle_pago.ticketID
+  , fin_detalle_pago.numero_tarjeta
+  , fin_detalle_pago.franquicia
+  , fin_detalle_pago.cod_aprobacion
+  , fin_detalle_pago.num_recibido
+FROM
+  fin_detalle_pago
+  INNER JOIN fin_estado_pago 
+      ON (fin_detalle_pago.estado_pago_id = fin_estado_pago._id)
+  INNER JOIN fin_forma_pago 
+      ON (fin_detalle_pago.forma_pago_id = fin_forma_pago._id)
+      WHERE fin_detalle_pago.pago_id = ?`;
+
+  let result = await conDB.raw(sql, [id_factura]);
+  if (result[0].length > 0) {
+    return result[0];
+  } else {
+    return [];
+  }
+};

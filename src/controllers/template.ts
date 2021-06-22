@@ -64,6 +64,15 @@ export const viewPDFPago = async (req: any, res = response) => {
 }
 
 
+//====================
+//   /page/ConsultaEstadoPago 
+//=====================
+export const consultaEstadoPagoView = async (req: any, res = response) => {
+    let codigo = req.params.codigo;
+    res.render("consulta_pago");
+}
+
+
 
 //====================
 //   /page/pagoinscripcion 
