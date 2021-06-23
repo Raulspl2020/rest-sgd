@@ -103,7 +103,7 @@
                                             :data-bs-target=" '#collapseOne'+row.id " aria-expanded="true"
                                             aria-controls="collapseOne">
 
-                                     
+
                                             <div class="row" style="width: 100%;">
                                                 <div class="col-md-4">
                                                     <strong>Referencia: </strong> {[row.id]}
@@ -116,7 +116,7 @@
                                                 <div class="col-md-4">
                                                     <strong>Fecha: </strong> {[row.fecha]}
                                                 </div>
-                                                 
+
                                             </div>
 
 
@@ -125,6 +125,34 @@
                                     <div :id="'collapseOne'+row.id" class="accordion-collapse collapse show"
                                         :aria-labelledby="'headingOne'+row.id" data-bs-parent="#accordionExample">
                                         <div class="accordion-body">
+
+
+
+                                            <table class="table"  v-for="(det, index2) in row.det_factura">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">CONCEPTO</th>
+                                                        <th scope="col">VALOR UND</th>
+                                                        <th scope="col">DESCUENTO</th>
+                                                        <th scope="col">AUMENTO</th>
+                                                        <th scope="col">SUBTOTAL</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <th scope="row">{[index2+1]}</th>
+                                                        <td>{[det.concepto]}</td>
+                                                        <td>{[det.valor_unidad]}</td>
+                                                        <td>{[det.descuento *100]} %</td>
+                                                        <td>{[det.aumento *100]} %</td>
+                                                        <td>$ {[  det.valor_unidad -  (det.valor_unidad *  det.descuento)  + (det.valor_unidad *  det.aumento) ]}</td>
+                                                    </tr>
+                                            
+                                                </tbody>
+                                            </table>
+
+
                                             <strong>This is the first item's accordion body.</strong> It is shown by
                                             default, until the collapse plugin adds the appropriate classes that we use
                                             to style each element. These classes control the overall appearance, as well
