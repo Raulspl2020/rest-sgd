@@ -39,7 +39,7 @@ export const verificaPagosPendientesOnline = async () => {
         let result = await getPagosOnlinePendientes(minutos);
         if (result != false) {
             result.forEach((row: any) => {
-                if(row.estado_pago_id ==999 || row.estado_pago_id ==4001 || row.estado_pago_id ==null || row.estado_pago_id ==200 ){
+                if(row.estado_pago_id ==999 || row.estado_pago_id ==4001 || row.estado_pago_id ==null || row.estado_pago_id ==200 || row.estado_pago_id==888  ){
                     fetch(`${process.env.BASE_URL}/transaccion/estado?id_pago=${row.codigo}`)
                     .then(response => response.json())
                     .then((responseData) => {

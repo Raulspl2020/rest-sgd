@@ -68,8 +68,9 @@ export const viewPDFPago = async (req: any, res = response) => {
 //   /page/ConsultaEstadoPago 
 //=====================
 export const consultaEstadoPagoView = async (req: any, res = response) => {
-    let codigo = req.params.codigo;
-    res.render("consulta_pago");
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    res.render("consulta_pago",data);
 }
 
 
