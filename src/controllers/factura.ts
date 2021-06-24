@@ -5,6 +5,9 @@ import { guardarLog } from "../provider/log_provider";
 import { getConfigPeriodo } from "../provider/pago_provider";
 import { consultarpagoMatricula } from "./matricula";
 import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provider";
+import { ejecutarZonaPagos } from "../helpers/pago";
+import { ListResponsePago } from "../models/ResponsePago";
+import { Verificadorpago } from "./zonapagos";
 
 //====================
 //   /transaccion/consultaFactura
@@ -416,13 +419,19 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
           "id": row._id,
           "codigo": row.codigo,
           "descripcion": row.descripcion,
+          "categoria": row.categoria,
           "fecha": format(row.fecha, 'DD-MM-YYYY hh:mm:ss A')
         });
       }
     }
 
+
+   await Verificadorpago(facturas[0].codigo)
     //recorrer las facturas para llenar el detalle
     for (const factura of facturas) {
+      //verifica el pago en zona pagos y actualiza en la db
+      
+
       let pagosDB = await consultaPagoFacturaCliente(factura.id);
       for (const pago of pagosDB) {
         pago.fecha =   format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
@@ -452,6 +461,7 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
 
 
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       error: true,
       message: error.message

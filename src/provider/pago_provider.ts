@@ -249,7 +249,8 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
 export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
   return await trx("fin_detalle_pago")
-    .where("pago_id", id)
+    .where({"pago_id": id})
+    .whereRaw("forma_pago_id <> ? OR  forma_pago_id IS NULL", [99])
     .del()
     .then((ids: any) => {
       let detalle: any = dataInsert;

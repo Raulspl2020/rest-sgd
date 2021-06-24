@@ -1,15 +1,17 @@
 import cryptoRandomString from "crypto-random-string";
 import Validator from "validatorjs";
-import { dataConfigPago, dividirCodigoBarrasText, generarCodigoBarras, generarCodigoBarrasText, limpiarCampos } from "../helpers/pago";
+import { dataConfigPago, dividirCodigoBarrasText, ejecutarZonaPagos, generarCodigoBarras, generarCodigoBarrasText, limpiarCampos } from "../helpers/pago";
 import { Pago } from "../models/Pago";
 import { consultarpagoMatricula } from "./matricula";
 import fetch from "node-fetch";
-import { actualizarPagoyDetalleNew, existePago, getConfigPeriodo, getDescuento, getPagoByID, getPaquete, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
+import { actualizarEstadoPago, actualizarPagoyDetalle, actualizarPagoyDetalleNew, detIdPagoByCodigo, existePago, getConfigPeriodo, getDescuento, getPagoByID, getPaquete, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
 import { getInfoEstudiante } from "./pago";
 import * as moneda from 'currency-formatter';
 import { generarHTMLPDF } from "../helpers/global";
-import { format } from "date-format-parse";
 import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provider";
+import { ListResponsePago } from "../models/ResponsePago";
+import { v4 as uuidv4 } from 'uuid';
+import { parse, format } from 'date-format-parse';
 
 
 //=================================
@@ -595,7 +597,7 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
 
   try {
 
-    let cadenaCodigo = body.nombre1+ body.nombre2 + body.apellido1 + body.apellido2 + body.id_cliente;
+    let cadenaCodigo = body.nombre1 + body.nombre2 + body.apellido1 + body.apellido2 + body.id_cliente;
     let codigoFactura = await generarCodigoFactura(cadenaCodigo.toUpperCase().trim());
 
     let resultPaquete = await getPaquete(0);
@@ -607,13 +609,13 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
     info_cliente = {
       "cod_matricula": null,
       "cod_doc": body.tipo_id,
-      "tipo_doc": (body.tipo_id_text=='')? 'CC': body.tipo_id_text,
+      "tipo_doc": (body.tipo_id_text == '') ? 'CC' : body.tipo_id_text,
       "nom_estadomatricula": null,
       "ide_persona": body.id_persona,
-      "ape1_persona":  body.apellido1,
+      "ape1_persona": body.apellido1,
       "ape2_persona": body.apellido2,
       "nom1_persona": body.nombre1,
-      "nom2_persona":  body.nombre2,
+      "nom2_persona": body.nombre2,
       "email_persona": body.email_persona,
       "cel_persona": body.cel_persona,
       "siglas_colegio": null,
@@ -692,7 +694,7 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
 
 
     //actualizamos los datos en la DB
-    let json_detalle:any = {
+    let json_detalle: any = {
       "general": {
         "fecha_limite_pago": fechaLimitepago,
         "fecha_actual": format(new Date(), 'DD-MM-YYYY hh:mm:ss A'),
@@ -702,7 +704,7 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
       },
       "info_cliente": info_cliente,
       'det_factura': resultPaquete,
-      "descuentos" : [],
+      "descuentos": [],
       "cod_pago": codigoFactura,
       "total_a_pagar_s": moneda.format(body.total, { locale: 'es-CO' }).replace('$', '').trim(),
       "total_a_pagar_i": parseInt(Math.round(body.total).toString())
@@ -809,8 +811,6 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
 
       });
 
-
-
       //agregar descuentos y aumentos encontrados
       resultPaquete.forEach((element: any, index: number) => {
         if (element.descuento_ext == '1') {
@@ -820,10 +820,7 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
 
           let subTotal = (element.valor_unidad * element.cantidad) + ((element.valor_unidad * element.cantidad) * element.aumento) - ((element.valor_unidad * element.cantidad) * element.descuento);
           element.subtotal = subTotal;
-
           total_a_pagar = total_a_pagar + subTotal;
-
-
         }
 
 
@@ -841,8 +838,6 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
     if (periodoInfo == false) {
       throw new Error("No se encontró periodo y sede configurados");
     }
-
-
 
     let arrayDB: any = {};
 
@@ -864,6 +859,89 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
 
   } catch (error) {
     throw new Error(error.message);
+  }
+
+
+}
+
+
+//verifica los pagos en zonapagos y actualiza el estado en la db
+export const Verificadorpago = async (pago_id: any) => {
+  let fechaUpdate = new Date();
+  const data = {
+    int_id_comercio: process.env.ZONAPAGOS_ID,
+    str_usr_comercio: process.env.ZONAPAGOS_USER,
+    str_pwd_comercio: process.env.ZONAPAGOS_PASS,
+    int_no_pago: -1,
+    str_id_pago: pago_id //cambiar por id
+  };
+
+  let id_pago = await detIdPagoByCodigo(pago_id);
+
+  try {
+    let responseData = await ejecutarZonaPagos(data, "VerificacionPago");
+    console.log(responseData);
+
+    if (responseData.int_error == 0) {
+      const resss = new ListResponsePago();
+      let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
+      let dataBody: any = pagoDecoded[0];
+
+
+      let data: any = {
+        'json_detalle': responseData.str_res_pago,
+        'estado_id': pagoDecoded[0].int_pago_terminado,
+        'is_online': '1',
+        'fecha_update': format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss')
+      };
+
+      let detPago: any = [];
+      pagoDecoded.forEach((det: any) => {
+
+        console.log("recorriendo el pago");
+
+        let fechaInsert: any = fechaUpdate;
+
+        if (det.dat_fecha == '') {
+          fechaInsert = format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss');
+        } else {
+          fechaInsert = format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss');
+        }
+
+        detPago.push({
+          '_id': uuidv4(),
+          'pago_id': id_pago,
+          'valor_pago': (det.dbl_valor_pagado == '') ? 0 : det.dbl_valor_pagado,
+          'total_pago': (det.dbl_total_pago == '') ? 0 : det.dbl_total_pago,
+          'valor_iva_pago': (det.dbl_valor_iva_pagado == '') ? 0 : det.dbl_valor_iva_pagado,
+          'estado_pago_id': (det.int_estado_pago == '') ? null : det.int_estado_pago,
+          'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago,
+          'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco,
+          'codigo_transaccion': (det.str_codigo_transacción == '') ? null : det.str_codigo_transacción,
+          'fecha': fechaInsert,
+          'ticketID': (det.str_ticketID == '') ? null : det.str_ticketID,
+          'numero_tarjeta': (det.int_numero_tarjeta == '') ? null : det.int_numero_tarjeta,
+          'franquicia': (det.str_franquicia == '') ? null : det.str_franquicia,
+          'cod_aprobacion': (det.int_cod_aprobacion == '') ? null : det.int_cod_aprobacion,
+          'num_recibido': (det.int_num_recibido == '') ? null : det.int_num_recibido
+        });
+
+      });
+
+      //actualiza la fecha y el estado de un pago en la DB
+      let resDB = await actualizarEstadoPago(data, pago_id);
+
+      //borra y crea los detalles pago: true-false
+      let resDb2 = await actualizarPagoyDetalle(id_pago, detPago);
+      return true;
+    } else {
+      throw new Error("Error de comunicacion con zonapagos o código no encontrado");
+    }
+
+
+  } catch (error) {
+    console.log(error);
+    return false;
   }
 
 

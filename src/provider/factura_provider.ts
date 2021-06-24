@@ -157,6 +157,7 @@ export const consultaFacturaCliente = async (id_cliente: any) => {
   , fin_detalle_factura.aumento
   , fin_detalle_factura.valor_unidad
   , fin_detalle_factura.cantidad
+  , fin_categoria_pago.descripcion as categoria
 FROM
   fin_detalle_factura
   INNER JOIN fin_pago 
@@ -198,9 +199,10 @@ FROM
   fin_detalle_pago
   INNER JOIN fin_estado_pago 
       ON (fin_detalle_pago.estado_pago_id = fin_estado_pago._id)
-  INNER JOIN fin_forma_pago 
+  LEFT JOIN fin_forma_pago 
       ON (fin_detalle_pago.forma_pago_id = fin_forma_pago._id)
-      WHERE fin_detalle_pago.pago_id = ?`;
+      WHERE fin_detalle_pago.pago_id = ?
+      ORDER BY fin_detalle_pago.fecha DESC`;
 
   let result = await conDB.raw(sql, [id_factura]);
   if (result[0].length > 0) {

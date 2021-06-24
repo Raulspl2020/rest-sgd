@@ -143,7 +143,6 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     if (responseData.int_error == 0) {
       const resss = new ListResponsePago();
       let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
-
       let dataBody: any = pagoDecoded[0];
       if (id_pago == false) {
         //insertar el pago en la DB
