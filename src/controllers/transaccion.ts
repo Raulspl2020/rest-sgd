@@ -19,7 +19,8 @@ import {
   detIdPagoByCodigo,
   getConfigPeriodo,
   getCategoriaPorcentaje,
-  guardarProcentajeSoporte
+  guardarProcentajeSoporte,
+  detIdPagoByID
 } from "../provider/pago_provider";
 let Validator = require("validatorjs");
 
@@ -121,7 +122,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
   let fechaUpdate = new Date();
 
   try {
-    let id_pago = await detIdPagoByCodigo(codigo_pago);
+    let id_pago = await detIdPagoByID(codigo_pago);
     let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
       method: "POST",
       body: JSON.stringify(data),

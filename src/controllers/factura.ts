@@ -425,16 +425,19 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
       }
     }
 
+    if (facturas.length > 0) {
+      console.log("ejecutando verificador");
+      await Verificadorpago(facturas[0].id)
+    }
 
-   await Verificadorpago(facturas[0].codigo)
     //recorrer las facturas para llenar el detalle
     for (const factura of facturas) {
       //verifica el pago en zona pagos y actualiza en la db
-      
+
 
       let pagosDB = await consultaPagoFacturaCliente(factura.id);
       for (const pago of pagosDB) {
-        pago.fecha =   format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
+        pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
       }
 
       let det_factua = [];

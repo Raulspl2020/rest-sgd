@@ -143,8 +143,21 @@ export const detIdPagoByCodigo = async (codigo: any) => {
   }
 };
 
-export const actualizarEstadoPago = async (params: any, codigo: string) => {
-  let result = await conDB("fin_pago").where({'codigo': codigo}).update(params);
+export const detIdPagoByID = async (id_pago: any) => {
+  let result = await conDB
+    .select("_id")
+    .from("fin_pago")
+    .where("_id", id_pago);
+  if (result.length > 0) {
+    return result[0]._id;
+  } else {
+    return false;
+  }
+};
+
+
+export const actualizarEstadoPago = async (params: any, id_pago: string) => {
+  let result = await conDB("fin_pago").where({'_id': id_pago}).update(params);
   return result;
 };
 
@@ -211,8 +224,8 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
 //actualiza los datos en fin_pago, borras los detalles de la factura y crea unos nuevos
 export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_id : any) => {
  // delete pago["codigo"];
-  console.log(det_pago);
-  let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss A');
+ // console.log(det_pago);
+  let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss');
   pago.fecha_update = fechaActual;
   const trx = await conDB.transaction();
   return await trx("fin_detalle_factura")
@@ -226,6 +239,7 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
     .then((result: any) => {
 
       console.log("se va a actualizar el pago");
+      console.log(pago);
      return trx("fin_pago")
         .where("_id", pago_id)
         .update(pago)
@@ -250,7 +264,7 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
   return await trx("fin_detalle_pago")
     .where({"pago_id": id})
-    .whereRaw("forma_pago_id <> ? OR  forma_pago_id IS NULL", [99])
+    .whereRaw("(forma_pago_id <> ? OR  forma_pago_id IS NULL)", [99])
     .del()
     .then((ids: any) => {
       let detalle: any = dataInsert;

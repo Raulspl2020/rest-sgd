@@ -131,7 +131,7 @@
 
 
 
-                                            <table class="table" v-for="(det, index2) in row.det_factura">
+                                            <table class="table">
                                                 <thead>
                                                     <tr>
                                                         <th scope="col">#</th>
@@ -143,7 +143,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr>
+                                                    <tr  v-for="(det, index2) in row.det_factura">
                                                         <th scope="row">{[index2+1]}</th>
                                                         <td>{[det.concepto]}</td>
                                                         <td>{[det.valor_unidad]}</td>

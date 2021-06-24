@@ -4,7 +4,7 @@ import { dataConfigPago, dividirCodigoBarrasText, ejecutarZonaPagos, generarCodi
 import { Pago } from "../models/Pago";
 import { consultarpagoMatricula } from "./matricula";
 import fetch from "node-fetch";
-import { actualizarEstadoPago, actualizarPagoyDetalle, actualizarPagoyDetalleNew, detIdPagoByCodigo, existePago, getConfigPeriodo, getDescuento, getPagoByID, getPaquete, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
+import { actualizarEstadoPago, actualizarPagoyDetalle, actualizarPagoyDetalleNew, detIdPagoByCodigo, detIdPagoByID, existePago, getConfigPeriodo, getDescuento, getPagoByID, getPaquete, guardarPagoyDetalle, updateDataPago } from "../provider/pago_provider";
 import { getInfoEstudiante } from "./pago";
 import * as moneda from 'currency-formatter';
 import { generarHTMLPDF } from "../helpers/global";
@@ -35,7 +35,7 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
 
     let result: any = await consultarpagoMatricula(body.cod_matricula);
 
-    console.log(result);
+    //console.log(result);
 
     let matricula = result.matricula;
     let detalle_factura = result.detalle_factura;
@@ -103,6 +103,9 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
         });
       });
 
+      console.log("hasta aqui no hay fecha");
+      console.log(tPago);
+
       resultSavePago = await actualizarPagoyDetalleNew(tPago, tDetallePago, id_pago);
       if (resultSavePago != false) {
         id_pago = resultSavePago[0];
@@ -110,37 +113,7 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
         throw new Error("No se ha podido guardar el pago");
       }
 
-
-
-
     }
-
-    //preparamos los datos para enviar a zonapagos
-    let infoPago = new Pago({
-      flt_total_con_iva: result.total_a_pagar_int,
-      flt_valor_iva: 0,
-      str_id_pago: codigoFactura,
-      str_descripcion_pago: detalle_factura[0].paquete,
-      str_email: matricula.email_persona,
-      str_id_cliente: matricula.ide_persona,
-      str_tipo_id: matricula.cod_doc,
-      str_nombre_cliente: matricula.nom1_persona + " " + matricula.nom2_persona,
-      str_apellido_cliente:
-        matricula.ape1_persona + " " + matricula.ape2_persona,
-      str_telefono_cliente: matricula.cel_persona,
-      str_opcional1: detalle_factura[0].codigo, //codigo paquete
-      str_opcional2: "", //valor en letras
-      str_opcional3: matricula.cod_matricula, //matricula
-      str_opcional4: matricula.cod_periodo, //periodo
-      str_opcional5: "",
-    });
-
-    //recortamos el tamaño de la descripcion
-    let finpago2: Pago = new Pago(infoPago);
-    finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
-
-    let bodyZonapagos = dataConfigPago(finpago2);
-
 
 
     //actualizamos los datos de la factua en la db
@@ -177,9 +150,35 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
     console.log("hasta aqui todo bien");
     let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
 
-
     //INICAMOS EL PAGO CON ZONAPAGOS
     if (isPagoOnline) {
+
+      //preparamos los datos para enviar a zonapagos
+      let infoPago = new Pago({
+        flt_total_con_iva: result.total_a_pagar_int,
+        flt_valor_iva: 0,
+        str_id_pago: id_pago,
+        str_descripcion_pago: detalle_factura[0].paquete,
+        str_email: matricula.email_persona,
+        str_id_cliente: matricula.ide_persona,
+        str_tipo_id: matricula.cod_doc,
+        str_nombre_cliente: matricula.nom1_persona + " " + matricula.nom2_persona,
+        str_apellido_cliente:
+          matricula.ape1_persona + " " + matricula.ape2_persona,
+        str_telefono_cliente: matricula.cel_persona,
+        str_opcional1: detalle_factura[0].codigo, //codigo paquete
+        str_opcional2: "", //valor en letras
+        str_opcional3: matricula.cod_matricula, //matricula
+        str_opcional4: matricula.cod_periodo, //periodo
+        str_opcional5: "",
+      });
+
+      //recortamos el tamaño de la descripcion
+      let finpago2: Pago = new Pago(infoPago);
+      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
+
+      let bodyZonapagos = dataConfigPago(finpago2);
+
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
     } else {
       // let infoEstudiante = await getInfoEstudiante(matricula.cod_matricula);
@@ -507,33 +506,6 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
       //guardar el detalle de la factura
       resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
     }
-
-    //preparamos los datos para enviar a zonapagos
-    let infoPago = new Pago({
-      flt_total_con_iva: resultMatricula.total_a_pagar_i,
-      flt_valor_iva: 0,
-      str_id_pago: codigoFactura,
-      str_descripcion_pago: conceptos[0].paquete,
-      str_email: matricula.email_persona,
-      str_id_cliente: matricula.ide_persona,
-      str_tipo_id: matricula.cod_doc,
-      str_nombre_cliente: matricula.nom1_persona + " " + matricula.nom2_persona,
-      str_apellido_cliente: matricula.ape1_persona + " " + matricula.ape2_persona,
-      str_telefono_cliente: matricula.cel_persona,
-      str_opcional1: conceptos[0].codigo, //codigo paquete
-      str_opcional2: "", //valor en letras
-      str_opcional3: matricula.cod_matricula, //matricula
-      str_opcional4: matricula.cod_periodo, //periodo
-      str_opcional5: "",
-    });
-
-    //recortamos el tamaño de la descripcion
-    let finpago2: Pago = new Pago(infoPago);
-    finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
-
-    let bodyZonapagos = dataConfigPago(finpago2);
-
-
     //actualizamos el los datos en la DB
     let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], resultMatricula.total_a_pagar_i, resultMatricula.general.fecha_fin_ordinaria);
     //acualizar codigo de barras en la base de datos y el json con la referencia
@@ -546,6 +518,32 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
 
 
     if (isPagoOnline) {
+      id_pago = resultSavePago[0];
+      //preparamos los datos para enviar a zonapagos
+      let infoPago = new Pago({
+        flt_total_con_iva: resultMatricula.total_a_pagar_i,
+        flt_valor_iva: 0,
+        str_id_pago: id_pago,
+        str_descripcion_pago: conceptos[0].paquete,
+        str_email: matricula.email_persona,
+        str_id_cliente: matricula.ide_persona,
+        str_tipo_id: matricula.cod_doc,
+        str_nombre_cliente: matricula.nom1_persona + " " + matricula.nom2_persona,
+        str_apellido_cliente: matricula.ape1_persona + " " + matricula.ape2_persona,
+        str_telefono_cliente: matricula.cel_persona,
+        str_opcional1: conceptos[0].codigo, //codigo paquete
+        str_opcional2: "", //valor en letras
+        str_opcional3: matricula.cod_matricula, //matricula
+        str_opcional4: matricula.cod_periodo, //periodo
+        str_opcional5: "",
+      });
+
+      //recortamos el tamaño de la descripcion
+      let finpago2: Pago = new Pago(infoPago);
+      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
+
+      let bodyZonapagos = dataConfigPago(finpago2);
+
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
     } else {
 
@@ -628,30 +626,7 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
     }
 
 
-    //preparamos los datos para enviar a zonapagos
-    let infoPago = new Pago({
-      flt_total_con_iva: parseInt(body.total),
-      flt_valor_iva: 0,
-      str_id_pago: codigoFactura,
-      str_descripcion_pago: body.des_concepto,
-      str_email: body.email_persona,
-      str_id_cliente: body.id_persona,
-      str_tipo_id: body.tipo_id,
-      str_nombre_cliente: body.nombre1 + " " + body.nombre2,
-      str_apellido_cliente: body.apellido1 + " " + body.apellido2,
-      str_telefono_cliente: body.cel_persona,
-      str_opcional1: "0", //codigo paquete
-      str_opcional2: "", //valor en letras
-      str_opcional3: "", //matricula
-      str_opcional4: "", //periodo
-      str_opcional5: "",
-    });
 
-    //recortamos el tamaño de la descripcion
-    let finpago2: Pago = new Pago(infoPago);
-    finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
-
-    let bodyZonapagos = dataConfigPago(finpago2);
 
     //GUARDAR EL PAGO EN LA DB
     let tPago: any = {
@@ -723,6 +698,30 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
 
     //INICAMOS EL PAGO CON ZONAPAGOS
     if (isPagoOnline) {
+      //preparamos los datos para enviar a zonapagos
+      let infoPago = new Pago({
+        flt_total_con_iva: parseInt(body.total),
+        flt_valor_iva: 0,
+        str_id_pago: id_pago,
+        str_descripcion_pago: body.des_concepto,
+        str_email: body.email_persona,
+        str_id_cliente: body.id_persona,
+        str_tipo_id: body.tipo_id,
+        str_nombre_cliente: body.nombre1 + " " + body.nombre2,
+        str_apellido_cliente: body.apellido1 + " " + body.apellido2,
+        str_telefono_cliente: body.cel_persona,
+        str_opcional1: "0", //codigo paquete
+        str_opcional2: "", //valor en letras
+        str_opcional3: "", //matricula
+        str_opcional4: "", //periodo
+        str_opcional5: "",
+      });
+
+      //recortamos el tamaño de la descripcion
+      let finpago2: Pago = new Pago(infoPago);
+      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
+
+      let bodyZonapagos = dataConfigPago(finpago2);
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
     } else {
 
@@ -876,11 +875,10 @@ export const Verificadorpago = async (pago_id: any) => {
     str_id_pago: pago_id //cambiar por id
   };
 
-  let id_pago = await detIdPagoByCodigo(pago_id);
+  let id_pago = await detIdPagoByID(pago_id);
 
   try {
     let responseData = await ejecutarZonaPagos(data, "VerificacionPago");
-    console.log(responseData);
 
     if (responseData.int_error == 0) {
       const resss = new ListResponsePago();
