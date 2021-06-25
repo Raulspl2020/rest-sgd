@@ -148,10 +148,10 @@ export const consultaFacturaCliente = async (id_cliente: any) => {
   fin_pago._id
   , fin_pago.codigo
   , fin_pago.descripcion
+  , fin_pago.cod_paquete
   , fin_pago.json_response
   , fin_pago.fecha
   , fin_pago.valor
-  , fin_categoria_pago.descripcion
   , fin_concepto.descripcion as concepto
   , fin_detalle_factura.descuento
   , fin_detalle_factura.aumento

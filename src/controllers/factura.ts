@@ -8,6 +8,7 @@ import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provid
 import { ejecutarZonaPagos } from "../helpers/pago";
 import { ListResponsePago } from "../models/ResponsePago";
 import { Verificadorpago } from "./zonapagos";
+import * as moneda from 'currency-formatter';
 
 //====================
 //   /transaccion/consultaFactura
@@ -393,7 +394,8 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
   let body = req.body;
 
   try {
-
+    let total_a_pagarString:any =  moneda.format(0, { locale: 'es-CO' }).replace('$', '').trim();
+   
     let resultDB = await consultaFacturaCliente(body.id_cliente);
     let jsonData: any = {};
     if (resultDB.length > 0) {
@@ -434,7 +436,7 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
     for (const factura of facturas) {
       //verifica el pago en zona pagos y actualiza en la db
 
-
+      let total_a_pagar= 0;
       let pagosDB = await consultaPagoFacturaCliente(factura.id);
       for (const pago of pagosDB) {
         pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
@@ -443,23 +445,30 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
       let det_factua = [];
       for (const row of resultDB) {
         if (factura.id == row._id) {
+          let subtotal =  (row.valor_unidad - (row.valor_unidad* row.descuento) + (row.valor_unidad* row.aumento));
           det_factua.push({
-            'concepto': row.concepto,
+            'concepto': (row.cod_paquete==0) ?  row.descripcion :  row.concepto,
             'descuento': row.descuento,
             'aumento': row.aumento,
             'valor_unidad': row.valor_unidad,
             'cantidad': row.cantiad
           });
+          total_a_pagar = total_a_pagar +subtotal;
         }
 
       }
       factura.det_factura = det_factua;
       factura.pagos = pagosDB;
+      factura.total_a_pagar_s =  moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
     }
 
     res.status(200).json({
-      cliente: cliente,
-      facturas
+      error: false,
+      message: "Ejecucion correcta",
+      data: {
+        cliente: cliente,
+        facturas
+      }
     });
 
 
