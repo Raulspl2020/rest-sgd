@@ -40,3 +40,39 @@ export const generarHTMLPDF = async (html: string) => {
     }
 
 }
+
+export const generarHTMLPDFNew = async (html: string) => {
+    try {
+        const browser = await puppeteer.launch({
+            args: [
+                "--no-sandbox",
+                "--headless",
+                "--disable-gpu",
+                '--start-maximized',
+                "--disable-setuid-sandbox",
+            ]
+        });
+        const page = await browser.newPage();
+
+
+
+        await page.setContent(html);
+        const pdf = await page.pdf({
+            format: "Letter",
+            width: '1920px',
+             height: '1080px',
+            pageRanges: '1-1',
+            printBackground: true,
+        });
+        console.log("Pdf generado");
+        await browser.close();
+
+        return pdf;
+
+
+
+    } catch (error) {
+        throw new Error(error.message);
+    }
+
+}

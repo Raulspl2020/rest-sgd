@@ -1,4 +1,5 @@
 import { response } from 'express';
+import { generarHTMLPDF, generarHTMLPDFNew } from '../helpers/global';
 
 
 
@@ -72,6 +73,32 @@ export const consultaEstadoPagoView = async (req: any, res = response) => {
     data.BASE_URL = process.env.BASE_URL.toString();
     res.render("consulta_pago",data);
 }
+
+
+//====================
+//   /page/DetalleFactura/:ref/:tipo 
+//=====================
+export const pdfFacturaView = async (req: any, res = response) => {
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+
+    res.render("pdf_factura",data, async (err: any, html: any) => {
+        let pdf = await generarHTMLPDFNew(html);
+        res.contentType("application/pdf");
+        res.send(pdf);
+      });
+
+}
+
+//====================
+//   /page/DetalleFactura/:ref
+//=====================
+export const htmlFacturaView = async (req: any, res = response) => {
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    res.render("pdf_factura",data);
+}
+
 
 
 
