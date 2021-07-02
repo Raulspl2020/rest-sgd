@@ -148,7 +148,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
             //configurar deacuerdo a la configuracion del periodo
-            if (resultDB.nro_creditos <= resultConfig.min_creditos) {
+            if (resultDB.nro_creditos <= resultConfig.min_creditos && resultDB.nro_creditos > 0 ) {
 
                 //se debe cobrar por credito individual
                 console.log("Se cobra por creditos");
@@ -334,11 +334,12 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
             }
 
-
+            let estadoPago =  await existePago(resultPaquete[0].codigo,id_matricula);
             return {
                 error: false,
                 message: "Ejecución correcta",
                 matricula: resultDB,
+                estadopago: estadoPago,
                 soportes: await getCategoriaPorcentajeByMatricula(id_matricula),
                 descuentos : resultDescuentos,
                 detalle_factura: resultPaquete,

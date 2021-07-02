@@ -21,7 +21,8 @@
                 <div class="card border border border-dark">
 
                     <div class="card-body pb-1 ">
-                        <h4 class="card-title text-center text-light border border border-dark bg-danger" @click="consultarPersona">
+                        <h4 class="card-title text-center text-light border border border-dark bg-danger"
+                            @click="consultarPersona">
 
                             <img src="{{BASE_URL}}/static/img/LogoITP1.svg" style="height: 60px;" class="img img-fluid"
                                 alt="">
@@ -100,15 +101,14 @@
 
                                     <li class="nav-item">
                                         <a class="nav-link" id="contact-tab" data-toggle="tab" href="#contact"
-                                            role="tab" aria-controls="contact" aria-selected="false">Carga soporte
-                                            para descuento</a>
+                                            role="tab" aria-controls="contact" aria-selected="false">Descuentos</a>
                                     </li>
 
                                 </ul>
                             </div>
 
                             <div class="col-md-2">
-                                <a id="profile-tab" class="btn btn-outline-secondary" href="#">Consulta precios</a>
+                                <a id="profile-tab" class="btn btn-outline-secondary" href="javascript:void(0)">Consulta precios</a>
                             </div>
                         </div>
 
@@ -154,10 +154,9 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="form-group">
-                                            <label for="">Archivo adjunto:</label>
-                                            <div type="text" class="form-control bg-light">
-                                                <a href="#">archivo_8979419841.pdf</a>
-                                            </div>
+                                            <label for="">Estado:</label>
+                                            <div type="text" class="form-control bg-light text-primary">
+                                                <strong>{[pago.id]} - {[pago.estado]}</strong> </div>
                                         </div>
                                     </div>
                                 </div>
@@ -442,6 +441,11 @@
                         colorTextoAlert: "text-success",
                         cod_periodo: ''
                     },
+                    pago: {
+                        id: '',
+                        codigo: '',
+                        estado: 'SIN PAGO'
+                    },
                     factura: {
                         txtDescFactura: "",
                         txtTotalPagar: 0,
@@ -457,7 +461,7 @@
                     soportes: [],
                     numeroLetras: "CERO PESOS",
                     activarBoton: true,
-                    txtBoton: "Confirmar pago",
+                    txtBoton: "Pagar en linea",
                     activarBotonEf: true,
                     txtBotonEf: "Pagar en efectivo",
                     msjResp: "",
@@ -554,6 +558,16 @@
                         .then((response) => response.json())
                         .then((data) => {
                             if (!data.error) {
+
+
+
+                                if (data.estadopago != false) {
+                                    this.pago.id = data.estadopago._id;
+                                    this.pago.codigo = data.estadopago.codigo;
+                                    this.pago.estado = data.estadopago.estado;
+                                }
+
+
                                 let matricula = data.matricula;
                                 this.categorias = data.categorias;
                                 let detalle_factura = data.detalle_factura;
