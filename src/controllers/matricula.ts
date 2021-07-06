@@ -2,7 +2,9 @@ import { getInfoMatricula, getDetPeriodo } from "../provider/matricula_provider"
 import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
-
+import xlsx from 'node-xlsx';
+import fs from 'fs';
+import path from 'path';
 
 //====================
 //   /matricula/generarpagoinscripcion 
@@ -66,7 +68,7 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
         }
 
 
-        let estadoPago =  await existePago('6',id_matricula);
+        let estadoPago = await existePago('6', id_matricula);
 
 
 
@@ -108,7 +110,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
     let precios: any;
     let periodo: any;
     id_matricula = id_matricula.trim();
-    let resultDescuentos:any = [];
+    let resultDescuentos: any = [];
     try {
         let result = await getInfoMatricula(id_matricula);
         console.log(result[0]);
@@ -127,17 +129,17 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 //si aplica descuento sino aplica aumento, si es 1 añade un descuento
                 if (row.accion == 1) {
                     let registro = {
-                        'id' : row._id,
-                        'descripcion' : row.descripcion,
-                        'descuento': (row.porcentaje *100)
+                        'id': row._id,
+                        'descripcion': row.descripcion,
+                        'descuento': (row.porcentaje * 100)
                     };
                     resultDescuentos.push(registro);
 
                     porcentaje_descuento = porcentaje_descuento + row.porcentaje;
-                    auxDescripcion =  auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + (row.observacion==null) ? row.descripcion +" " : row.observacion + " "; 
+                    auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + (row.observacion == null) ? row.descripcion + " " : row.observacion + " ";
                 } else {
                     porcentaje_aumento = porcentaje_aumento + row.porcentaje;
-                    auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " +  (row.observacion==null) ? row.descripcion+ " " : row.observacion + " ";
+                    auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + (row.observacion == null) ? row.descripcion + " " : row.observacion + " ";
                 }
             });
 
@@ -148,18 +150,18 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
             //configurar deacuerdo a la configuracion del periodo
-            if (resultDB.nro_creditos <= resultConfig.min_creditos && resultDB.nro_creditos > 0 ) {
+            if (resultDB.nro_creditos <= resultConfig.min_creditos && resultDB.nro_creditos > 0) {
 
                 //se debe cobrar por credito individual
                 console.log("Se cobra por creditos");
 
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete( 1);
+                    resultPaquete = await getPaquete(1);
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete( 4);
+                    resultPaquete = await getPaquete(4);
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete( 5);
+                    resultPaquete = await getPaquete(5);
                 }
 
 
@@ -170,7 +172,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                 if (resultPaquete != false) {
 
-                    descripcionFactura = "" + resultPaquete[0].paquete + " + " +auxDescripcion
+                    descripcionFactura = "" + resultPaquete[0].paquete + " + " + auxDescripcion
 
                     precios = resultPaquete;
                     //recorrer los detalles de paquete
@@ -265,11 +267,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete( 2);
+                    resultPaquete = await getPaquete(2);
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete( 3);
+                    resultPaquete = await getPaquete(3);
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete( 5);
+                    resultPaquete = await getPaquete(5);
                 }
 
                 if (resultPaquete != false) {
@@ -334,14 +336,14 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
             }
 
-            let estadoPago =  await existePago(resultPaquete[0].codigo,id_matricula);
+            let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
             return {
                 error: false,
                 message: "Ejecución correcta",
                 matricula: resultDB,
                 estadopago: estadoPago,
                 soportes: await getCategoriaPorcentajeByMatricula(id_matricula),
-                descuentos : resultDescuentos,
+                descuentos: resultDescuentos,
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
                 total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),
@@ -424,11 +426,11 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
 
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete( 1);
+                    resultPaquete = await getPaquete(1);
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete( 4);
+                    resultPaquete = await getPaquete(4);
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete( 5);
+                    resultPaquete = await getPaquete(5);
                 }
 
 
@@ -601,6 +603,65 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
             error: true,
             message: error.message
         });
+    }
+
+
+
+}
+
+
+//====================
+//   /matricula/CargaPlantillaDescuento 
+//=====================
+export const cargaPlantillaDescuento = async (req: any, res: any) => {
+
+    let body = req.body;
+
+    try {
+
+        //subir el archivo si existe
+        if (req.files && req.files.archivo) {
+            const { archivo } = req.files;
+          //  const uploadPath = path.join(__dirname, '../../public/format/plantilla-descuentos.xlsx');
+           // const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(uploadPath));
+         //  console.log(fs.readFileSync(uploadPath));
+            console.log(archivo.data.length);
+
+            console.log(archivo);
+            const workSheetsFromBuffer = xlsx.parse(Buffer.from(archivo.data));
+            console.log(workSheetsFromBuffer);
+            const primeraHoja = workSheetsFromBuffer[0].data;
+
+            primeraHoja.forEach((row: any) => {
+                console.log(row);
+            });
+
+
+
+
+        } else {
+            throw new Error("No se ha seleccionado un archivo");
+        }
+
+
+
+
+
+        //console.log(workSheetsFromBuffer);
+
+        return res.status(200).json({
+            error: true,
+            message: "todo en orden"
+        });
+
+
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: error.message
+        });
+
+
     }
 
 

@@ -1,9 +1,10 @@
 import { Router } from 'express';
 const router = Router();
-import {consultarPagoInscripcion, generarpagoMatricula}  from '../controllers/matricula';
+import {cargaPlantillaDescuento, consultarPagoInscripcion, generarpagoMatricula}  from '../controllers/matricula';
 
 router.get('/generarpagomatricula/:id_matricula', generarpagoMatricula);
 router.get('/generarpagoinscripcion/:id_matricula', consultarPagoInscripcion);
+router.post('/CargaPlantillaDescuento', cargaPlantillaDescuento);
 
 
 

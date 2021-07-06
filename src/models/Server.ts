@@ -58,7 +58,7 @@ class Server {
         this.app.use(bodyParser.json());
         //File-upploads
         this.app.use(fileUpload(
-            {useTempFiles : true,
+            {useTempFiles : false,
             tempFileDir : '/tmp/',
             createParentPath: true
         }

@@ -103,7 +103,8 @@ export const dataConfigPago = (infoPago: any) => {
       {
         int_codigo: 50,
         //str_valor: "2701", para desarrollo
-        str_valor: "1001", // para produccion
+        //str_valor: "1001", // para produccion
+        str_valor: (process.env.NODE_ENV=='pro') ? "1001" : "2701"
       },
       {
         int_codigo: 100,
