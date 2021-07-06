@@ -384,6 +384,14 @@ export const getDescuento = async (cod_matricula: any, periodo_id: any) => {
   return result;
 };
 
+//cambia el estado del descuento a Facturado para que no se pueda volver a usar
+export const updateEstadoDescuentoFac = async (matricula_id:any) => {
+  return await conDB("fin_porcentaje_soporte")
+    .where({ matricula_id: matricula_id })
+    .update({ porcentaje_estado_id: 4 });
+};
+
+
 
 //consulta las categorias de descuento disponibles
 export const getCategriaDescuento = async (accion: any) => {

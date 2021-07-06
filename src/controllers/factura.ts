@@ -2,7 +2,7 @@ import { parse, format } from "date-format-parse";
 import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { guardarLog } from "../provider/log_provider";
-import { getConfigPeriodo } from "../provider/pago_provider";
+import { getConfigPeriodo, getDescuento, updateEstadoDescuentoFac } from "../provider/pago_provider";
 import { consultarpagoMatricula } from "./matricula";
 import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provider";
 import { ejecutarZonaPagos } from "../helpers/pago";
@@ -62,11 +62,6 @@ export const consultaFacturaService = async (req: any, res: any) => {
 
           let resultMatricula = await getInfoMatricula(matricula_id);
           let resultDB = resultMatricula[0][0];
-
-
-          console.log("El resultado de la base de datos es");
-          console.log(resultDB);
-
 
           let periodo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
           let finOrdianria = new Date(periodo.fec_fin_matordinaria);
@@ -182,6 +177,23 @@ export const registrarPagoService = async (req: any, res: any) => {
 
       if (resultObjectDB.data[0].estado_id == 1) {
         throw new Error("La factura " + Referencia_pago + " ya se encuentra pagada");
+      }
+
+      let categoria_id = resultObjectDB.data[0].categoria_pago_id;
+
+      if (categoria_id == 1) {
+          let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
+
+          let resultMatricula = await getInfoMatricula(matricula_id);
+          let resultDB = resultMatricula[0][0];
+          //consular los descuentos y multas que un estudiante tiene asignados
+          let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+          if(resultDto.length > 0){
+            console.log("Se encontraron descuentos");
+            await updateEstadoDescuentoFac(resultDB.cod_matricula);
+          }else{
+            console.log("NO Se encontraron descuentos");
+          }
       }
 
 

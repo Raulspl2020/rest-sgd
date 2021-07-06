@@ -20,8 +20,12 @@ import {
   getConfigPeriodo,
   getCategoriaPorcentaje,
   guardarProcentajeSoporte,
-  detIdPagoByID
+  detIdPagoByID,
+  getDescuento,
+  updateEstadoDescuentoFac
 } from "../provider/pago_provider";
+import { consultaFacturaBanco } from "../provider/factura_provider";
+import { getInfoMatricula } from "../provider/matricula_provider";
 let Validator = require("validatorjs");
 
 
@@ -122,7 +126,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
   let fechaUpdate = new Date();
 
   try {
-    let id_pago = await detIdPagoByID(codigo_pago);
+    let id_pago =  await detIdPagoByID(codigo_pago);
     let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
       method: "POST",
       body: JSON.stringify(data),
@@ -171,6 +175,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         id_pago = resSavePago.pago_id;
 
       }
+      let estado_pago = 0;
 
       let data: any = {
         'json_detalle': responseData.str_res_pago,
@@ -189,6 +194,9 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         }else{
           fechaInsert = format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss');
         }
+
+        estado_pago = (det.int_estado_pago == '') ? 0 : det.int_estado_pago;
+
 
         detPago.push({
           '_id': uuidv4(),
@@ -209,6 +217,30 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         });
 
       });
+
+
+      //ACTUALIZAMOS EL ESTADO DE CADA DESCUENTO
+      if(estado_pago > 0) {
+        let resultObjectDB: any = await consultaFacturaBanco(id_pago);
+        let categoria_id = resultObjectDB.data[0].categoria_pago_id;
+        if (resultObjectDB != false) {
+          
+          if (categoria_id == 1) {
+            let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
+
+            let resultMatricula = await getInfoMatricula(matricula_id);
+            let resultDB = resultMatricula[0][0];
+            //consular los descuentos y multas que un estudiante tiene asignados
+            let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+            if(resultDto.length > 0){
+              console.log("Se encontraron descuentos");
+              await updateEstadoDescuentoFac(resultDB.cod_matricula);
+            }else{
+              console.log("NO Se encontraron descuentos");
+            }
+        }
+        }
+    }
 
 
       //actualiza la fecha y el estado de un pago en la DB
