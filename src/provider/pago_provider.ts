@@ -381,7 +381,8 @@ export const getDescuento = async (cat_pago: any, periodo_id: any, estudiante_id
       "=",
       "fin_porcetaje_categoria._id"
     )
-    .where({ 'categoria_pago_id': cat_pago, estudiante_id: estudiante_id, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
+    .where({ 'categoria_pago_id': cat_pago, estudiante_id: estudiante_id, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 })
+    .orderBy([{ column: 'fin_porcentaje_soporte.accion' }, { column: 'fin_porcentaje_soporte.porcentaje', order: 'asc' }]);
   return result;
 };
 
