@@ -305,7 +305,7 @@ export const getCategoriaPorcentaje = async (id: any) => {
 };
 
 //obtiene una categoria de porcentaje
-export const getCategoriaPorcentajeByMatricula = async (cod_matricula: any) => {
+export const getCategoriaPorcentajeByMatricula = async (cat_pago: any,estudiante_id:any, periodo_id:any ) => {
   let result = await conDB
     .select('fin_porcentaje_soporte.fecha', 'fin_porcentaje_soporte.porcentaje', 'fin_porcentaje_soporte.observacion', 'fin_porcetaje_categoria.descripcion', 'fin_porcentaje_estado.descripcion as estado')
     .from("fin_porcentaje_soporte")
@@ -321,7 +321,8 @@ export const getCategoriaPorcentajeByMatricula = async (cod_matricula: any) => {
     )
 
 
-    .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
+   // .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
+    .where({ 'fin_porcentaje_soporte.categoria_pago_id': cat_pago, 'fin_porcentaje_soporte.estudiante_id': estudiante_id, 'fin_porcentaje_soporte.periodo_id': periodo_id});
   return result;
 };
 
@@ -371,7 +372,7 @@ FROM
 
 
 //consulta descuentos a un estudiante
-export const getDescuento = async (cod_matricula: any, periodo_id: any) => {
+export const getDescuento = async (cat_pago: any, periodo_id: any, estudiante_id:any) => {
   let result = await conDB
     .select('fin_porcentaje_soporte._id','fin_porcentaje_soporte.porcentaje','fin_porcentaje_soporte.accion','fin_porcentaje_soporte.observacion','fin_porcentaje_soporte.tipo','fin_porcentaje_soporte.json_file','fin_porcetaje_categoria.descripcion')
     .from("fin_porcentaje_soporte")
@@ -380,7 +381,7 @@ export const getDescuento = async (cod_matricula: any, periodo_id: any) => {
       "=",
       "fin_porcetaje_categoria._id"
     )
-    .where({ 'matricula_id': cod_matricula, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
+    .where({ 'categoria_pago_id': cat_pago, estudiante_id: estudiante_id, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 });
   return result;
 };
 

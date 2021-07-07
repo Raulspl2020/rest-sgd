@@ -187,7 +187,7 @@ export const registrarPagoService = async (req: any, res: any) => {
           let resultMatricula = await getInfoMatricula(matricula_id);
           let resultDB = resultMatricula[0][0];
           //consular los descuentos y multas que un estudiante tiene asignados
-          let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+          let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo,resultDB.ide_persona);
           if(resultDto.length > 0){
             console.log("Se encontraron descuentos");
             await updateEstadoDescuentoFac(resultDB.cod_matricula);

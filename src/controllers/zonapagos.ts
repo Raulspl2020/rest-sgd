@@ -788,7 +788,7 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
         throw new Error("No se encontraron precios configurados");
       }
       //consular los descuentos y multas que un estudiante tiene asignados
-      let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+      let resultDto = await getDescuento(resultPaquete[0].categoria_id, resultDB.cod_periodo, resultDB.ide_persona);
       console.log(resultDto);
 
 

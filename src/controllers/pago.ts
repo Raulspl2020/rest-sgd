@@ -103,7 +103,7 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
       //obtenemos el paquete a facturar
       let resultPaquete: any = null;
       //consular los descuentos y multas que un estudiante tiene asignados
-      let resultDto = await getDescuento(resultDB.matricula.cod_matricula, resultDB.matricula.cod_periodo);
+      let resultDto = await getDescuento(5, resultDB.matricula.cod_periodo,resultDB.matricula.ide_persona);
 
 
 

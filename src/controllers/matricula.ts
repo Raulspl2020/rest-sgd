@@ -35,7 +35,7 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
                 throw new Error("No se encontraron precios configurados");
             }
             //consular los descuentos y multas que un estudiante tiene asignados
-            let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+            let resultDto = await getDescuento(resultPaquete[0].categoria_id, resultDB.cod_periodo, resultDB.ide_persona);
             resultDto.forEach((row: any) => {
                 //si aplica descuento sino aplica aumento, si es 1 añade un descuento
                 if (row.accion == 1) {
@@ -122,7 +122,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
             //consular los descuentos y multas que un estudiante tiene asignados
-            let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+            let resultDto = await getDescuento("1", resultDB.cod_periodo, resultDB.ide_persona);
             resultDto.forEach((row: any) => {
 
 
@@ -342,7 +342,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 message: "Ejecución correcta",
                 matricula: resultDB,
                 estadopago: estadoPago,
-                soportes: await getCategoriaPorcentajeByMatricula(id_matricula),
+                soportes: await getCategoriaPorcentajeByMatricula('1',resultDB.ide_persona, resultDB.cod_periodo),
                 descuentos: resultDescuentos,
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
@@ -412,7 +412,7 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
             periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
 
             //consular los descuentos que un estudiante tiene asignados
-            let resultDto = await getDescuento(resultDB.cod_matricula, resultDB.cod_periodo);
+            let resultDto = await getDescuento(1, resultDB.cod_periodo, resultDB.ide_persona);
             resultDto.forEach((row: any) => {
                 porcentaje_descuento = porcentaje_descuento + row.porcentaje;
             });
