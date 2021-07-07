@@ -1,10 +1,11 @@
-import { getInfoMatricula, getDetPeriodo } from "../provider/matricula_provider";
+import { getInfoMatricula, getDetPeriodo, insertArrayDescuento } from "../provider/matricula_provider";
 import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 import xlsx from 'node-xlsx';
 import fs from 'fs';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 //====================
 //   /matricula/generarpagoinscripcion 
@@ -317,22 +318,41 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                     });
 
-                    //volvemos a recorrer para calcular totales
-                    total_a_pagar = 0;
-                    precios.forEach((element: any, index: number) => {
-                        precios[index].paquete = descripcionFactura;
-                        let subtotal = (element.valor_unidad * element.cantidad);
-                        precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
-                        total_a_pagar = element.subtotal + total_a_pagar;
-                    });
+
 
 
                 } else {
                     throw new Error("No se encontraron precios configurados");
                 }
 
+                 //RECORREMOS PARA APLICAR LOS DESCUENTOS EN ORDEN ASCENDENTE
+              /*  resultPaquete.forEach((element_fac: any) => {
+
+                    if(element_fac.descuento_ext=='1'){
+                        let auxSubtotal =  (element_fac.cantidad * element_fac.valor_unidad) +  ((element_fac.cantidad * element_fac.valor_unidad) * element_fac.aumento);
+                        let subtotal = 0;
+                        resultDescuentos.forEach((element_desc: any, index: number) => {
+                            auxSubtotal =  auxSubtotal -  (auxSubtotal * (element_desc.descuento/100));
+                        });
+                        element_fac.subtotal = auxSubtotal;
+                        console.log(element_fac);
+                    }
+
+                });
+                */
+
+                //volvemos a recorrer para calcular totales
+                total_a_pagar = 0;
+                precios.forEach((element: any, index: number) => {
+                    precios[index].paquete = descripcionFactura;
+                    let subtotal = (element.valor_unidad * element.cantidad);
+                    precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
+                    total_a_pagar = element.subtotal + total_a_pagar;
+                });
 
 
+
+                console.log(resultPaquete);
 
             }
 
@@ -632,9 +652,41 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
             console.log(workSheetsFromBuffer);
             const primeraHoja = workSheetsFromBuffer[0].data;
 
-            primeraHoja.forEach((row: any) => {
-                console.log(row);
+            let dataInsert:any = [];
+
+            let codigo_Cargue = uuidv4() ;
+            let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss');
+
+            primeraHoja.forEach((row: any, index:number) => {
+               // console.log(row);
+
+
+                let rowObject = {
+                    'codigo_cargue': (row[0]==undefined || row[0]=='' ) ? codigo_Cargue : row[0],
+                    'config_id':  (row[1]==undefined || row[1]=='' ) ? null : row[1],
+                    'porcentaje_estado_id':  row[2],
+                    'estudiante_id': row[3],
+                    'matricula_id': row[4],
+                    'porcentaje_categoria_id':  row[5],
+                    'porcentaje': row[6],
+                    'periodo_id': row[7],
+                   // 'nom_periodo': row[8]
+                    'observacion': (row[8]==undefined || row[8]=='' ) ? null : row[8],
+                    'accion': row[9],
+                    'tipo': row[10],
+                    'fecha': fechaActual
+                }; 
+
+                if(index>0){
+                    dataInsert.push(rowObject);
+                }
+
+
             });
+
+            let resultDB = await insertArrayDescuento(dataInsert);
+
+            console.log(resultDB);
 
 
 

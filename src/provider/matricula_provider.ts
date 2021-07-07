@@ -110,4 +110,26 @@ export const getDatePeriodo = async (cod_colegio: any, cod_periodo: any) => {
 };
 
 
+//carga estudiantes con descuento a la tabla fin_porcentaje_soporte
+export const insertArrayDescuento = async (dataInsert: any) => {
+
+    
+  const trx = await conDB.transaction();
+  return await trx("fin_porcentaje_soporte")
+    .insert(dataInsert)
+    .then((result: any) => {
+      trx.commit();
+      console.log(result);
+      return true;
+    })
+    .catch((result: any) => {
+      console.log(result);
+      trx.rollback();
+      return false;
+    });
+
+}
+
+
+
 

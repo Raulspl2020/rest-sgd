@@ -322,8 +322,9 @@ export const getCategoriaPorcentajeByMatricula = async (cat_pago: any,estudiante
 
 
    // .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
-    .where({ 'fin_porcentaje_soporte.categoria_pago_id': cat_pago, 'fin_porcentaje_soporte.estudiante_id': estudiante_id, 'fin_porcentaje_soporte.periodo_id': periodo_id});
-  return result;
+    .where({ 'fin_porcentaje_soporte.categoria_pago_id': cat_pago, 'fin_porcentaje_soporte.estudiante_id': estudiante_id, 'fin_porcentaje_soporte.periodo_id': periodo_id})
+    .orderBy([{ column: 'fin_porcentaje_soporte.accion' }, {column: 'fin_porcentaje_soporte.porcentaje_estado_id' }, { column: 'fin_porcentaje_soporte.porcentaje', order: 'asc' }]);
+    return result;
 };
 
 
