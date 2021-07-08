@@ -1,4 +1,4 @@
-import { getInfoMatricula, getDetPeriodo, insertArrayDescuento } from "../provider/matricula_provider";
+import { getInfoMatricula, getDetPeriodo, insertArrayDescuento, getDataDescuentosByCodigo } from "../provider/matricula_provider";
 import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
@@ -6,6 +6,7 @@ import xlsx from 'node-xlsx';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import stream from 'stream';
 
 //====================
 //   /matricula/generarpagoinscripcion 
@@ -325,21 +326,21 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     throw new Error("No se encontraron precios configurados");
                 }
 
-                 //RECORREMOS PARA APLICAR LOS DESCUENTOS EN ORDEN ASCENDENTE
-              /*  resultPaquete.forEach((element_fac: any) => {
-
-                    if(element_fac.descuento_ext=='1'){
-                        let auxSubtotal =  (element_fac.cantidad * element_fac.valor_unidad) +  ((element_fac.cantidad * element_fac.valor_unidad) * element_fac.aumento);
-                        let subtotal = 0;
-                        resultDescuentos.forEach((element_desc: any, index: number) => {
-                            auxSubtotal =  auxSubtotal -  (auxSubtotal * (element_desc.descuento/100));
-                        });
-                        element_fac.subtotal = auxSubtotal;
-                        console.log(element_fac);
-                    }
-
-                });
-                */
+                //RECORREMOS PARA APLICAR LOS DESCUENTOS EN ORDEN ASCENDENTE
+                /*  resultPaquete.forEach((element_fac: any) => {
+  
+                      if(element_fac.descuento_ext=='1'){
+                          let auxSubtotal =  (element_fac.cantidad * element_fac.valor_unidad) +  ((element_fac.cantidad * element_fac.valor_unidad) * element_fac.aumento);
+                          let subtotal = 0;
+                          resultDescuentos.forEach((element_desc: any, index: number) => {
+                              auxSubtotal =  auxSubtotal -  (auxSubtotal * (element_desc.descuento/100));
+                          });
+                          element_fac.subtotal = auxSubtotal;
+                          console.log(element_fac);
+                      }
+  
+                  });
+                  */
 
                 //volvemos a recorrer para calcular totales
                 total_a_pagar = 0;
@@ -355,7 +356,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 console.log(resultPaquete);
 
             }
-        
+
 
             let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
             return {
@@ -363,7 +364,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 message: "Ejecución correcta",
                 matricula: resultDB,
                 estadopago: estadoPago,
-                soportes: await getCategoriaPorcentajeByMatricula('1',resultDB.ide_persona, resultDB.cod_periodo),
+                soportes: await getCategoriaPorcentajeByMatricula('1', resultDB.ide_persona, resultDB.cod_periodo),
                 descuentos: resultDescuentos,
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
@@ -643,9 +644,9 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
         //subir el archivo si existe
         if (req.files && req.files.archivo) {
             const { archivo } = req.files;
-          //  const uploadPath = path.join(__dirname, '../../public/format/plantilla-descuentos.xlsx');
-           // const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(uploadPath));
-         //  console.log(fs.readFileSync(uploadPath));
+            //  const uploadPath = path.join(__dirname, '../../public/format/plantilla-descuentos.xlsx');
+            // const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(uploadPath));
+            //  console.log(fs.readFileSync(uploadPath));
             console.log(archivo.data.length);
 
             console.log(archivo);
@@ -653,32 +654,32 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
             console.log(workSheetsFromBuffer);
             const primeraHoja = workSheetsFromBuffer[0].data;
 
-            let dataInsert:any = [];
+            let dataInsert: any = [];
 
-            let codigo_Cargue = uuidv4() ;
+            let codigo_Cargue = uuidv4();
             let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss');
 
-            primeraHoja.forEach((row: any, index:number) => {
-               // console.log(row);
+            primeraHoja.forEach((row: any, index: number) => {
+                // console.log(row);
 
 
                 let rowObject = {
-                    'codigo_cargue': (row[0]==undefined || row[0]=='' ) ? codigo_Cargue : row[0],
-                    'config_id':  (row[1]==undefined || row[1]=='' ) ? null : row[1],
-                    'porcentaje_estado_id':  row[2],
+                    'codigo_cargue': (row[0] == undefined || row[0] == '') ? codigo_Cargue : row[0],
+                    'config_id': (row[1] == undefined || row[1] == '') ? null : row[1],
+                    'porcentaje_estado_id': row[2],
                     'estudiante_id': row[3],
                     'matricula_id': row[4],
-                    'porcentaje_categoria_id':  row[5],
+                    'porcentaje_categoria_id': row[5],
                     'porcentaje': row[6],
                     'periodo_id': row[7],
-                   // 'nom_periodo': row[8]
-                    'observacion': (row[8]==undefined || row[8]=='' ) ? null : row[8],
+                    // 'nom_periodo': row[8]
+                    'observacion': (row[8] == undefined || row[8] == '') ? null : row[8],
                     'accion': row[9],
                     'tipo': row[10],
                     'fecha': fechaActual
-                }; 
+                };
 
-                if(index>0){
+                if (index > 0) {
                     dataInsert.push(rowObject);
                 }
 
@@ -686,27 +687,27 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
             });
 
             let resultDB = await insertArrayDescuento(dataInsert);
-
-            console.log(resultDB);
-
-
+            if (resultDB[0]) {
+                return res.status(200).json({
+                    error: false,
+                    message: `Cargado exitosamente, se han afectado  ${resultDB[1]} registros`,
+                    data: {
+                        'codigo': codigo_Cargue,
+                        'fecha': fechaActual,
+                        'registros': resultDB[1]
+                    }
+                });
+            } else {
+                return res.status(200).json({
+                    error: true,
+                    message: `Archivo procesado con errores, ${resultDB[1].sqlMessage} `
+                });
+            }
 
 
         } else {
             throw new Error("No se ha seleccionado un archivo");
         }
-
-
-
-
-
-        //console.log(workSheetsFromBuffer);
-
-        return res.status(200).json({
-            error: true,
-            message: "todo en orden"
-        });
-
 
     } catch (error) {
         return res.status(500).json({
@@ -714,9 +715,62 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
             message: error.message
         });
 
-
     }
 
+}
+
+
+
+//====================
+//   /matricula/descargarCargueDescuento 
+//=====================
+export const descargarCargueDescuento = async (req: any, res: any) => {
+    let codigoFile = req.params.codigo.trim();
+
+    let columns: any = [];
+    let arrayData: any = [];
+    try {
+        let resultDB = await getDataDescuentosByCodigo(codigoFile);
+
+        if (resultDB.length > 0) {
+            console.log(Object.entries(resultDB[0]));
+            for (const [key, value] of Object.entries(resultDB[0])) {
+                columns.push(key);
+            }
+            arrayData.push(columns);
+
+            resultDB.forEach((element: any) => {
+                let row: any = [];
+                for (const [key, value] of Object.entries(element)) {
+                    row.push(value);
+                }
+                arrayData.push(row)
+            });
+
+            const data = arrayData;
+            const options = { '!cols': [{ wch: 6 }, { wch: 7 }, { wch: 10 }, { wch: 20 }] };
+            var buffer = xlsx.build([{ name: "Hoja 1", data: data }], options); // Returns a buffer
+
+            // return res.download(buffer);
+            var fileName = 'Cargue_' + codigoFile + '.xlsx';
+
+            var readStream = new stream.PassThrough();
+            readStream.end(buffer);
+
+            res.set('Content-disposition', 'attachment; filename=' + fileName);
+            res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+            readStream.pipe(res);
+
+        }else{
+            res.send(`<h1>No se encontró el archivo solicitado</h1>`);
+        }
+
+
+    } catch (error) {
+        console.log(error);
+        res.send(`<h1>Ocurrio un error: ${error.message}</h1>`);
+    }
 
 
 }

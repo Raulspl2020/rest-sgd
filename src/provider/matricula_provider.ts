@@ -112,22 +112,76 @@ export const getDatePeriodo = async (cod_colegio: any, cod_periodo: any) => {
 
 //carga estudiantes con descuento a la tabla fin_porcentaje_soporte
 export const insertArrayDescuento = async (dataInsert: any) => {
+    const trx = await conDB.transaction();
+    return await trx("fin_porcentaje_soporte")
+        .insert(dataInsert)
+        .then((result: any) => {
 
-    
-  const trx = await conDB.transaction();
-  return await trx("fin_porcentaje_soporte")
-    .insert(dataInsert)
-    .then((result: any) => {
-      trx.commit();
-      console.log(result);
-      return true;
-    })
-    .catch((result: any) => {
-      console.log(result);
-      trx.rollback();
-      return false;
-    });
+            return trx.raw('SELECT ROW_COUNT() as numero').then((afeccted: any) => {
+                trx.commit();
+                console.log(result);
+                return [true, afeccted[0][0].numero];
+            });
 
+        })
+        .catch((result: any) => {
+            console.log(result);
+            trx.rollback();
+            return [false, result];
+        });
+
+}
+
+
+
+//lista los cargues realizados exitosamente
+export const getCargaDescuentos = async (dataInsert: any) => {
+    let sql = "SELECT codigo_cargue, fecha, COUNT(*) AS numero FROM fin_porcentaje_soporte WHERE codigo_cargue <> '0' GROUP BY   codigo_cargue";
+    let result = await conDB.raw(sql);
+    if (result[0].length > 0) {
+        return result[0];
+    } else {
+        return false;
+    }
+}
+
+//lista los desceuntos cargados por codigo de cargue
+export const getDataDescuentosByCodigo = async (codigo: any) => {
+    let sql = `SELECT
+    fin_porcentaje_soporte.codigo_cargue AS 'CODIGO CARGUE'
+    , fin_porcentaje_soporte.config_id AS 'CONFIGURACION'
+    , fin_porcentaje_soporte.porcentaje_estado_id AS 'ESTADO PORCENTAJE'
+    , fin_porcentaje_estado.descripcion AS descripcion_estado
+    , col_persona.ide_persona AS 'NRO IDENTIFICACION'
+    , CONCAT_WS( " "   , col_persona.ape1_persona
+    , col_persona.ape2_persona
+    , col_persona.nom1_persona
+    , col_persona.nom2_persona) AS estudiante
+    , fin_porcentaje_soporte.matricula_id AS 'COD MATRICULA'
+    , fin_porcentaje_soporte.porcentaje_categoria_id AS 'CATEGORIA PORCENTAJE'
+    , fin_porcetaje_categoria.descripcion AS descripcion_categoria
+    , fin_porcentaje_soporte.porcentaje AS 'VALOR PORCENTAJE'
+    , col_periodo.cod_periodo AS 'ID PERIODO'
+    , col_periodo.nom_periodo 
+    , fin_porcentaje_soporte.observacion AS 'OBSERVACION'
+    , fin_porcentaje_soporte.accion AS 'ACCION'
+    , fin_porcentaje_soporte.tipo AS 'TIPO'
+FROM
+    sigedin_desarrollo.fin_porcentaje_soporte
+    INNER JOIN sigedin_desarrollo.col_persona 
+        ON (fin_porcentaje_soporte.estudiante_id = col_persona.ide_persona)
+    INNER JOIN sigedin_desarrollo.fin_porcetaje_categoria 
+        ON (fin_porcentaje_soporte.porcentaje_categoria_id = fin_porcetaje_categoria._id)
+    INNER JOIN sigedin_desarrollo.col_periodo 
+        ON (fin_porcentaje_soporte.periodo_id = col_periodo.cod_periodo)
+    INNER JOIN sigedin_desarrollo.fin_porcentaje_estado 
+        ON (fin_porcentaje_soporte.porcentaje_estado_id = fin_porcentaje_estado._id) WHERE fin_porcentaje_soporte.codigo_cargue = ? ;`;
+    let result = await conDB.raw(sql,[codigo]);
+    if (result[0].length > 0) {
+        return result[0];
+    } else {
+        return [];
+    }
 }
 
 
