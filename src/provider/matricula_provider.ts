@@ -167,14 +167,14 @@ export const getDataDescuentosByCodigo = async (codigo: any) => {
     , fin_porcentaje_soporte.accion AS 'ACCION'
     , fin_porcentaje_soporte.tipo AS 'TIPO'
 FROM
-    sigedin_desarrollo.fin_porcentaje_soporte
-    INNER JOIN sigedin_desarrollo.col_persona 
+    fin_porcentaje_soporte
+    INNER JOIN col_persona 
         ON (fin_porcentaje_soporte.estudiante_id = col_persona.ide_persona)
-    INNER JOIN sigedin_desarrollo.fin_porcetaje_categoria 
+    INNER JOIN fin_porcetaje_categoria 
         ON (fin_porcentaje_soporte.porcentaje_categoria_id = fin_porcetaje_categoria._id)
-    INNER JOIN sigedin_desarrollo.col_periodo 
+    INNER JOIN col_periodo 
         ON (fin_porcentaje_soporte.periodo_id = col_periodo.cod_periodo)
-    INNER JOIN sigedin_desarrollo.fin_porcentaje_estado 
+    INNER JOIN fin_porcentaje_estado 
         ON (fin_porcentaje_soporte.porcentaje_estado_id = fin_porcentaje_estado._id) WHERE fin_porcentaje_soporte.codigo_cargue = ? ;`;
     let result = await conDB.raw(sql,[codigo]);
     if (result[0].length > 0) {
