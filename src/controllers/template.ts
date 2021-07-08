@@ -1,6 +1,7 @@
 import { response } from 'express';
 import { generarHTMLPDF, generarHTMLPDFNew } from '../helpers/global';
-
+import stream from 'stream';
+import path from 'path';
 
 
 
@@ -71,7 +72,7 @@ export const viewPDFPago = async (req: any, res = response) => {
 export const consultaEstadoPagoView = async (req: any, res = response) => {
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
-    res.render("consulta_pago",data);
+    res.render("consulta_pago", data);
 }
 
 
@@ -82,11 +83,11 @@ export const pdfFacturaView = async (req: any, res = response) => {
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
 
-    res.render("pdf_factura",data, async (err: any, html: any) => {
+    res.render("pdf_factura", data, async (err: any, html: any) => {
         let pdf = await generarHTMLPDFNew(html);
         res.contentType("application/pdf");
         res.send(pdf);
-      });
+    });
 
 }
 
@@ -96,8 +97,29 @@ export const pdfFacturaView = async (req: any, res = response) => {
 export const htmlFacturaView = async (req: any, res = response) => {
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
-    res.render("pdf_factura",data);
+    res.render("pdf_factura", data);
 }
+
+
+//====================
+//   /page/admindescuento
+//=====================
+export const htmlAdminDescuentoView = async (req: any, res = response) => {
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    res.render("admin_descuentos", data);
+}
+//====================
+//   /page/descargarplantilladesceunto
+//=====================
+export const descargarPlantillaDesceunto = async (req: any, res = response) => {
+    const uploadPath = path.join(__dirname, '../../public/format/plantilla-descuentos.xlsx');
+    return res.download(uploadPath);
+
+}
+
+
+
 
 
 
@@ -111,13 +133,13 @@ export const viewConsultaPago = async (req: any, res = response) => {
     // const buffer = canvas.toBuffer('application/pdf')
     // fs.writeFileSync('./image.pdf', buffer)
 
-// //convert your PDF to a Blob and save to file
-// canvas.stream.on('finish', function () {
-//     var blob = canvas.stream.toBlob('application/pdf');
-//    // saveAs(blob, 'example.pdf', true);
-//     fs.writeFileSync('./image.pdf', blob)
-// });
-// canvas.end();
+    // //convert your PDF to a Blob and save to file
+    // canvas.stream.on('finish', function () {
+    //     var blob = canvas.stream.toBlob('application/pdf');
+    //    // saveAs(blob, 'example.pdf', true);
+    //     fs.writeFileSync('./image.pdf', blob)
+    // });
+    // canvas.end();
 
 
 

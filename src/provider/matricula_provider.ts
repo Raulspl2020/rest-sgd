@@ -135,14 +135,43 @@ export const insertArrayDescuento = async (dataInsert: any) => {
 
 
 //lista los cargues realizados exitosamente
-export const getCargaDescuentos = async (dataInsert: any) => {
-    let sql = "SELECT codigo_cargue, fecha, COUNT(*) AS numero FROM fin_porcentaje_soporte WHERE codigo_cargue <> '0' GROUP BY   codigo_cargue";
+export const getCargaDescuentos = async () => {
+    let sql = "SELECT codigo_cargue, fecha, COUNT(*) AS numero FROM fin_porcentaje_soporte WHERE codigo_cargue <> '0' GROUP BY codigo_cargue ORDER BY _id DESC";
     let result = await conDB.raw(sql);
     if (result[0].length > 0) {
         return result[0];
     } else {
-        return false;
+        return [];
     }
+}
+
+//permite veificar si algun descuento cargado con el codigo x se uso en una factura o esta en estado 4
+export const verificaCargueFacturado = async (codigo: any) => {
+    let sql = "SELECT * FROM fin_porcentaje_soporte WHERE codigo_cargue=? AND porcentaje_estado_id=4";
+    let result = await conDB.raw(sql, [codigo]);
+    if (result[0].length > 0) {
+        return result[0];
+    } else {
+        return [];
+    }
+}
+//permite veificar si algun descuento cargado con el codigo x se uso en una factura o esta en estado 4
+export const eliminaDescuentosCargue = async (codigo: any) => {
+    const trx = await conDB.transaction();
+    return await trx("fin_porcentaje_soporte")
+        .where("codigo_cargue", codigo)
+        .del()
+        .then((result: any) => {
+            trx.commit();
+            return true;
+
+        })
+        .catch((result: any) => {
+            console.log(result);
+            trx.rollback();
+            return false;
+        });
+
 }
 
 //lista los desceuntos cargados por codigo de cargue
@@ -176,7 +205,7 @@ FROM
         ON (fin_porcentaje_soporte.periodo_id = col_periodo.cod_periodo)
     INNER JOIN fin_porcentaje_estado 
         ON (fin_porcentaje_soporte.porcentaje_estado_id = fin_porcentaje_estado._id) WHERE fin_porcentaje_soporte.codigo_cargue = ? ;`;
-    let result = await conDB.raw(sql,[codigo]);
+    let result = await conDB.raw(sql, [codigo]);
     if (result[0].length > 0) {
         return result[0];
     } else {

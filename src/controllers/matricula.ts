@@ -1,4 +1,4 @@
-import { getInfoMatricula, getDetPeriodo, insertArrayDescuento, getDataDescuentosByCodigo } from "../provider/matricula_provider";
+import { getInfoMatricula, getDetPeriodo, insertArrayDescuento, getDataDescuentosByCodigo, getCargaDescuentos, verificaCargueFacturado, eliminaDescuentosCargue } from "../provider/matricula_provider";
 import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
@@ -719,6 +719,65 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
 
 }
 
+//====================
+//   /matricula/ListaCargueDescuento
+//=====================
+export const listaCargueDescuento = async (req: any, res: any) => {
+    try {
+
+        let resultDB = await getCargaDescuentos();
+        return res.status(200).json({
+            error: false,
+            data: resultDB
+        });
+
+
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: error.message
+        });
+    }
+
+}
+//====================
+//   /matricula/eliminarCargueDescuento
+//=====================
+export const eliminarCargueDescuento = async (req: any, res: any) => {
+    let codigoFile = req.params.codigo.trim();
+    try {
+
+        //si encuentra registros significa que alguno ya se uso en una factura
+        let resultDB = await verificaCargueFacturado(codigoFile);
+
+        if (resultDB.length > 0) {
+            return res.status(200).json({
+                error: true,
+                message: "Algunos descuentos del archivo que se intenta eliminar ya fueron facturados "
+            });
+        }
+
+        resultDB = await eliminaDescuentosCargue(codigoFile);
+
+        if (!resultDB) {
+            throw new Error("Error al eliminar el archivo");
+        }
+
+        return res.status(200).json({
+            error: false,
+            message: "Archivo eliminado "
+        });
+
+
+
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: error.message
+        });
+    }
+
+}
 
 
 //====================
@@ -762,7 +821,7 @@ export const descargarCargueDescuento = async (req: any, res: any) => {
 
             readStream.pipe(res);
 
-        }else{
+        } else {
             res.send(`<h1>No se encontró el archivo solicitado</h1>`);
         }
 

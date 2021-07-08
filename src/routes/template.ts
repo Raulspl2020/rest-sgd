@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { generarPagoCodigoBarras } from '../controllers/pago';
-import { vistaHolaMundo, pagoPersonalizado, pagoMatricula, pagoInscripcion, viewConsultaPago, viewPDFPago, consultaEstadoPagoView, pdfFacturaView, htmlFacturaView } from '../controllers/template';
+import { vistaHolaMundo, pagoPersonalizado, pagoMatricula, pagoInscripcion, viewConsultaPago, viewPDFPago, consultaEstadoPagoView, pdfFacturaView, htmlFacturaView, htmlAdminDescuentoView, descargarPlantillaDesceunto } from '../controllers/template';
 const router = Router();
 
 router.get('/inicio', vistaHolaMundo);
@@ -12,5 +12,7 @@ router.get('/GenerarPagoCodigoBarras/:codigo', generarPagoCodigoBarras);
 router.get('/ConsultaEstadoPago', consultaEstadoPagoView);
 router.get('/DetalleFactura/:ref', htmlFacturaView);
 router.get('/DetalleFactura/:ref/:tipo', pdfFacturaView);
+router.get('/admindescuento', htmlAdminDescuentoView);
+router.get('/descargarplantilladesceunto', descargarPlantillaDesceunto);
 
 export default router;
