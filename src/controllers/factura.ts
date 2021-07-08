@@ -182,18 +182,25 @@ export const registrarPagoService = async (req: any, res: any) => {
       let categoria_id = resultObjectDB.data[0].categoria_pago_id;
 
       if (categoria_id == 1) {
-          let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
+        let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
 
-          let resultMatricula = await getInfoMatricula(matricula_id);
-          let resultDB = resultMatricula[0][0];
-          //consular los descuentos y multas que un estudiante tiene asignados
-          let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo,resultDB.ide_persona);
-          if(resultDto.length > 0){
-            console.log("Se encontraron descuentos");
-            await updateEstadoDescuentoFac(resultDB.cod_matricula);
-          }else{
-            console.log("NO Se encontraron descuentos");
-          }
+        let resultMatricula = await getInfoMatricula(matricula_id);
+        let resultDB = resultMatricula[0][0];
+        //consular los descuentos y multas que un estudiante tiene asignados
+        let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo,resultDB.ide_persona);
+
+        if(resultDto.length > 0){
+          let idsDescuento:any = [];
+          resultDto.forEach((e:any) => {
+            idsDescuento.push(e._id);
+          });
+          
+          console.log("Se encontraron descuentos");
+        let resultUpdateDB =   await updateEstadoDescuentoFac(idsDescuento,Referencia_pago);
+        console.log(resultUpdateDB);
+        }else{
+          console.log("NO Se encontraron descuentos");
+        }
       }
 
 

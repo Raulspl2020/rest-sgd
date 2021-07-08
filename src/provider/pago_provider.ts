@@ -388,10 +388,41 @@ export const getDescuento = async (cat_pago: any, periodo_id: any, estudiante_id
 };
 
 //cambia el estado del descuento a Facturado para que no se pueda volver a usar
-export const updateEstadoDescuentoFac = async (matricula_id:any) => {
-  return await conDB("fin_porcentaje_soporte")
-    .where({ matricula_id: matricula_id })
-    .update({ porcentaje_estado_id: 4 });
+export const updateEstadoDescuentoFac = async (ids:any, pago_id:any) => {
+
+  const trx = await conDB.transaction();
+
+  let dataInsert: any =[];
+  ids.forEach((row:any) => {
+    let rowDB = {
+      'pago_id': pago_id,
+      'porcentaje_soporte_id' : row
+    }
+    dataInsert.push(rowDB);
+  });
+
+
+  return conDB("fin_porcentaje_soporte")
+  .whereIn('_id', ids )
+  .update({ porcentaje_estado_id: 4 })
+
+    .then((ress: any) => {
+
+      return  trx("fin_factura_descuento")
+      .insert(dataInsert)
+
+    })
+    .then((result: any) => {
+      trx.commit();
+      console.log(result)
+      return true;
+    })
+    .catch((result: any) => {
+      console.log(result);
+      trx.rollback();
+      return false;
+    });
+
 };
 
 

@@ -355,6 +355,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 console.log(resultPaquete);
 
             }
+        
 
             let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
             return {

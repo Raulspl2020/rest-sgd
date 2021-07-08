@@ -195,7 +195,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           fechaInsert = format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss');
         }
 
-        estado_pago = (det.int_estado_pago == '') ? 0 : det.int_estado_pago;
+        estado_pago = (det.int_estado_pago == 1) ? det.int_estado_pago : 0;
 
 
         detPago.push({
@@ -232,9 +232,16 @@ export const actualizarTransaccion = async (req: any, res = response) => {
             let resultDB = resultMatricula[0][0];
             //consular los descuentos y multas que un estudiante tiene asignados
             let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo,resultDB.ide_persona);
+
             if(resultDto.length > 0){
+              let idsDescuento:any = [];
+              resultDto.forEach((e:any) => {
+                idsDescuento.push(e._id);
+              });
+              
               console.log("Se encontraron descuentos");
-              await updateEstadoDescuentoFac(resultDB.cod_matricula);
+            let resultUpdateDB =   await updateEstadoDescuentoFac(idsDescuento,id_pago);
+            console.log(resultUpdateDB);
             }else{
               console.log("NO Se encontraron descuentos");
             }
