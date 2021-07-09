@@ -789,7 +789,9 @@ export const descargarCargueDescuento = async (req: any, res: any) => {
     let columns: any = [];
     let arrayData: any = [];
     try {
+        console.log("consultando registros en DB");
         let resultDB = await getDataDescuentosByCodigo(codigoFile);
+        console.log("Fin de la consulta");
 
         if (resultDB.length > 0) {
             console.log(Object.entries(resultDB[0]));
@@ -806,20 +808,24 @@ export const descargarCargueDescuento = async (req: any, res: any) => {
                 arrayData.push(row)
             });
 
+            console.log("construyendo excel");
             const data = arrayData;
             const options = { '!cols': [{ wch: 6 }, { wch: 7 }, { wch: 10 }, { wch: 20 }] };
-            var buffer = xlsx.build([{ name: "Hoja 1", data: data }], options); // Returns a buffer
+            var buffer = await xlsx.build([{ name: "Hoja 1", data: data }], options); // Returns a buffer
+            console.log("buffer generado excel");
 
             // return res.download(buffer);
-            var fileName = 'Cargue_' + codigoFile + '.xlsx';
+            let fileName: string = `Cargue_${codigoFile}.xlsx`;
 
             var readStream = new stream.PassThrough();
             readStream.end(buffer);
 
-            res.set('Content-disposition', 'attachment; filename=' + fileName);
+            res.set('Content-disposition', 'attachment; filename=' + fileName.toString());
             res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            console.log("Iniciando descarga");
 
             readStream.pipe(res);
+            // return res.download(buffer);
 
         } else {
             res.send(`<h1>No se encontró el archivo solicitado</h1>`);
@@ -827,6 +833,7 @@ export const descargarCargueDescuento = async (req: any, res: any) => {
 
 
     } catch (error) {
+        console.log("Error al descargar");
         console.log(error);
         res.send(`<h1>Ocurrio un error: ${error.message}</h1>`);
     }

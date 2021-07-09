@@ -17,5 +17,5 @@ if(process.env.NODE_ENV==='local'){
 }
 
 if(process.env.NODE_ENV==='dev'){
-    process.env.BASE_URL = `https://desarrolo.itp.edu.co/api`;
+    process.env.BASE_URL = `https://desarrollo.itp.edu.co/api`;
 }

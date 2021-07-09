@@ -114,7 +114,7 @@
 
 
 
-                            <div class="alert alert-warning mt-3" role="alert" v-show="mostrarAlerta">
+                            <div class="alert mt-3" :class="classalerta" role="alert" v-show="mostrarAlerta">
                                 <i class="fa fa-warning"></i> {[textoAlerta]}
                             </div>
 
@@ -170,6 +170,7 @@
                     cargando: false,
                     mostrarAlerta: false,
                     existenFacturas: false,
+                    classalerta: 'alert-warning',
                     textoAlerta: "",
                     desactivarBotonSoporte: false,
                     cargues: []
@@ -204,14 +205,17 @@
                                     this.cargues = resultdata;
                                     this.existenFacturas = true;
                                 } else {
-                                    this.mostrarAlerta = true;
-                                    this.textoAlerta = "No se encontraron archivos cargados";
+                                    //      this.classalerta= 'alert-info';
+                                    //  this.mostrarAlerta = true;
+                                    //  this.textoAlerta = "No se encontraron archivos cargados";
+
                                 }
 
 
                             } else {
                                 console.log("Servicio no disponible temporalmente");
                                 this.mostrarAlerta = true;
+                                this.classalerta = 'alert-danger';
                                 this.textoAlerta = data.message;
                             }
 
@@ -221,6 +225,7 @@
                 },
                 handleFileUpload() {
                     this.file = this.$refs.file.files[0];
+                    this.desactivarBotonSoporte = false;
                 },
 
                 enviarArchivo() {
@@ -237,14 +242,20 @@
                         }
                     ).then((response) => response.json())
                         .then(function (data) {
-                            console.log(data.message);
+                            this.cargando = false;
+                            if (!data.error) {
+                                this.classalerta = 'alert-success';
+                                this.consultarCargue();
+                            } else {
+                                this.classalerta = 'alert-warning';
+                                this.desactivarBotonSoporte = false;
 
-                            console.log('SUCCESS!!');
+                            }
                             // 
                             this.mostrarAlerta = true;
                             this.textoAlerta = data.message;
-                            this.desactivarBotonSoporte = false;
-                            this.consultarCargue();
+                            // this.desactivarBotonSoporte = false;
+
 
                         }.bind(this))
                         .catch(function () {
@@ -276,19 +287,21 @@
                             }
 
                             this.mostrarAlerta = true;
+                            this.classalerta = 'alert-info';
                             this.textoAlerta = data.message;
 
 
 
 
-                        }).bind(this);
-                },
-        enviarPago(pago) {
-            this.pagoDetalle = pago;
-            console.log(pago);
-        },
 
-        procesarFormulario() { }
+                        });
+                },
+                enviarPago(pago) {
+                    this.pagoDetalle = pago;
+                    console.log(pago);
+                },
+
+                procesarFormulario() { }
             },
         });
 
