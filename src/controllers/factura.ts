@@ -1,5 +1,5 @@
 import { parse, format } from "date-format-parse";
-import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, reversarPagoyDetalle } from "../provider/factura_provider";
+import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, existeDetPago, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { guardarLog } from "../provider/log_provider";
 import { getConfigPeriodo, getDescuento, updateEstadoDescuentoFac } from "../provider/pago_provider";
@@ -98,9 +98,16 @@ export const consultaFacturaService = async (req: any, res: any) => {
 
 
         if (resultObjectDB.data[0].estado_id == 1) {
-          responseData.Codigo_Estado = "1";
-          responseData.Descripción_estado = "Factura no disponible para pago / Cliente no Existe";
-          responseData.Info_Adicional = "La factura " + Referencia_pago + " ya ha sido pagada";
+
+
+          let resultDBPago = await existeDetPago(Referencia_pago, resultObjectDB.total);
+          if (resultDBPago != false) {
+            responseData.Codigo_Estado = "1";
+            responseData.Descripción_estado = "Factura no disponible para pago / Cliente no Existe";
+            responseData.Info_Adicional = "La factura " + Referencia_pago + " ya ha sido pagada";
+
+          }
+
         }
 
 
@@ -176,7 +183,12 @@ export const registrarPagoService = async (req: any, res: any) => {
       }
 
       if (resultObjectDB.data[0].estado_id == 1) {
-        throw new Error("La factura " + Referencia_pago + " ya se encuentra pagada");
+
+        let resultDBPago = await existeDetPago(Referencia_pago, resultObjectDB.total);
+        if (resultDBPago != false) {
+          throw new Error("La factura " + Referencia_pago + " ya se encuentra pagada");
+        }
+
       }
 
       let categoria_id = resultObjectDB.data[0].categoria_pago_id;
@@ -187,18 +199,18 @@ export const registrarPagoService = async (req: any, res: any) => {
         let resultMatricula = await getInfoMatricula(matricula_id);
         let resultDB = resultMatricula[0][0];
         //consular los descuentos y multas que un estudiante tiene asignados
-        let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo,resultDB.ide_persona);
+        let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo, resultDB.ide_persona);
 
-        if(resultDto.length > 0){
-          let idsDescuento:any = [];
-          resultDto.forEach((e:any) => {
+        if (resultDto.length > 0) {
+          let idsDescuento: any = [];
+          resultDto.forEach((e: any) => {
             idsDescuento.push(e._id);
           });
-          
+
           console.log("Se encontraron descuentos");
-        let resultUpdateDB =   await updateEstadoDescuentoFac(idsDescuento,Referencia_pago);
-        console.log(resultUpdateDB);
-        }else{
+          let resultUpdateDB = await updateEstadoDescuentoFac(idsDescuento, Referencia_pago);
+          console.log(resultUpdateDB);
+        } else {
           console.log("NO Se encontraron descuentos");
         }
       }
@@ -230,6 +242,37 @@ export const registrarPagoService = async (req: any, res: any) => {
         responseData.Codigo_Estado = "0";
         responseData.Severidad = "I";
         responseData.Descripcion = "Se realizó exitosamente la actualización del pago.";
+
+        //ACTUALIZAMOS EL ESTADO DE CADA DESCUENTO
+
+        let categoria_id = resultObjectDB.data[0].categoria_pago_id;
+        if (categoria_id == 1) {
+          let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
+
+          let resultMatricula = await getInfoMatricula(matricula_id);
+          let resultDB = resultMatricula[0][0];
+          //consular los descuentos y multas que un estudiante tiene asignados
+          let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo, resultDB.ide_persona);
+
+          if (resultDto.length > 0) {
+            let idsDescuento: any = [];
+            resultDto.forEach((e: any) => {
+              idsDescuento.push(e._id);
+            });
+
+            console.log("Se encontraron descuentos");
+            let resultUpdateDB = await updateEstadoDescuentoFac(idsDescuento, Referencia_pago);
+            console.log(resultUpdateDB);
+          } else {
+            console.log("NO Se encontraron descuentos");
+          }
+
+        }
+
+
+
+
+
       } else {
         responseData.Codigo_Estado = "1";
         responseData.Severidad = "W";
@@ -413,8 +456,8 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
   let body = req.body;
 
   try {
-    let total_a_pagarString:any =  moneda.format(0, { locale: 'es-CO' }).replace('$', '').trim();
-   
+    let total_a_pagarString: any = moneda.format(0, { locale: 'es-CO' }).replace('$', '').trim();
+
     let resultDB = await consultaFacturaCliente(body.id_cliente);
     let jsonData: any = {};
     if (resultDB.length > 0) {
@@ -455,7 +498,7 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
     for (const factura of facturas) {
       //verifica el pago en zona pagos y actualiza en la db
 
-      let total_a_pagar= 0;
+      let total_a_pagar = 0;
       let pagosDB = await consultaPagoFacturaCliente(factura.id);
       for (const pago of pagosDB) {
         pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
@@ -464,21 +507,21 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
       let det_factua = [];
       for (const row of resultDB) {
         if (factura.id == row._id) {
-          let subtotal =  (row.valor_unidad - (row.valor_unidad* row.descuento) + (row.valor_unidad* row.aumento));
+          let subtotal = (row.valor_unidad - (row.valor_unidad * row.descuento) + (row.valor_unidad * row.aumento));
           det_factua.push({
-            'concepto': (row.cod_paquete==0) ?  row.descripcion :  row.concepto,
+            'concepto': (row.cod_paquete == 0) ? row.descripcion : row.concepto,
             'descuento': row.descuento,
             'aumento': row.aumento,
             'valor_unidad': row.valor_unidad,
             'cantidad': row.cantiad
           });
-          total_a_pagar = total_a_pagar +subtotal;
+          total_a_pagar = total_a_pagar + subtotal;
         }
 
       }
       factura.det_factura = det_factua;
       factura.pagos = pagosDB;
-      factura.total_a_pagar_s =  moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
+      factura.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
     }
 
     res.status(200).json({

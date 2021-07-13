@@ -220,7 +220,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
 
       //ACTUALIZAMOS EL ESTADO DE CADA DESCUENTO
-      if(estado_pago > 0) {
+      if(estado_pago ==1) {
         let resultObjectDB: any = await consultaFacturaBanco(id_pago);
         let categoria_id = resultObjectDB.data[0].categoria_pago_id;
         if (resultObjectDB != false) {

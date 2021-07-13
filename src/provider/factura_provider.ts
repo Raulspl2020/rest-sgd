@@ -49,13 +49,14 @@ FROM
 };
 
 
-//compueba si existe un detalle de pago
-export const existeDetPago = async (where: any) => {
+//compueba si existe un detalle de pago exitoso por el mismo valor de a factura
+export const existeDetPago = async (pago_id: any, valor:number) => {
 
   let result = await conDB
     .select()
     .from("fin_detalle_pago")
-    .where(where)
+    .where({'pago_id':pago_id,  'estado_pago_id': 1})
+    .whereRaw('valor_pago >=?', [valor])
   if (result.length > 0) {
     return result[0];
   } else {

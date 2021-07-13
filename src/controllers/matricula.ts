@@ -394,6 +394,7 @@ export const generarpagoMatricula = async (req: any, res: any) => {
 
     try {
         let result: any = await consultarpagoMatricula(req.params.id_matricula.trim());
+        console.log(JSON.stringify(result));
         result.categorias = await getCategriaDescuento(1);
         return res.status(200).json(result);
 
