@@ -125,9 +125,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
             //consular los descuentos y multas que un estudiante tiene asignados
             let resultDto = await getDescuento("1", resultDB.cod_periodo, resultDB.ide_persona);
+
+
             resultDto.forEach((row: any) => {
-
-
                 //si aplica descuento sino aplica aumento, si es 1 añade un descuento
                 if (row.accion == 1) {
                     let registro = {
@@ -177,6 +177,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     descripcionFactura = "" + resultPaquete[0].paquete + " + " + auxDescripcion
 
                     precios = resultPaquete;
+                    console.log(precios);
                     //recorrer los detalles de paquete
                     precios.forEach((element: any, index: number) => {
 
@@ -186,9 +187,45 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                             console.log("Se va a aplicar descuento");
 
+
+
+                            //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
+                            resultDto.forEach((row: any) => {
+                                //si aplica descuento sino aplica aumento
+
+                                //si es un descuento
+                                if (row.accion == 1) {
+                                    //si el soporte permite aplicar en todos los conceptos
+                                    if (row.tipo == 1) {
+                                        precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                    } else {
+                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id==1 ||  precios[index].concepto_id==2  ) {
+                                            precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                        }
+                                    }
+
+                                    //si es un aumento
+                                } else {
+                                    //si el soporte permite aplicar en todos los conceptos
+                                    if (row.tipo == 1) {
+                                        precios[index].aumento = precios[index].aumento + row.porcentaje;
+                                    } else {
+                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7) {
+                                            precios[index].aumento = precios[index].aumento + row.porcentaje;
+                                        }
+                                    }
+                                }
+
+
+                            });
+
+
+
+
+
                             //añade aumento para matricula extraordinaria
                             if (periodo == false) {
-                                precios[index].aumento = resultConfig.porcentaje_ext;
+                                precios[index].aumento = precios[index].aumento=  resultConfig.porcentaje_ext;
                                 descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
                             }
                             console.log(precios[index].aumento);
@@ -199,7 +236,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                 totaAPagar = totaAPagar + (element.subtotal * element.cantidad);
                             } else {
                                 precios[index].cantidad = resultDB.nro_creditos;
-                                precios[index].descuento = porcentaje_descuento;
+                              //  precios[index].descuento = porcentaje_descuento;
                                 precios[index].aumento = porcentaje_aumento + precios[index].aumento;
                                 porcentaje_descuento = 0;
                                 porcentaje_aumento = 0;
@@ -219,19 +256,6 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                             }
                             total_sin_descuento = totaAPagar;
                         }
-
-
-                        //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
-                        resultDto.forEach((row: any) => {
-                            //si aplica descuento sino aplica aumento
-                            if (row.tipo == 1 && row.accion == 1) {
-                                precios[index].descuento = row.porcentaje;
-                            } else if (row.tipo == 1 && row.accion == 0) {
-                                precios[index].aumento = row.porcentaje;
-                            }
-
-                        });
-
 
 
                         //calcula el total sin descuento
@@ -289,15 +313,49 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                         //si se puede aplicar descuento externo
                         if (element.descuento_ext == '1') {
 
+
+
+                            //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
+                            resultDto.forEach((row: any) => {
+                                //si aplica descuento sino aplica aumento
+
+                                //si es un descuento
+                                if (row.accion == 1) {
+                                    //si el soporte permite aplicar en todos los conceptos
+                                    if (row.tipo == 1) {
+                                        precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                    } else {
+                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7) {
+                                            precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                        }
+                                    }
+
+                                    //si es un aumento
+                                } else {
+                                    //si el soporte permite aplicar en todos los conceptos
+                                    if (row.tipo == 1) {
+                                        precios[index].aumento = precios[index].aumento + row.porcentaje;
+                                    } else {
+                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id==1 ||  precios[index].concepto_id==2  ) {
+                                            precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                        }
+                                    }
+                                }
+
+
+                            });
+
+
+
                             //añade aumento para matricula extraordinaria
                             if (periodo == false) {
-                                precios[index].aumento = resultConfig.porcentaje_ext;
+                                precios[index].aumento = precios[index].aumento + resultConfig.porcentaje_ext;
                                 descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
                             }
 
                             let totaAPagar = 0;
                             totaAPagar = totaAPagar + (element.subtotal * element.cantidad);
-                            precios[index].descuento = porcentaje_descuento;
+                            // precios[index].descuento = porcentaje_descuento; tener en cuenta
 
 
                             total_con_descuento = totaAPagar - (totaAPagar * porcentaje_descuento);
@@ -307,6 +365,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                             totaAPagar = totaAPagar + (element.subtotal * element.cantidad);
                             total_sin_descuento = totaAPagar;
                         }
+
+
+
+
+
 
                         //calcula el total sin descuento
                         if (element.cantidad > 0) {
@@ -353,7 +416,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
 
-                console.log(resultPaquete);
+                // console.log(resultPaquete);
 
             }
 
@@ -394,7 +457,7 @@ export const generarpagoMatricula = async (req: any, res: any) => {
 
     try {
         let result: any = await consultarpagoMatricula(req.params.id_matricula.trim());
-        console.log(JSON.stringify(result));
+        // console.log(JSON.stringify(result));
         result.categorias = await getCategriaDescuento(1);
         return res.status(200).json(result);
 
