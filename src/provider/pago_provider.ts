@@ -157,7 +157,7 @@ export const detIdPagoByID = async (id_pago: any) => {
 
 
 export const actualizarEstadoPago = async (params: any, id_pago: string) => {
-  let result = await conDB("fin_pago").where({'_id': id_pago}).update(params);
+  let result = await conDB("fin_pago").where({ '_id': id_pago }).update(params);
   return result;
 };
 
@@ -204,7 +204,7 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
 
       detalle.forEach((det: any) => (det.pago_id = ids[0]));
       id = ids;
-      
+
       return trx("fin_detalle_factura").insert(detalle);
     })
 
@@ -222,9 +222,9 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
 
 
 //actualiza los datos en fin_pago, borras los detalles de la factura y crea unos nuevos
-export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_id : any) => {
- // delete pago["codigo"];
- // console.log(det_pago);
+export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_id: any) => {
+  // delete pago["codigo"];
+  // console.log(det_pago);
   let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss');
   pago.fecha_update = fechaActual;
   const trx = await conDB.transaction();
@@ -240,13 +240,13 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
 
       console.log("se va a actualizar el pago");
       console.log(pago);
-     return trx("fin_pago")
+      return trx("fin_pago")
         .where("_id", pago_id)
         .update(pago)
         .then((result: any) => {
           console.log(pago_id);
           trx.commit();
-          let idArreglo =  [pago_id,0];
+          let idArreglo = [pago_id, 0];
           return idArreglo;
         })
     })
@@ -263,7 +263,7 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
 export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
   return await trx("fin_detalle_pago")
-    .where({"pago_id": id})
+    .where({ "pago_id": id })
     .whereRaw("(forma_pago_id <> ? OR  forma_pago_id IS NULL)", [99])
     .del()
     .then((ids: any) => {
@@ -305,7 +305,7 @@ export const getCategoriaPorcentaje = async (id: any) => {
 };
 
 //obtiene una categoria de porcentaje
-export const getCategoriaPorcentajeByMatricula = async (cat_pago: any,estudiante_id:any, periodo_id:any ) => {
+export const getCategoriaPorcentajeByMatricula = async (cat_pago: any, estudiante_id: any, periodo_id: any) => {
   let result = await conDB
     .select('fin_porcentaje_soporte.fecha', 'fin_porcentaje_soporte.porcentaje', 'fin_porcentaje_soporte.observacion', 'fin_porcetaje_categoria.descripcion', 'fin_porcentaje_estado.descripcion as estado')
     .from("fin_porcentaje_soporte")
@@ -321,10 +321,10 @@ export const getCategoriaPorcentajeByMatricula = async (cat_pago: any,estudiante
     )
 
 
-   // .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
-    .where({ 'fin_porcentaje_soporte.categoria_pago_id': cat_pago, 'fin_porcentaje_soporte.estudiante_id': estudiante_id, 'fin_porcentaje_soporte.periodo_id': periodo_id})
-    .orderBy([{ column: 'fin_porcentaje_soporte.accion' }, {column: 'fin_porcentaje_soporte.porcentaje_estado_id' }, { column: 'fin_porcentaje_soporte.porcentaje', order: 'asc' }]);
-    return result;
+    // .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
+    .where({ 'fin_porcentaje_soporte.categoria_pago_id': cat_pago, 'fin_porcentaje_soporte.estudiante_id': estudiante_id, 'fin_porcentaje_soporte.periodo_id': periodo_id })
+    .orderBy([{ column: 'fin_porcentaje_soporte.accion' }, { column: 'fin_porcentaje_soporte.porcentaje_estado_id' }, { column: 'fin_porcentaje_soporte.porcentaje', order: 'asc' }]);
+  return result;
 };
 
 
@@ -336,7 +336,7 @@ export const guardarProcentajeSoporte = async (data: any) => {
 };
 
 //obtiene el detalle de un paquete
-export const getPaquete = async ( codigo: any) => {
+export const getPaquete = async (codigo: any) => {
   let sql = `SELECT
   fin_paquete.codigo
   , fin_paquete.descripcion AS paquete
@@ -363,7 +363,7 @@ FROM
       `;
 
 
-  let result = await conDB.raw(sql, [ codigo]);
+  let result = await conDB.raw(sql, [codigo]);
   if (result[0].length > 0) {
     return result[0];
   } else {
@@ -373,9 +373,9 @@ FROM
 
 
 //consulta descuentos a un estudiante
-export const getDescuento = async (cat_pago: any, periodo_id: any, estudiante_id:any) => {
+export const getDescuento = async (cat_pago: any, periodo_id: any, estudiante_id: any) => {
   let result = await conDB
-    .select('fin_porcentaje_soporte._id','fin_porcentaje_soporte.porcentaje','fin_porcentaje_soporte.accion','fin_porcentaje_soporte.observacion','fin_porcentaje_soporte.tipo','fin_porcentaje_soporte.json_file','fin_porcetaje_categoria.descripcion')
+    .select('fin_porcentaje_soporte._id', 'fin_porcentaje_soporte.porcentaje', 'fin_porcentaje_soporte.accion', 'fin_porcentaje_soporte.observacion', 'fin_porcentaje_soporte.tipo', 'fin_porcentaje_soporte.json_file', 'fin_porcetaje_categoria.descripcion')
     .from("fin_porcentaje_soporte")
     .join(
       "fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id",
@@ -388,28 +388,28 @@ export const getDescuento = async (cat_pago: any, periodo_id: any, estudiante_id
 };
 
 //cambia el estado del descuento a Facturado para que no se pueda volver a usar
-export const updateEstadoDescuentoFac = async (ids:any, pago_id:any) => {
+export const updateEstadoDescuentoFac = async (ids: any, pago_id: any) => {
 
   const trx = await conDB.transaction();
 
-  let dataInsert: any =[];
-  ids.forEach((row:any) => {
+  let dataInsert: any = [];
+  ids.forEach((row: any) => {
     let rowDB = {
       'pago_id': pago_id,
-      'porcentaje_soporte_id' : row
+      'porcentaje_soporte_id': row
     }
     dataInsert.push(rowDB);
   });
 
 
   return conDB("fin_porcentaje_soporte")
-  .whereIn('_id', ids )
-  .update({ porcentaje_estado_id: 4 })
+    .whereIn('_id', ids)
+    .update({ porcentaje_estado_id: 4 })
 
     .then((ress: any) => {
 
-      return  trx("fin_factura_descuento")
-      .insert(dataInsert)
+      return trx("fin_factura_descuento")
+        .insert(dataInsert)
 
     })
     .then((result: any) => {
@@ -445,7 +445,7 @@ export const updateCodigoBarras = async (codigo: string, id: number) => {
 };
 
 //actualiza datos de un pago por id
-export const updateDataPago = async (data:any, id:number) => {
+export const updateDataPago = async (data: any, id: number) => {
   return await conDB("fin_pago")
     .where("fin_pago._id", id)
     .update(data);
@@ -486,7 +486,7 @@ export const getPagoByID = async (id: number) => {
 //verificar si ya se genero un pago antes y no esta pagado
 export const existePago = async (cod_paquete: string, matricula_id: string) => {
   let result = await conDB
-    .select('fin_pago._id','fin_pago.codigo','fin_pago.valor','fin_estado_pago.descripcion as estado')
+    .select('fin_pago._id', 'fin_pago.json_response', 'fin_pago.codigo', 'fin_pago.valor', 'fin_estado_pago.descripcion as estado', 'fin_estado_pago._id as estado_id')
     .from("fin_pago")
     .join(
       "fin_estado_pago", "fin_pago.estado_id",
@@ -501,6 +501,142 @@ export const existePago = async (cod_paquete: string, matricula_id: string) => {
     return false;
   }
 };
+
+//verificar si ya se genero un pago antes y no esta pagado
+export const existeFactura = async (cod_paquete: string, matricula_id: string) => {
+  let result = await conDB
+    .select('fin_pago._id', 'fin_pago.json_response', 'fin_pago.codigo', 'fin_pago.valor', 'fin_estado_pago.descripcion as estado', 'fin_estado_pago._id as estado_id')
+    .from("fin_pago")
+    .join(
+      "fin_estado_pago", "fin_pago.estado_id",
+      "=",
+      "fin_estado_pago._id"
+    )
+    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id });
+
+  if (result.length > 0) {
+    return result[0];
+  } else {
+    return false;
+  }
+};
+
+
+
+//verifica la factura por id trae los conceptos y total a pagar
+export const getFactura = async (id_factura: any) => {
+  let result = await conDB
+    .select('fin_pago._id',
+      'fin_pago.codigo', 'fin_pago.descripcion AS desc_factura',
+      'fin_pago.fecha',
+      'fin_pago.estudiante_id',
+      'fin_pago.valor',
+      'fin_detalle_factura.concepto_id',
+      'fin_concepto.codigo AS codigo_concepto',
+      'fin_concepto.descripcion AS concepto',
+      'fin_detalle_factura.descuento',
+      'fin_detalle_factura.aumento',
+      'fin_detalle_factura.valor_unidad',
+      'fin_detalle_factura.cantidad',
+    )
+    .from("fin_detalle_factura")
+    .join("fin_pago", "fin_detalle_factura.pago_id", "=", " fin_pago._id")
+    .join("fin_concepto", "fin_detalle_factura.concepto_id", "=", " fin_concepto._id")
+    .where({ 'fin_pago._id': id_factura });
+
+  if (result.length > 0) {
+    return result;
+  } else {
+    return [];
+  }
+};
+
+
+//verifica la factura por id trae los conceptos y total a pagar
+export const getFacturaByMatricula = async (matricula_id: any, cod_paquete: any) => {
+  let result = await conDB
+    .select('fin_pago._id',
+      'fin_pago.codigo', 'fin_pago.descripcion AS desc_factura',
+      'fin_pago.fecha',
+      'fin_pago.estudiante_id',
+      'fin_pago.valor',
+      'fin_detalle_factura.concepto_id',
+      'fin_concepto.codigo AS codigo_concepto',
+      'fin_concepto.descripcion AS concepto',
+      'fin_detalle_factura.descuento',
+      'fin_detalle_factura.aumento',
+      'fin_detalle_factura.valor_unidad',
+      'fin_detalle_factura.cantidad',
+    )
+    .from("fin_detalle_factura")
+    .join("fin_pago", "fin_detalle_factura.pago_id", "=", " fin_pago._id")
+    .join("fin_concepto", "fin_detalle_factura.concepto_id", "=", " fin_concepto._id")
+    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id });
+
+  if (result.length > 0) {
+    return result;
+  } else {
+    return [];
+  }
+};
+
+
+
+
+//obtiene los pagos relacionados con una factura con su respectivo estado
+export const getPagoFactura = async (id_factura: any) => {
+
+  let result = await conDB
+    .select('fin_detalle_pago._id',
+      'fin_detalle_pago.pago_id',
+      'fin_detalle_pago.valor_pago',
+      'fin_detalle_pago.estado_pago_id',
+      'fin_estado_pago.descripcion AS estado',
+      'fin_detalle_pago.forma_pago_id',
+      'fin_forma_pago.descripcion AS forma_pago',
+      `fin_detalle_pago.fecha`
+      )
+    .from("fin_detalle_pago")
+    .join("fin_estado_pago", "fin_detalle_pago.estado_pago_id", "=", "fin_estado_pago._id")
+    .join("fin_forma_pago", "fin_detalle_pago.forma_pago_id", "=", "fin_forma_pago._id")
+    .where({ 'fin_detalle_pago.pago_id': id_factura, 'fin_detalle_pago.estado_pago_id': 1 });
+
+  if (result.length > 0) {
+    return result;
+  } else {
+    return [];
+  }
+
+}
+
+//obtiene los descuentos aplicados a una factura  con su respectivo estado
+export const getDescuentoFactura = async (id_factura: any) => {
+
+  let result = await conDB
+    .select('fin_factura_descuento._id',
+      'fin_factura_descuento.pago_id',
+      'fin_factura_descuento.porcentaje_soporte_id',
+      'fin_porcentaje_soporte.fecha',
+      'fin_porcentaje_soporte.porcentaje_estado_id',
+      'fin_porcentaje_estado.descripcion AS estado',
+      'fin_porcentaje_soporte.porcentaje_categoria_id',
+      'fin_porcetaje_categoria.descripcion AS categoria',
+      'fin_porcentaje_soporte.accion',
+      'fin_porcentaje_soporte.porcentaje'
+      )
+    .from("fin_factura_descuento")
+    .join("fin_porcentaje_soporte", "fin_factura_descuento.porcentaje_soporte_id", "=", "fin_porcentaje_soporte._id")
+    .join("fin_porcentaje_estado", "fin_porcentaje_soporte.porcentaje_estado_id", "=", "fin_porcentaje_estado._id")
+    .join("fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id", "=", "fin_porcetaje_categoria._id")
+    .where({ 'fin_factura_descuento.pago_id': id_factura });
+
+  if (result.length > 0) {
+    return result;
+  } else {
+    return [];
+  }
+
+}
 
 
 

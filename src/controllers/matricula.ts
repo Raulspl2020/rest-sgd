@@ -1,5 +1,5 @@
 import { getInfoMatricula, getDetPeriodo, insertArrayDescuento, getDataDescuentosByCodigo, getCargaDescuentos, verificaCargueFacturado, eliminaDescuentosCargue } from "../provider/matricula_provider";
-import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago } from "../provider/pago_provider";
+import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago, getFactura, getPagoFactura, getFacturaByMatricula } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 import xlsx from 'node-xlsx';
@@ -138,12 +138,17 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     resultDescuentos.push(registro);
 
                     porcentaje_descuento = porcentaje_descuento + row.porcentaje;
-                    auxDescripcion = auxDescripcion + " + DESCUENTO " + (row.porcentaje * 100) + "% " + (row.observacion == null) ? row.descripcion + " " : row.observacion + " ";
+                    let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion ;
+                    auxDescripcion = `+ DESCUENTO ${(row.porcentaje * 100)}% ${desc}`;
                 } else {
                     porcentaje_aumento = porcentaje_aumento + row.porcentaje;
-                    auxDescripcion = auxDescripcion + " + AUMENTO " + (row.porcentaje * 100) + "% " + (row.observacion == null) ? row.descripcion + " " : row.observacion + " ";
+                    let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion ;
+                    auxDescripcion = `+ DESCUENTO ${(row.porcentaje * 100)}% ${desc}`;
                 }
             });
+
+            console.log(resultDto);
+            console.log(auxDescripcion);
 
 
 
@@ -174,7 +179,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                 if (resultPaquete != false) {
 
-                    descripcionFactura = "" + resultPaquete[0].paquete + " + " + auxDescripcion
+                    descripcionFactura = " " + resultPaquete[0].paquete + " + " + auxDescripcion
 
                     precios = resultPaquete;
                     console.log(precios);
@@ -421,12 +426,60 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
             }
 
 
-            let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
+            //verifica si ya existe una factura creada con esa matricula y con ese paquete
+           // let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
+           let pagoFactura: any = [];
+            let resFactura = await getFacturaByMatricula(id_matricula, resultPaquete[0].codigo);
+            //si encuentra factura creada verifica si tiene pagos
+            if(resFactura.length > 0){
+                 pagoFactura = await getPagoFactura(resFactura[0]._id);
+
+                //si encuentra pagos exitosos
+                if(pagoFactura.length > 0){
+
+                   
+                    pagoFactura.forEach((pago:any) => {
+                       pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
+                    });
+
+                    //actualizamos los conceptos de la factura a mostrar
+                    resultPaquete.forEach((con:any) => {
+
+                        resFactura.forEach((fact:any) => {
+                            
+                            if(con.concepto_id == fact.concepto_id){
+                                con.cantidad = fact.cantidad;
+                                con.descuento = fact.descuento;
+                                con.valor_unidad = fact.valor_unidad;
+                                con.aumento =  fact.aumento;
+                            }
+    
+                        });
+                        
+                    });
+
+                    //actualizamos el total a pagar
+                    total_a_pagar = 0;
+                    resultPaquete.forEach((element: any, index: number) => {
+                        let subtotal = (element.valor_unidad * element.cantidad);
+                        resultPaquete[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
+                        total_a_pagar = element.subtotal + total_a_pagar;
+                    });
+
+                }
+
+
+
+            }
+            
+
+            
+
             return {
                 error: false,
                 message: "Ejecución correcta",
                 matricula: resultDB,
-                estadopago: estadoPago,
+                estadopago: pagoFactura,
                 soportes: await getCategoriaPorcentajeByMatricula('1', resultDB.ide_persona, resultDB.cod_periodo),
                 descuentos: resultDescuentos,
                 detalle_factura: resultPaquete,
@@ -457,7 +510,12 @@ export const generarpagoMatricula = async (req: any, res: any) => {
 
     try {
         let result: any = await consultarpagoMatricula(req.params.id_matricula.trim());
-        // console.log(JSON.stringify(result));
+
+
+       // let resFactura =  await getFactura();
+
+
+         console.log(JSON.stringify(result));
         result.categorias = await getCategriaDescuento(1);
         return res.status(200).json(result);
 
