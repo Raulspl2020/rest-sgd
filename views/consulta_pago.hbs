@@ -39,7 +39,7 @@
                                             value="" placeholder="Identificación del cliente" />
                                         <div class="input-group-append">
                                             <button type="submit" class="btn btn-outline-secondary "
-                                                @click="consultarFactura">
+                                                @click="consultarFactura" :disabled="cargando">
 
                                                 <span v-if="cargando" class="spinner-border spinner-border-sm"
                                                     role="status" aria-hidden="true"></span>
@@ -309,7 +309,7 @@
                                                         <td>{[pagoDetalle.nombre_banco]}</td>
                                                     </tr>
                                                     <tr>
-                                                        <th scope="row">COD TRANSACIÓN:</th>
+                                                        <th scope="row">COD TRANSACCIÓN:</th>
                                                         <td>{[pagoDetalle.codigo_transaccion]}</td>
                                                     </tr>
                                                     <tr>

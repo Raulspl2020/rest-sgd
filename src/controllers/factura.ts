@@ -2,7 +2,7 @@ import { parse, format } from "date-format-parse";
 import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, existeDetPago, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { guardarLog } from "../provider/log_provider";
-import { getConfigPeriodo, getDescuento, updateEstadoDescuentoFac } from "../provider/pago_provider";
+import { getConfigPeriodo, getDescuento, getDescuentoFactura, getFactura, getPagoFactura, updateEstadoDescuentoFac } from "../provider/pago_provider";
 import { consultarpagoMatricula } from "./matricula";
 import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provider";
 import { ejecutarZonaPagos } from "../helpers/pago";
@@ -500,6 +500,7 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
 
       let total_a_pagar = 0;
       let pagosDB = await consultaPagoFacturaCliente(factura.id);
+
       for (const pago of pagosDB) {
         pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
       }
@@ -513,7 +514,7 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
             'descuento': row.descuento,
             'aumento': row.aumento,
             'valor_unidad': row.valor_unidad,
-            'cantidad': row.cantiad
+            'cantidad': row.cantidad
           });
           total_a_pagar = total_a_pagar + subtotal;
         }
@@ -541,7 +542,90 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
       message: error.message
     });
   }
+}
 
+
+//===================================
+//   /transaccion/DetalleFactura/:ref
+//===================================
+export const detalleFacturaByID = async (req: any, res: any) => {
+
+  let body = req.body;
+  let idFactura =  req.params.ref;
+  let factura:any = {};
+  let det_factura : any = [];
+  let total_a_pagar = 0;
+  let cliente : any = {};
+
+  try {
+    let dataConceptos = await getFactura(idFactura);
+
+
+    //si encuentra conceptos en la factura
+    if (dataConceptos.length >0 ) {
+
+      for (const pago of dataConceptos) {
+        pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
+
+        factura= {
+          "id": pago._id,
+          "codigo": pago.codigo,
+          "descripcion": pago.desc_factura,
+          "categoria": pago.categoria,
+          "fecha": pago.fecha
+        };
+        let json_response = JSON.parse(pago.json_response);
+        cliente =  json_response.info_cliente;
+
+        delete pago.json_response;
+
+
+        let subtotal = (pago.valor_unidad - (pago.valor_unidad * pago.descuento) + (pago.valor_unidad * pago.aumento));
+        total_a_pagar = total_a_pagar +subtotal;
+        det_factura.push({
+          
+          'concepto': (pago.cod_paquete == 0) ? pago.descripcion : pago.concepto,
+          'descuento': pago.descuento,
+          'aumento': pago.aumento,
+          'valor_unidad':  moneda.format(pago.valor_unidad, { locale: 'es-CO' }).replace('$', '').trim(),
+          'cantidad': pago.cantidad,
+          'subtotal':  moneda.format(subtotal, { locale: 'es-CO' }).replace('$', '').trim()
+        });
+
+      }
+
+    }
+
+    let dataPagos = await getPagoFactura(idFactura);
+    for (const pago of dataPagos) {
+      pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
+    }
+
+    let dataDescuentos =  await getDescuentoFactura(idFactura);
+    for (const dsto of dataDescuentos) {
+      dsto.fecha = format(dsto.fecha, 'DD-MM-YYYY')
+    }
+
+    factura.det_factura = det_factura;
+    factura.pagos =  dataPagos;
+    factura.descuentos = dataDescuentos;
+    factura.cliente =  cliente;
+    factura.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
+
+    return res.status(200).json({
+      error : false,
+      message: "Ejecucion correcta",
+      data : factura
+    });
+  
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: true,
+      message: error.message
+    });
+  }
 
 
 

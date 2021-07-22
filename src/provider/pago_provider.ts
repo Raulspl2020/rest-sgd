@@ -528,9 +528,11 @@ export const getFactura = async (id_factura: any) => {
   let result = await conDB
     .select('fin_pago._id',
       'fin_pago.codigo', 'fin_pago.descripcion AS desc_factura',
+      'fin_categoria_pago.descripcion as categoria',
       'fin_pago.fecha',
       'fin_pago.estudiante_id',
       'fin_pago.valor',
+      'fin_pago.json_response',
       'fin_detalle_factura.concepto_id',
       'fin_concepto.codigo AS codigo_concepto',
       'fin_concepto.descripcion AS concepto',
@@ -541,6 +543,7 @@ export const getFactura = async (id_factura: any) => {
     )
     .from("fin_detalle_factura")
     .join("fin_pago", "fin_detalle_factura.pago_id", "=", " fin_pago._id")
+    .join("fin_categoria_pago", "fin_pago.categoria_pago_id", "=", " fin_categoria_pago._id")
     .join("fin_concepto", "fin_detalle_factura.concepto_id", "=", " fin_concepto._id")
     .where({ 'fin_pago._id': id_factura });
 
@@ -590,11 +593,19 @@ export const getPagoFactura = async (id_factura: any) => {
     .select('fin_detalle_pago._id',
       'fin_detalle_pago.pago_id',
       'fin_detalle_pago.valor_pago',
+      'fin_detalle_pago.total_pago',
       'fin_detalle_pago.estado_pago_id',
       'fin_estado_pago.descripcion AS estado',
       'fin_detalle_pago.forma_pago_id',
       'fin_forma_pago.descripcion AS forma_pago',
-      `fin_detalle_pago.fecha`
+      `fin_detalle_pago.fecha`,
+      'fin_detalle_pago.nombre_banco',
+      'fin_detalle_pago.codigo_transaccion',
+      'fin_detalle_pago.ticketID',
+      'fin_detalle_pago.numero_tarjeta',
+      'fin_detalle_pago.franquicia',
+      'fin_detalle_pago.cod_aprobacion',
+      'fin_detalle_pago.num_recibido'
       )
     .from("fin_detalle_pago")
     .join("fin_estado_pago", "fin_detalle_pago.estado_pago_id", "=", "fin_estado_pago._id")

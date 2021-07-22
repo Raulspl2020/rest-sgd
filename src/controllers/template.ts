@@ -2,6 +2,10 @@ import { response } from 'express';
 import { generarHTMLPDF, generarHTMLPDFNew } from '../helpers/global';
 import stream from 'stream';
 import path from 'path';
+import { getDescuentoFactura, getFactura, getPagoFactura } from '../provider/pago_provider';
+import * as moneda from 'currency-formatter';
+
+import { format } from 'date-format-parse';
 
 
 
@@ -115,6 +119,91 @@ export const htmlAdminDescuentoView = async (req: any, res = response) => {
 export const descargarPlantillaDesceunto = async (req: any, res = response) => {
     const uploadPath = path.join(__dirname, '../../public/format/plantilla-descuentos.xlsx');
     return res.download(uploadPath);
+
+}
+
+
+
+//====================
+//   /page/recibopago/:ref
+//=====================
+export const pdfReciboPago = async (req: any, res = response) => {
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    let body = req.body;
+    let idFactura =  req.params.ref;
+    let factura:any = {};
+    let det_factura : any = [];
+    let total_a_pagar = 0;
+    let cliente : any = {};
+
+    try {
+
+        let dataConceptos = await getFactura(idFactura);
+
+
+        //si encuentra conceptos en la factura
+        if (dataConceptos.length >0 ) {
+    
+          for (const pago of dataConceptos) {
+            pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
+    
+            factura= {
+              "id": pago._id,
+              "codigo": pago.codigo,
+              "descripcion": pago.desc_factura,
+              "categoria": pago.categoria,
+              "fecha": pago.fecha
+            };
+            let json_response = JSON.parse(pago.json_response);
+            cliente =  json_response.info_cliente;
+    
+            delete pago.json_response;
+    
+    
+            let subtotal = (pago.valor_unidad - (pago.valor_unidad * pago.descuento) + (pago.valor_unidad * pago.aumento));
+            total_a_pagar = total_a_pagar +subtotal;
+            det_factura.push({
+              
+              'concepto': (pago.cod_paquete == 0) ? pago.descripcion : pago.concepto,
+              'descuento': (pago.descuento * 100),
+              'aumento': pago.aumento,
+              'valor_unidad':  moneda.format(pago.valor_unidad, { locale: 'es-CO' }).replace('$', '').trim(),
+              'cantidad': pago.cantidad,
+              'subtotal':  moneda.format(subtotal, { locale: 'es-CO' }).replace('$', '').trim()
+            });
+    
+          }
+    
+        }
+    
+        let dataPagos = await getPagoFactura(idFactura);
+        for (const pago of dataPagos) {
+          pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
+        }
+    
+        let dataDescuentos =  await getDescuentoFactura(idFactura);
+        for (const dsto of dataDescuentos) {
+          dsto.fecha = format(dsto.fecha, 'DD-MM-YYYY');
+          dsto.porcentaje =   dsto.porcentaje*100;
+        }
+    
+        factura.det_factura = det_factura;
+        factura.pagos =  dataPagos;
+        factura.descuentos = dataDescuentos;
+        factura.cliente =  cliente;
+        factura.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
+        
+    } catch (error) {
+        
+    }
+    data.factura =  factura;
+
+    res.render("pdf_recibo_pago", data, async (err: any, html: any) => {
+        let pdf = await generarHTMLPDFNew(html);
+        res.contentType("application/pdf");
+        res.send(pdf);
+    });
 
 }
 
