@@ -1,11 +1,13 @@
 import { response } from 'express';
-import { generarHTMLPDF, generarHTMLPDFNew } from '../helpers/global';
+import { createQR, generarHTMLPDF, generarHTMLPDFNew } from '../helpers/global';
 import stream from 'stream';
 import path from 'path';
 import { getDescuentoFactura, getFactura, getPagoFactura } from '../provider/pago_provider';
 import * as moneda from 'currency-formatter';
 
 import { format } from 'date-format-parse';
+
+import QRCode from 'qrcode';
 
 
 
@@ -179,7 +181,14 @@ export const pdfReciboPago = async (req: any, res = response) => {
     
         let dataPagos = await getPagoFactura(idFactura);
         for (const pago of dataPagos) {
-          pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
+          pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
+        pago.nombre_banco = (pago.nombre_banco==null) ? "NO APLICA" : pago.nombre_banco;
+        pago.codigo_transaccion = (pago.codigo_transaccion==null) ? "NO APLICA" : pago.codigo_transaccion;
+        pago.ticketID = (pago.ticketID==null) ? "NO APLICA" : pago.ticketID;
+        pago.numero_tarjeta = (pago.numero_tarjeta==null) ? "NO APLICA" : pago.numero_tarjeta;
+        pago.franquicia = (pago.franquicia==null) ? "NO APLICA" : pago.franquicia;
+        pago.cod_aprobacion = (pago.cod_aprobacion==null) ? "NO APLICA" : pago.cod_aprobacion;
+        pago.num_recibido = (pago.num_recibido==null) ? "NO APLICA" : pago.num_recibido;
         }
     
         let dataDescuentos =  await getDescuentoFactura(idFactura);
@@ -193,17 +202,31 @@ export const pdfReciboPago = async (req: any, res = response) => {
         factura.descuentos = dataDescuentos;
         factura.cliente =  cliente;
         factura.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
+        data.factura =  factura;
+        data.fecha_actual =  format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
+        data.urlService =  `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${factura.id}`;
+    
+        QRCode.toDataURL( data.urlService, {errorCorrectionLevel: "L"},(err, src) => {
+            if (err) res.send("Error occured");
+    
+            data.scrQR = src;
+    
+            res.render("pdf_recibo_pago", data, async (err: any, html: any) => {
+                let pdf = await generarHTMLPDFNew(html);
+                res.contentType("application/pdf");
+                res.send(pdf);
+            });
+    
+        });
         
     } catch (error) {
-        
+        res.send(error.message);
     }
-    data.factura =  factura;
 
-    res.render("pdf_recibo_pago", data, async (err: any, html: any) => {
-        let pdf = await generarHTMLPDFNew(html);
-        res.contentType("application/pdf");
-        res.send(pdf);
-    });
+
+
+
+
 
 }
 

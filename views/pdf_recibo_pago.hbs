@@ -135,7 +135,7 @@
                 </td>
 
                 <td rowspan="4" style="text-align: right">
-                    <img src="{{BASE_URL}}/static/img/LogoITP2.svg" style="height: 120px;" class="img img-fluid">
+                    <img src="{{scrQR}}" style="height: 120px;" class="img img-fluid">
                 </td>
             </tr>
 
@@ -153,26 +153,28 @@
         <table style="width: 100%; font-size: 10px; border-collapse: collapse; " class="table-border" cellpadding="0"
             cellspacing="0">
             <tr>
-                <td colspan="2">Adicional: {{ factura.cliente.siglas_colegio }} | {{ factura.cliente.nom_periodo }} |  {{ factura.cliente.nom_nivel_educativo }} |  {{ factura.cliente.cod_matricula }}  </td>
-                <th rowspan="4">REF: {{factura.id}}</th>
+                <td colspan="2">Adicional: {{ factura.cliente.siglas_colegio }} | {{ factura.cliente.nom_periodo }} | {{
+                    factura.cliente.nom_nivel_educativo }} | {{ factura.cliente.cod_matricula }} </td>
+                <th rowspan="4">RECIBO NRO: {{factura.id}}</th>
 
             </tr>
             <tr>
-               <td>Identificación: {{factura.cliente.tipo_doc}}-{{factura.cliente.ide_persona}}</td>
-                <td>Cliente: {{factura.cliente.ape1_persona}} {{factura.cliente.ape2_persona}} {{factura.cliente.nom1_persona}} {{factura.cliente.nom2_persona}}</td>
+                <td>Identificación: {{factura.cliente.tipo_doc}}-{{factura.cliente.ide_persona}}</td>
+                <td>Cliente: {{factura.cliente.ape1_persona}} {{factura.cliente.ape2_persona}}
+                    {{factura.cliente.nom1_persona}} {{factura.cliente.nom2_persona}}</td>
             </tr>
             <tr>
                 <td>Celuar: {{factura.cliente.cel_persona}}</td>
                 <td>E-mail: {{factura.cliente.email_persona}} </td>
 
 
-               
+
             </tr>
 
             <tr>
-                <td>Fecha: {{factura.fecha}}</td>
+                <td>Fecha factura: {{factura.fecha}}</td>
                 <td>Categoria: {{factura.categoria}}</td>
-               
+
             </tr>
             <tr>
                 <th colspan="2">CONCEPTO FACTURA</th>
@@ -184,7 +186,7 @@
 
                     <table style="border: 0px solid black; border-collapse: collapse; width: 100%;">
                         <tr style="border-top: 0px solid;">
-                            <th style="border-top: 0px solid;">Descripcion</th>
+                            <th style="border-top: 0px solid;">Descripción</th>
                             <th style="border-top: 0px solid;">Valor Und</th>
                             <th style="border-top: 0px solid;">Cantidad</th>
                             <th style="border-top: 0px solid;">Descuento</th>
@@ -213,21 +215,19 @@
                     </ul>
                 </td>
                 <td style="text-align: left; font-size: 9px;">
-                    
-                        {{#each factura.descuentos }}
-                        <li>{{categoria}} {{porcentaje}} % </li>
-                        {{/each}}
-                 
+
+                    {{#each factura.descuentos }}
+                    <li>{{categoria}} {{porcentaje}} % </li>
+                    {{/each}}
+
                 </td>
             </tr>
             <tr>
                 <td rowspan="2" colspan="2" style="width: 70%;">
-                    <small style="font-size: 10px; ">Páguese en efectivo en el banco <strong>BBVA</strong> o
-                        <strong>SuperGiros</strong>. Exija en
-                        esta factura el timbre de una maquina registradora o sello de cancelación del banco y consérvelo
-                        en caso de reclamo. Esta boleta se debe pagar en efectivo</small>
+                    <small style="font-size: 10px; ">Recibo de pago generado a travez de <strong>Sigedin</strong>, valide la autenticidad de este recibo escaneando el código QR, o a travéz del siguiente enlace: <span style="color: midnightblue;">{{urlService}}</span></small>
                 </td>
-                <td rowspan="2" style="background: #8bc34a; font-size: 12px;"> Pago ordinario : <Strong style="float: right;">$ {{
+                <td rowspan="2" style="background: #8bc34a; font-size: 12px;"> TOTAL: <Strong
+                        style="float: right;">$ {{
                         factura.total_a_pagar_s }}</Strong> </td>
 
             </tr>
@@ -238,6 +238,78 @@
 
 
     </div>
+
+    <p style="text-align: center;">Detalle de pago</p>
+    <div>
+        {{#each factura.pagos }}
+        <table border="0" cellpadding="1" class="" cellspacing="1"
+            style="width: 100%; font-size: 9px; border-collapse: collapse; text-align: justify;" class="table-border">
+
+            <tr >
+                <th style="width: 20%;">ID</th>
+                <td>{{_id}}</td>
+            </tr>
+            <tr>
+                <th>VALOR COBRADO:</th>
+                <td>{{total_pago}}</td>
+            </tr>
+            <tr>
+                <th>VALOR PAGADO:</th>
+                <td>{{total_pago}}</td>
+            </tr>
+            <tr>
+                <th>FORMA DE PAGO:</th>
+                <td>{{forma_pago}}</td>
+            </tr>
+            <tr>
+                <th>FECHA DE PAGO:</th>
+                <td>{{fecha}}</td>
+            </tr>
+            <tr>
+                <th>ESTADO:</th>
+                <td style="background-color: lawngreen;" >{{estado}}</td>
+            </tr>
+            <tr>
+                <th>BANCO:</th>
+                <td>{{nombre_banco}}</td>
+            </tr>
+            <tr>
+                <th>CODIGO TRANSACCIÓN:</th>
+                <td>{{codigo_transaccion}}</td>
+            </tr>
+            <tr>
+                <th>TIKED ID:</th>
+                <td>{{ticketID}}</td>
+            </tr>
+            <tr>
+                <th>NÚMERO DE TARJETA:</th>
+                <td>{{numero_tarjeta}}</td>
+            </tr>
+            <tr>
+                <th>FRANQUICIA:</th>
+                <td>{{franquicia}}</td>
+            </tr>
+            <tr>
+                <th>CÓDIGO APROBACIÓN:</th>
+                <td>{{cod_aprobacion}}</td>
+            </tr>
+
+            <tr>
+                <th>NRO RECIBIDO:</th>
+                <td>{{num_recibido}}</td>
+            </tr>
+
+
+
+
+
+
+        </table>
+
+
+        {{/each}}
+    </div>
+
     <div style="text-align: left; margin-top: 2px; font-size: 8px;">Generado: {{fecha_actual}}</div>
 
     <hr>

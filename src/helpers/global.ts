@@ -1,4 +1,7 @@
 const puppeteer = require("puppeteer");
+const { createCanvas, loadImage } = require("canvas");
+import QRCode from 'qrcode';
+
 export const convertTo24Hour = (time: string) => {
 
     let hours = parseInt(time.substr(0, 2));
@@ -76,3 +79,26 @@ export const generarHTMLPDFNew = async (html: string) => {
     }
 
 }
+
+
+export const createQR = async (dataForQRcode:string, center_image:string, width:number, cwidth:number)=> {
+    const canvas = createCanvas(width, width);
+    QRCode.toCanvas(
+      canvas,
+      dataForQRcode,
+      {
+        errorCorrectionLevel: "M",
+        margin: 1,
+        color: {
+          dark: "#000000",
+          light: "#ffffff",
+        },
+      }
+    );
+  
+    const ctx = canvas.getContext("2d");
+    const img = await loadImage(center_image);
+    const center = (width - cwidth) / 2;
+    ctx.drawImage(img, center, center, cwidth, cwidth);
+    return canvas.toDataURL("image/png");
+  }
