@@ -218,6 +218,12 @@ export const pdfReciboPago = async (req: any, res = response) => {
 
         }
 
+        const nDate = new Date().toLocaleString('es-CO', {
+            timeZone: 'America/Bogota'
+          });
+          
+         // console.log(nDate);
+
         let dataPagos = await getPagoFactura(idFactura);
         for (const pago of dataPagos) {
             pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
@@ -242,7 +248,8 @@ export const pdfReciboPago = async (req: any, res = response) => {
         factura.cliente = cliente;
         factura.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
         data.factura = factura;
-        data.fecha_actual = format(new Date(), 'DD-MM-YYYY H:mm:ss A');
+      //  data.fecha_actual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
+        data.fecha_actual = nDate;
         data.urlService = `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${factura.id}`;
 
         QRCode.toDataURL(data.urlService, { errorCorrectionLevel: "L" }, (err: any, src: any) => {
