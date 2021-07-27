@@ -125,14 +125,14 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label for="">Estado:</label>
                                             <div type="text" class="form-control bg-light text-primary"> <strong>{[pago.id]} - {[pago.estado]}</strong> </div>
                                         </div>
                                     </div>
 
-                                    <div class="col-md-9">
+                                    <div class="col-md-8">
                                         <div class="form-group">
                                             <label for="">Total en letras:</label>
                                             <div type="text" class="form-control bg-light text-success">
@@ -201,7 +201,7 @@
                                     </div>
                                 </div>
 
-                                <div class="row">
+                                <div class="row"  v-if="!factura.pagado">
                                     <div class="col-6">
                                         {{!-- <div><strong>Esado transaccion: </strong> PENDIENTE</div> --}}
                                         <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong> </h4>
@@ -230,6 +230,29 @@
                                             </button>
                                         </div>
                                     </div>
+                                </div>
+
+
+                                <div class="row" v-if="factura.pagado">
+                                    <h5>Pago efectuado exitosamente</h5>
+
+                                    <ol class="list-group list-group-numbered ">
+
+                                        <li class="list-group-item list-group-item-info d-flex justify-content-between align-items-start"
+                                            v-for="(row, index) in factura.pagos">
+                                            <div class="ms-2 me-auto">
+                                                <div class="fw-bold">$ {[row.valor_pago]} - {[row.estado]}</div>
+                                                {[row.forma_pago ]} - {[row.fecha ]}
+                                            </div>
+                                            <a :href="'{{BASE_URL}}/page/DescargarReciboPago/'+row.pago_id" target="_blank">
+                                                <span class="badge bg-success rounded-pill">
+                                                  <i class="fa fa-file-pdf-o"></i>  Descargar recibo
+                                                </span>
+                                            </a>
+                                        </li>
+
+
+                                    </ol>
                                 </div>
                                 <br /><br />
 
@@ -294,7 +317,9 @@
                         txtDescFactura: "",
                         txtTotalPagar: 0,
                         txtTotalPagarInt: 0,
-                        cod_paquete: "0"
+                        cod_paquete: "0",
+                        pagado: false,
+                        pagos: []
                     },
                     porcentaje: {
                         categoria: 1,
@@ -327,10 +352,16 @@
                         .then((data) => {
                             if (!data.error) {
 
-                                if(data.estadopago!=false){
-                                    this.pago.id = data.estadopago._id;
-                                    this.pago.codigo = data.estadopago.codigo;
-                                    this.pago.estado = data.estadopago.estado;
+                               if (data.estadopago.length > 0) {
+                                    this.factura.pagado = true;
+                                    this.factura.pagos = data.estadopago;
+                                    this.pago.id = data.estadopago[0].pago_id;
+                                    // this.pago.codigo = data.estadopago[0].estado_pago_id;
+                                    this.pago.estado = data.estadopago[0].estado;
+
+
+                                } else {
+                                    this.pago.estado = "SIN PAGO";
                                 }
 
 

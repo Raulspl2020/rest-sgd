@@ -19,6 +19,45 @@ const { DOMImplementation, XMLSerializer } = require('xmldom');
 //   /page/inicio 
 //=====================
 export const vistaHolaMundo = async (req: any, res = response) => {
+    var sql = require("mssql");
+
+
+    // config for your database
+    var config = {
+        user: 'sys_software',
+        password: 'sysLtda900',
+        server: '10.10.13.6',
+        database: 'sys_apolo'
+    };
+
+    const sqlConfig = {
+        user: 'sys_software',
+        password: 'sysLtda900',
+        server: '10.10.13.6\\sqlexpress',
+        database: 'sys_apolo',
+        pool: {
+          max: 10,
+          min: 0,
+          idleTimeoutMillis: 30000
+        },
+        options: {
+          encrypt: false, // for azure
+          trustServerCertificate: false // change to true for local dev / self-signed certs
+        }
+      }
+      
+
+       try {
+        // make sure that any items are correctly URL encoded in the connection string
+        await sql.connect(sqlConfig)
+        const result = await sql.query`select * from centro_costo;`
+        console.dir(result)
+       } catch (err) {
+        console.log(err);
+       }
+
+
+
 
 
     res.render("hola_mundo");
@@ -133,11 +172,11 @@ export const pdfReciboPago = async (req: any, res = response) => {
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
     let body = req.body;
-    let idFactura =  req.params.ref;
-    let factura:any = {};
-    let det_factura : any = [];
+    let idFactura = req.params.ref;
+    let factura: any = {};
+    let det_factura: any = [];
     let total_a_pagar = 0;
-    let cliente : any = {};
+    let cliente: any = {};
 
     try {
 
@@ -145,80 +184,80 @@ export const pdfReciboPago = async (req: any, res = response) => {
 
 
         //si encuentra conceptos en la factura
-        if (dataConceptos.length >0 ) {
-    
-          for (const pago of dataConceptos) {
-            pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
-    
-            factura= {
-              "id": pago._id,
-              "codigo": pago.codigo,
-              "descripcion": pago.desc_factura,
-              "categoria": pago.categoria,
-              "fecha": pago.fecha
-            };
-            let json_response = JSON.parse(pago.json_response);
-            cliente =  json_response.info_cliente;
-    
-            delete pago.json_response;
-    
-    
-            let subtotal = (pago.valor_unidad - (pago.valor_unidad * pago.descuento) + (pago.valor_unidad * pago.aumento));
-            total_a_pagar = total_a_pagar +subtotal;
-            det_factura.push({
-              
-              'concepto': (pago.cod_paquete == 0) ? pago.descripcion : pago.concepto,
-              'descuento': (pago.descuento * 100),
-              'aumento': pago.aumento,
-              'valor_unidad':  moneda.format(pago.valor_unidad, { locale: 'es-CO' }).replace('$', '').trim(),
-              'cantidad': pago.cantidad,
-              'subtotal':  moneda.format(subtotal, { locale: 'es-CO' }).replace('$', '').trim()
-            });
-    
-          }
-    
+        if (dataConceptos.length > 0) {
+
+            for (const pago of dataConceptos) {
+                pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
+
+                factura = {
+                    "id": pago._id,
+                    "codigo": pago.codigo,
+                    "descripcion": pago.desc_factura,
+                    "categoria": pago.categoria,
+                    "fecha": pago.fecha
+                };
+                let json_response = JSON.parse(pago.json_response);
+                cliente = json_response.info_cliente;
+
+                delete pago.json_response;
+
+
+                let subtotal = (pago.valor_unidad - (pago.valor_unidad * pago.descuento) + (pago.valor_unidad * pago.aumento));
+                total_a_pagar = total_a_pagar + subtotal;
+                det_factura.push({
+
+                    'concepto': (pago.cod_paquete == 0) ? pago.descripcion : pago.concepto,
+                    'descuento': (pago.descuento * 100),
+                    'aumento': pago.aumento,
+                    'valor_unidad': moneda.format(pago.valor_unidad, { locale: 'es-CO' }).replace('$', '').trim(),
+                    'cantidad': pago.cantidad,
+                    'subtotal': moneda.format(subtotal, { locale: 'es-CO' }).replace('$', '').trim()
+                });
+
+            }
+
         }
-    
+
         let dataPagos = await getPagoFactura(idFactura);
         for (const pago of dataPagos) {
-          pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
-        pago.nombre_banco = (pago.nombre_banco==null) ? "NO APLICA" : pago.nombre_banco;
-        pago.codigo_transaccion = (pago.codigo_transaccion==null) ? "NO APLICA" : pago.codigo_transaccion;
-        pago.ticketID = (pago.ticketID==null) ? "NO APLICA" : pago.ticketID;
-        pago.numero_tarjeta = (pago.numero_tarjeta==null) ? "NO APLICA" : pago.numero_tarjeta;
-        pago.franquicia = (pago.franquicia==null) ? "NO APLICA" : pago.franquicia;
-        pago.cod_aprobacion = (pago.cod_aprobacion==null) ? "NO APLICA" : pago.cod_aprobacion;
-        pago.num_recibido = (pago.num_recibido==null) ? "NO APLICA" : pago.num_recibido;
+            pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
+            pago.nombre_banco = (pago.nombre_banco == null) ? "NO APLICA" : pago.nombre_banco;
+            pago.codigo_transaccion = (pago.codigo_transaccion == null) ? "NO APLICA" : pago.codigo_transaccion;
+            pago.ticketID = (pago.ticketID == null) ? "NO APLICA" : pago.ticketID;
+            pago.numero_tarjeta = (pago.numero_tarjeta == null) ? "NO APLICA" : pago.numero_tarjeta;
+            pago.franquicia = (pago.franquicia == null) ? "NO APLICA" : pago.franquicia;
+            pago.cod_aprobacion = (pago.cod_aprobacion == null) ? "NO APLICA" : pago.cod_aprobacion;
+            pago.num_recibido = (pago.num_recibido == null) ? "NO APLICA" : pago.num_recibido;
         }
-    
-        let dataDescuentos =  await getDescuentoFactura(idFactura);
+
+        let dataDescuentos = await getDescuentoFactura(idFactura);
         for (const dsto of dataDescuentos) {
-          dsto.fecha = format(dsto.fecha, 'DD-MM-YYYY');
-          dsto.porcentaje =   dsto.porcentaje*100;
+            dsto.fecha = format(dsto.fecha, 'DD-MM-YYYY');
+            dsto.porcentaje = dsto.porcentaje * 100;
         }
-    
+
         factura.det_factura = det_factura;
-        factura.pagos =  dataPagos;
+        factura.pagos = dataPagos;
         factura.descuentos = dataDescuentos;
-        factura.cliente =  cliente;
+        factura.cliente = cliente;
         factura.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
-        data.factura =  factura;
-        data.fecha_actual =  format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
-        data.urlService =  `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${factura.id}`;
-    
-        QRCode.toDataURL( data.urlService, {errorCorrectionLevel: "L"},(err, src) => {
+        data.factura = factura;
+        data.fecha_actual = format(new Date(), 'DD-MM-YYYY H:mm:ss A');
+        data.urlService = `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${factura.id}`;
+
+        QRCode.toDataURL(data.urlService, { errorCorrectionLevel: "L" }, (err: any, src: any) => {
             if (err) res.send("Error occured");
-    
+
             data.scrQR = src;
-    
+
             res.render("pdf_recibo_pago", data, async (err: any, html: any) => {
                 let pdf = await generarHTMLPDFNew(html);
                 res.contentType("application/pdf");
                 res.send(pdf);
             });
-    
+
         });
-        
+
     } catch (error) {
         res.send(error.message);
     }

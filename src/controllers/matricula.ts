@@ -70,14 +70,63 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
         }
 
 
-        let estadoPago = await existePago('6', id_matricula);
+       // let estadoPago = await existePago('6', id_matricula);
+
+
+
+            //verifica si ya existe una factura creada con esa matricula y con ese paquete
+
+           let pagoFactura: any = [];
+            let resFactura = await getFacturaByMatricula(id_matricula, '6');
+            //si encuentra factura creada verifica si tiene pagos
+            if(resFactura.length > 0){
+                 pagoFactura = await getPagoFactura(resFactura[0]._id);
+
+                //si encuentra pagos exitosos
+                if(pagoFactura.length > 0){
+
+                   
+                    pagoFactura.forEach((pago:any) => {
+                       pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
+                    });
+
+                    //actualizamos los conceptos de la factura a mostrar
+                    resultPaquete.forEach((con:any) => {
+
+                        resFactura.forEach((fact:any) => {
+                            
+                            if(con.concepto_id == fact.concepto_id){
+                                con.cantidad = fact.cantidad;
+                                con.descuento = fact.descuento;
+                                con.valor_unidad = fact.valor_unidad;
+                                con.aumento =  fact.aumento;
+                            }
+    
+                        });
+                        
+                    });
+
+                    //actualizamos el total a pagar
+                    total_a_pagar = 0;
+                    resultPaquete.forEach((element: any, index: number) => {
+                        let subtotal = (element.valor_unidad * element.cantidad);
+                        resultPaquete[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
+                        total_a_pagar = element.subtotal + total_a_pagar;
+                    });
+
+                }
+
+
+
+            }
+
 
 
 
         return res.status(200).json({
             error: false,
             message: "Ejecución correcta",
-            estadopago: estadoPago,
+            estadopago: pagoFactura,
             matricula: resultDB,
             detalle_factura: resultPaquete,
             total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
