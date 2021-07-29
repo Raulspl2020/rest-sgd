@@ -103,9 +103,6 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
         });
       });
 
-      console.log("hasta aqui no hay fecha");
-      console.log(tPago);
-
       resultSavePago = await actualizarPagoyDetalleNew(tPago, tDetallePago, id_pago);
       if (resultSavePago != false) {
         id_pago = resultSavePago[0];
@@ -147,7 +144,7 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       'codigo_barras': codigo1,
       'json_response': JSON.stringify(infoPagoDB)
     };
-    console.log("hasta aqui todo bien");
+
     let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
 
     //INICAMOS EL PAGO CON ZONAPAGOS

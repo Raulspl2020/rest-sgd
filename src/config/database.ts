@@ -1,4 +1,5 @@
 import Knex from 'knex';
+const sql = require("mssql");
 
 const db: any = {
   desarrollo: {
@@ -23,7 +24,7 @@ const auth: any = {
     host: process.env.MYSQL_DEV_AUTH_HOST,
     user: process.env.MYSQL_DEV_AUTH_USER,
     password: process.env.MYSQL_DEV_AUTH_PASS,
-    database:  process.env.MYSQL_DEV_AUTH_DATABASE,
+    database: process.env.MYSQL_DEV_AUTH_DATABASE,
     port: 3306,
   },
 
@@ -54,4 +55,32 @@ let conAuth = Knex({
   connection: auth.default,
 });
 
-export { conDB, conAuth };
+const sqlConfig = {
+  user: process.env.MSSQL_DEV_USER,
+  password: process.env.MSSQL_DEV_PASS,
+  server: process.env.MSSQL_DEV_SERVER.toString(),
+  database:process.env.MSSQL_DEV_DATABASE,
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000
+  },
+  options: {
+    encrypt: false, // for azure
+    trustServerCertificate: false // change to true for local dev / self-signed certs
+  }
+}
+
+
+//establece una coneccion con sqlserver
+const conSysApolo = async () => {
+  try {
+    let conexion = await sql.connect(sqlConfig)
+    return conexion;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+}
+
+export { conDB, conAuth, conSysApolo };

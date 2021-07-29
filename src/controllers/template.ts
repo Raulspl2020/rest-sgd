@@ -7,7 +7,9 @@ import * as moneda from 'currency-formatter';
 
 import { format } from 'date-format-parse';
 
+
 import QRCode from 'qrcode';
+import { consultarTercero } from '../provider/sys_apolo/tercero_provider';
 
 
 
@@ -19,48 +21,16 @@ const { DOMImplementation, XMLSerializer } = require('xmldom');
 //   /page/inicio 
 //=====================
 export const vistaHolaMundo = async (req: any, res = response) => {
-    var sql = require("mssql");
 
+    try {
+        let result = await consultarTercero();
+        res.json(result);
+        
+    } catch (error) {
+        res.render("hola_mundo");
+    }
 
-    // config for your database
-    var config = {
-        user: 'sys_software',
-        password: 'sysLtda900',
-        server: '10.10.13.6',
-        database: 'sys_apolo'
-    };
-
-    const sqlConfig = {
-        user: 'sys_software',
-        password: 'sysLtda900',
-        server: '10.10.13.6\\sqlexpress',
-        database: 'sys_apolo',
-        pool: {
-          max: 10,
-          min: 0,
-          idleTimeoutMillis: 30000
-        },
-        options: {
-          encrypt: false, // for azure
-          trustServerCertificate: false // change to true for local dev / self-signed certs
-        }
-      }
-      
-
-       try {
-        // make sure that any items are correctly URL encoded in the connection string
-        await sql.connect(sqlConfig)
-        const result = await sql.query`select * from centro_costo;`
-        console.dir(result)
-       } catch (err) {
-        console.log(err);
-       }
-
-
-
-
-
-    res.render("hola_mundo");
+  
 
 };
 
@@ -220,9 +190,9 @@ export const pdfReciboPago = async (req: any, res = response) => {
 
         const nDate = new Date().toLocaleString('es-CO', {
             timeZone: 'America/Bogota'
-          });
-          
-         // console.log(nDate);
+        });
+
+        // console.log(nDate);
 
         let dataPagos = await getPagoFactura(idFactura);
         for (const pago of dataPagos) {
