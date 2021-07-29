@@ -296,7 +296,7 @@ export const registrarPagoService = async (req: any, res: any) => {
     }
   } catch (error) {
     console.log(error.message);
-    responseData.Codigo_Estado = "2";
+    responseData.Codigo_Estado = "1";
     responseData.Severidad = "E";
     responseData.Descripcion = "Ocurrió un error inesperado en la operación: ";
     guardarLog({
