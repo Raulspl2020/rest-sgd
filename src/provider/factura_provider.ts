@@ -143,7 +143,14 @@ export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) 
 
 //metodos para consultar estados de facturas y pagos
 
-export const consultaFacturaCliente = async (id_cliente: any) => {
+export const consultaFacturaCliente = async (id_cliente: any, tipo:string ='id_cliente') => {
+
+  let auxSql = "";
+  if(tipo=='id_cliente'){
+    auxSql=" WHERE fin_pago.estudiante_id = ?";
+  }else{
+    auxSql=" WHERE fin_pago._id = ?";
+  }
 
   let sql = `SELECT
   fin_pago._id
@@ -167,7 +174,7 @@ FROM
       ON (fin_pago.categoria_pago_id = fin_categoria_pago._id)
   INNER JOIN fin_concepto 
       ON (fin_detalle_factura.concepto_id = fin_concepto._id)
-              WHERE fin_pago.estudiante_id = ?
+              ${auxSql}
       GROUP BY fin_detalle_factura._id
       ORDER BY fin_pago._id DESC`;
 

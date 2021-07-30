@@ -458,7 +458,7 @@ export const consultaEstadoFactura = async (req: any, res: any) => {
   try {
     let total_a_pagarString: any = moneda.format(0, { locale: 'es-CO' }).replace('$', '').trim();
 
-    let resultDB = await consultaFacturaCliente(body.id_cliente);
+    let resultDB = await consultaFacturaCliente(body.id_cliente,body.tipo);
     let jsonData: any = {};
     if (resultDB.length > 0) {
       jsonData = JSON.parse(resultDB[0].json_response);
