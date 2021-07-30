@@ -220,8 +220,6 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
   let [convenio415, referencia8020] = await dividirCodigoBarrasText(codigo_barras);
   let id_pago = parseInt(referencia8020.substr(3))
   let data: any = await getPagoByID(id_pago);
-  console.log("aqui va el id_pago");
-  console.log(id_pago);
 
   try {
 
@@ -233,7 +231,8 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
     let general = jsonDB.general;
 
     let resultConfig = await getConfigPeriodo();
-    let porcentaje_ex = (resultConfig.porcentaje_ext) ? resultConfig.porcentaje_ext : 0.1;
+    console.log(resultConfig);
+    let porcentaje_ex =  resultConfig.porcentaje_ext;
     let new_detalle = await quitarAumentoDetalle(jsonDB.det_factura, 0);
     let new_total_ordinario = await calculaTotalaPagar(new_detalle);
     let new_det2 = await quitarAumentoDetalle(jsonDB.det_factura, porcentaje_ex);
