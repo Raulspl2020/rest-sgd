@@ -10,6 +10,8 @@ import { format } from 'date-format-parse';
 
 import QRCode from 'qrcode';
 import { consultarTercero } from '../provider/sys_apolo/tercero_provider';
+import { getDataDetalleFacturaById } from './factura';
+import { sendReciboPagoByID } from './mail';
 
 
 
@@ -20,17 +22,77 @@ const { DOMImplementation, XMLSerializer } = require('xmldom');
 //====================
 //   /page/inicio 
 //=====================
-export const vistaHolaMundo = async (req: any, res = response) => {
+export const vistaHolaMundo = async (req: any, res: any) => {
+
+    // try {
+    //     let result = await consultarTercero();
+    //     res.json(result);
+
+    // } catch (error) {
+    //     res.render("hola_mundo");
+    // }
+
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    let body = req.body;
+    let idFactura = req.params.ref;
 
     try {
-        let result = await consultarTercero();
-        res.json(result);
-        
+
+        let exphbs = require('express-hbs');
+
+        const hbs = fs.readFileSync('./views/pdf_recibo_pago.hbs', 'utf8');
+        console.log(hbs);
+
+
+        let template = exphbs.handlebars.compile(hbs);
+
+
+        let factura = await getDataDetalleFacturaById(707);
+
+        data.factura = factura;
+        data.fecha_actual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
+        //data.fecha_actual = nDate;
+        data.urlService = `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${factura.id}`;
+
+        let resultHTML = template(data);
+
+
+
+
+
+        console.log(resultHTML);
+
+        let pdf = await generarHTMLPDFNew(resultHTML);
+        let resMail = sendReciboPagoByID(factura.cliente, pdf, factura.categoria, factura.id);
+
+        console.log(resMail);
+
+        // res.send(pdf);
+
+        let fileName: string = `${factura.cliente.ide_persona}_${factura.id}.pdf`;
+
+        var readStream = new stream.PassThrough();
+        readStream.end(pdf);
+
+        res.set('Content-disposition', 'attachment; filename=' + fileName.toString());
+        res.contentType("application/pdf");
+        //   res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        console.log("Iniciando descarga");
+
+        readStream.pipe(res);
+
+
     } catch (error) {
-        res.render("hola_mundo");
+        console.log(error);
     }
 
-  
+
+
+
+
+
+
 
 };
 
@@ -143,80 +205,11 @@ export const pdfReciboPago = async (req: any, res = response) => {
     data.BASE_URL = process.env.BASE_URL.toString();
     let body = req.body;
     let idFactura = req.params.ref;
-    let factura: any = {};
-    let det_factura: any = [];
-    let total_a_pagar = 0;
-    let cliente: any = {};
 
     try {
 
-        let dataConceptos = await getFactura(idFactura);
+        let factura = await getDataDetalleFacturaById(idFactura);
 
-
-        //si encuentra conceptos en la factura
-        if (dataConceptos.length > 0) {
-
-            for (const pago of dataConceptos) {
-                pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A')
-
-                factura = {
-                    "id": pago._id,
-                    "codigo": pago.codigo,
-                    "descripcion": pago.desc_factura,
-                    "categoria": pago.categoria,
-                    "fecha": pago.fecha
-                };
-                let json_response = JSON.parse(pago.json_response);
-                cliente = json_response.info_cliente;
-
-                delete pago.json_response;
-
-
-                let subtotal = (pago.valor_unidad - (pago.valor_unidad * pago.descuento) + (pago.valor_unidad * pago.aumento));
-                total_a_pagar = total_a_pagar + subtotal;
-                det_factura.push({
-
-                    'concepto': (pago.cod_paquete == 0) ? pago.descripcion : pago.concepto,
-                    'descuento': (pago.descuento * 100),
-                    'aumento': pago.aumento,
-                    'valor_unidad': moneda.format(pago.valor_unidad, { locale: 'es-CO' }).replace('$', '').trim(),
-                    'cantidad': pago.cantidad,
-                    'subtotal': moneda.format(subtotal, { locale: 'es-CO' }).replace('$', '').trim()
-                });
-
-            }
-
-        }
-
-        const nDate = new Date().toLocaleString('es-CO', {
-            timeZone: 'America/Bogota'
-        });
-
-        // console.log(nDate);
-
-        let dataPagos = await getPagoFactura(idFactura);
-        for (const pago of dataPagos) {
-            pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
-            pago.nombre_banco = (pago.nombre_banco == null) ? "NO APLICA" : pago.nombre_banco;
-            pago.codigo_transaccion = (pago.codigo_transaccion == null) ? "NO APLICA" : pago.codigo_transaccion;
-            pago.ticketID = (pago.ticketID == null) ? "NO APLICA" : pago.ticketID;
-            pago.numero_tarjeta = (pago.numero_tarjeta == null) ? "NO APLICA" : pago.numero_tarjeta;
-            pago.franquicia = (pago.franquicia == null) ? "NO APLICA" : pago.franquicia;
-            pago.cod_aprobacion = (pago.cod_aprobacion == null) ? "NO APLICA" : pago.cod_aprobacion;
-            pago.num_recibido = (pago.num_recibido == null) ? "NO APLICA" : pago.num_recibido;
-        }
-
-        let dataDescuentos = await getDescuentoFactura(idFactura);
-        for (const dsto of dataDescuentos) {
-            dsto.fecha = format(dsto.fecha, 'DD-MM-YYYY');
-            dsto.porcentaje = dsto.porcentaje * 100;
-        }
-
-        factura.det_factura = det_factura;
-        factura.pagos = dataPagos;
-        factura.descuentos = dataDescuentos;
-        factura.cliente = cliente;
-        factura.total_a_pagar_s = moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim();
         data.factura = factura;
         data.fecha_actual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
         //data.fecha_actual = nDate;
@@ -229,6 +222,8 @@ export const pdfReciboPago = async (req: any, res = response) => {
 
             res.render("pdf_recibo_pago", data, async (err: any, html: any) => {
                 let pdf = await generarHTMLPDFNew(html);
+                let resMail = sendReciboPagoByID(factura.cliente, pdf, factura.categoria, factura.id);
+                console.log(resMail);
                 res.contentType("application/pdf");
                 res.send(pdf);
             });
