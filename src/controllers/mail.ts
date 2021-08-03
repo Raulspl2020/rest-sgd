@@ -108,6 +108,7 @@ export const consultaCorreo = async (req: any, res = response) => {
   }
 };
 
+
 // envia correo con recibo de pago adjunto:
 export const sendReciboPagoByID = async (cliente:any,filePDF:any, descripcion:string, id_fac:any) => {
 
@@ -138,7 +139,7 @@ En el archivo adjunto encontrará los detalles de: ${descripcion}. Para abrir el
 
     let dataMail = {
       from_name: body.from_name,
-      enviar_a: "durosero@itp.edu.co", // cliente.email_persona,
+      enviar_a: cliente.email_persona,
       asunto: "Recibo de pago - Pago exitoso",
       mensaje: message
     };
@@ -157,19 +158,15 @@ En el archivo adjunto encontrará los detalles de: ${descripcion}. Para abrir el
     console.log("imprimendo respuesta");
     console.log(response);
     if (!response) {
-      // res.status(401).json({
-      //   message: response,
-      //   error: true,
-      // });
+      return false;
+      console.log("No se ha podido enviar el correo");
     } else {
       console.log("E-mail enviado exitosamente");
-      // res.status(200).json({
-      //   message: "E-mail enviado exitosamente",
-      //   error: false,
-      // });
+      return true;
     }
   } catch (error) {
     console.log(error);
+    return false;
   }
 
 }

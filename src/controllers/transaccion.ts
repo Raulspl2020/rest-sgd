@@ -26,6 +26,7 @@ import {
 } from "../provider/pago_provider";
 import { consultaFacturaBanco } from "../provider/factura_provider";
 import { getInfoMatricula } from "../provider/matricula_provider";
+import { complileTemplateReciboPago } from "./template";
 let Validator = require("validatorjs");
 
 
@@ -221,6 +222,8 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
       //ACTUALIZAMOS EL ESTADO DE CADA DESCUENTO
       if(estado_pago ==1) {
+        //enviar recibo de pago al correo electronico
+        complileTemplateReciboPago(id_pago);
         let resultObjectDB: any = await consultaFacturaBanco(id_pago);
         let categoria_id = resultObjectDB.data[0].categoria_pago_id;
         if (resultObjectDB != false) {

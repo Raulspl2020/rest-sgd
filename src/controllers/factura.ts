@@ -9,6 +9,7 @@ import { ejecutarZonaPagos } from "../helpers/pago";
 import { ListResponsePago } from "../models/ResponsePago";
 import { Verificadorpago } from "./zonapagos";
 import * as moneda from 'currency-formatter';
+import { complileTemplateReciboPago } from "./template";
 
 //====================
 //   /transaccion/consultaFactura
@@ -288,6 +289,10 @@ export const registrarPagoService = async (req: any, res: any) => {
         'message': "OK",
         'host': req.headers['x-forwarded-for'] || req.connection.remoteAddress
       });
+
+      //enviar recibo de pago al correo electronico
+      complileTemplateReciboPago(Referencia_pago);
+
       res.status(200).json(responseData);
 
 

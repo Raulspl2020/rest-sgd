@@ -6,6 +6,7 @@ import { getDescuentoFactura, getFactura, getPagoFactura } from '../provider/pag
 import * as moneda from 'currency-formatter';
 
 import { format } from 'date-format-parse';
+const exphbs = require('express-hbs');
 
 
 import QRCode from 'qrcode';
@@ -263,10 +264,6 @@ export const viewConsultaPago = async (req: any, res = response) => {
     //     fs.writeFileSync('./image.pdf', blob)
     // });
     // canvas.end();
-
-
-
-
     let codigo = req.params.codigo;
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
@@ -274,3 +271,33 @@ export const viewConsultaPago = async (req: any, res = response) => {
     res.render("estado_pago", data);
 
 };
+
+
+
+//crea un recibo de pago en pdf y lo envia al correo
+export const complileTemplateReciboPago = async (id_factura:any) => {
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+
+    try {
+        //leer el contenido del archivo para despues ser compilado
+        const hbs = fs.readFileSync('./views/pdf_recibo_pago.hbs', 'utf8');
+        let template = exphbs.handlebars.compile(hbs);
+
+        let factura = await getDataDetalleFacturaById(id_factura);
+        //creamos la data que lleva la plantilla, o contendio dinamico
+        data.factura = factura;
+        data.fecha_actual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
+        data.urlService = `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${factura.id}`;
+        //pasamos la data
+        let resultHTML = template(data);
+        //comvertimos la plantilla html a pdf
+        let pdf = await generarHTMLPDFNew(resultHTML);
+        //enviamos el PDF al correo del cliente
+        let resMail = sendReciboPagoByID(factura.cliente, pdf, factura.categoria, factura.id);
+
+    } catch (error) {
+        console.log(error);
+    }
+
+}
