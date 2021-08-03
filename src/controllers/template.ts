@@ -199,7 +199,7 @@ export const descargarPlantillaDesceunto = async (req: any, res = response) => {
 
 
 //====================
-//   /page/recibopago/:ref
+//   /page/DescargarReciboPago/:ref
 //=====================
 export const pdfReciboPago = async (req: any, res = response) => {
     let data: any = {};
@@ -223,8 +223,6 @@ export const pdfReciboPago = async (req: any, res = response) => {
 
             res.render("pdf_recibo_pago", data, async (err: any, html: any) => {
                 let pdf = await generarHTMLPDFNew(html);
-                let resMail = sendReciboPagoByID(factura.cliente, pdf, factura.categoria, factura.id);
-                console.log(resMail);
                 res.contentType("application/pdf");
                 res.send(pdf);
             });

@@ -124,10 +124,12 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     str_id_pago: codigo_pago
   };
 
+  let estado_pago = 0;
+
   let fechaUpdate = new Date();
 
   try {
-    let id_pago =  await detIdPagoByID(codigo_pago);
+    let id_pago = await detIdPagoByID(codigo_pago);
     let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
       method: "POST",
       body: JSON.stringify(data),
@@ -136,12 +138,12 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     let responseData = await response.json();
 
     //no se encontraron pago online
-    if(responseData.int_estado ==1 && responseData.int_cantidad_pagos==0){
+    if (responseData.int_estado == 1 && responseData.int_cantidad_pagos == 0) {
       console.log("No se encontro el pago online");
-      let data:any = {
-        'is_online' : '0'
+      let data: any = {
+        'is_online': '0'
       };
-      let resultDB = await actualizarEstadoPago(data,codigo_pago);
+      let resultDB = await actualizarEstadoPago(data, codigo_pago);
       console.log(resultDB);
     }
 
@@ -176,7 +178,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         id_pago = resSavePago.pago_id;
 
       }
-      let estado_pago = 0;
+
 
       let data: any = {
         'json_detalle': responseData.str_res_pago,
@@ -188,11 +190,11 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       let detPago: any = [];
       pagoDecoded.forEach((det: any) => {
 
-        let fechaInsert:any = fechaUpdate;
+        let fechaInsert: any = fechaUpdate;
 
-        if(det.dat_fecha==''){
+        if (det.dat_fecha == '') {
           fechaInsert = format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss');
-        }else{
+        } else {
           fechaInsert = format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss');
         }
 
@@ -202,9 +204,10 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         detPago.push({
           '_id': uuidv4(),
           'pago_id': id_pago,
-          'valor_pago': (det.dbl_valor_pagado=='') ? 0 : det.dbl_valor_pagado,
-          'total_pago': (det.dbl_total_pago=='') ? 0 : det.dbl_total_pago,
-          'valor_iva_pago': (det.dbl_valor_iva_pagado=='') ? 0 : det.dbl_valor_iva_pagado ,
+          'int_n_pago': (det.int_n_pago == '') ? null : det.int_n_pago,
+          'valor_pago': (det.dbl_valor_pagado == '') ? 0 : det.dbl_valor_pagado,
+          'total_pago': (det.dbl_total_pago == '') ? 0 : det.dbl_total_pago,
+          'valor_iva_pago': (det.dbl_valor_iva_pagado == '') ? 0 : det.dbl_valor_iva_pagado,
           'estado_pago_id': (det.int_estado_pago == '') ? null : det.int_estado_pago,
           'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago,
           'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco,
@@ -221,36 +224,34 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
 
       //ACTUALIZAMOS EL ESTADO DE CADA DESCUENTO
-      if(estado_pago ==1) {
-        //enviar recibo de pago al correo electronico
-        complileTemplateReciboPago(id_pago);
+      if (estado_pago == 1) {
         let resultObjectDB: any = await consultaFacturaBanco(id_pago);
         let categoria_id = resultObjectDB.data[0].categoria_pago_id;
         if (resultObjectDB != false) {
-          
+
           if (categoria_id == 1) {
             let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
 
             let resultMatricula = await getInfoMatricula(matricula_id);
             let resultDB = resultMatricula[0][0];
             //consular los descuentos y multas que un estudiante tiene asignados
-            let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo,resultDB.ide_persona);
+            let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo, resultDB.ide_persona);
 
-            if(resultDto.length > 0){
-              let idsDescuento:any = [];
-              resultDto.forEach((e:any) => {
+            if (resultDto.length > 0) {
+              let idsDescuento: any = [];
+              resultDto.forEach((e: any) => {
                 idsDescuento.push(e._id);
               });
-              
+
               console.log("Se encontraron descuentos");
-            let resultUpdateDB =   await updateEstadoDescuentoFac(idsDescuento,id_pago);
-            console.log(resultUpdateDB);
-            }else{
+              let resultUpdateDB = await updateEstadoDescuentoFac(idsDescuento, id_pago);
+              console.log(resultUpdateDB);
+            } else {
               console.log("NO Se encontraron descuentos");
             }
+          }
         }
-        }
-    }
+      }
 
 
       //actualiza la fecha y el estado de un pago en la DB
@@ -260,21 +261,26 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       let resDb2 = await actualizarPagoyDetalle(id_pago, detPago);
 
       if (resDb2) {
-      let response = {
-        message: "Pago actualizado exitosamente",
-        error: false,
-        data: pagoDecoded,
-        data_server: responseData.str_res_pago,
-      };
-      
-      guardarLog({
-        'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
-        'json_body' :  JSON.stringify(req.query),
-        //'json_response': JSON.stringify(response),
-        'estado' :  1,
-        'message': "OK",
-        'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
-      });
+        let response = {
+          message: "Pago actualizado exitosamente",
+          error: false,
+          data: pagoDecoded,
+          data_server: responseData.str_res_pago,
+        };
+
+        if (estado_pago == 1) {
+          //enviar recibo de pago al correo electronico
+         // complileTemplateReciboPago(codigo_pago);
+        }
+
+        guardarLog({
+          'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
+          'json_body': JSON.stringify(req.query),
+          //'json_response': JSON.stringify(response),
+          'estado': 1,
+          'message': "OK",
+          'host': req.headers['x-forwarded-for'] || req.connection.remoteAddress
+        });
 
         res.status(200).json(response);
       } else {
@@ -298,11 +304,11 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
     guardarLog({
       'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
-      'json_body' :  JSON.stringify(req.query),
+      'json_body': JSON.stringify(req.query),
       'json_response': JSON.stringify(response),
-      'estado' :  0,
+      'estado': 0,
       'message': error.message,
-      'host' : req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      'host': req.headers['x-forwarded-for'] || req.connection.remoteAddress
     });
 
     res.status(500).json(response);
@@ -423,7 +429,7 @@ export const inicioPago = async (req: any, res = response) => {
 
       //verificar si es un pago de matricula, si lo es consultar el valor a pagar
       let conceptos = await getConceptosPaquete(infoPago.str_opcional1);
-      
+
       if (conceptos.length > 0 && conceptos[0].categoria_id == 1 && infoPago.str_opcional3 != "") {
         pagoMat = await consultarpagoMatricula(infoPago.str_opcional3);
         infoPago.flt_total_con_iva = pagoMat.total_a_pagar_int
@@ -530,7 +536,7 @@ const savePago = async (infoPago: any, responseData: any, dataMatricula: any) =>
     let tPago: any = {
       codigo: infoPago.str_id_pago,
       descripcion: infoPago.str_descripcion_pago,
-     // json_response: responseData,
+      // json_response: responseData,
       estado_id: 200,
       estudiante_id: infoPago.str_id_cliente,
       matricula_id: (infoPago.str_opcional3 == "") ? null : infoPago.str_opcional3,
@@ -538,7 +544,7 @@ const savePago = async (infoPago: any, responseData: any, dataMatricula: any) =>
       valor_letras: infoPago.str_opcional2,
       periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
       //  archivo_id: null,
-      cod_paquete : conceptos[0].codigo,
+      cod_paquete: conceptos[0].codigo,
       categoria_pago_id: conceptos[0].categoria_id,
     };
 

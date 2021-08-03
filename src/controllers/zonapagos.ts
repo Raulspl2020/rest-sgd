@@ -905,6 +905,7 @@ export const Verificadorpago = async (pago_id: any) => {
         detPago.push({
           '_id': uuidv4(),
           'pago_id': id_pago,
+          'int_n_pago':  (det.int_n_pago=='') ? null : det.int_n_pago,
           'valor_pago': (det.dbl_valor_pagado == '') ? 0 : det.dbl_valor_pagado,
           'total_pago': (det.dbl_total_pago == '') ? 0 : det.dbl_total_pago,
           'valor_iva_pago': (det.dbl_valor_iva_pagado == '') ? 0 : det.dbl_valor_iva_pagado,

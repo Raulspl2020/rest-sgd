@@ -259,28 +259,60 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
 
 
 
-
+//si los pagos ya existen realiza un update, de lo contrario un INSERT
 export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
-  return await trx("fin_detalle_pago")
-    .where({ "pago_id": id })
-    .whereRaw("(forma_pago_id <> ? OR  forma_pago_id IS NULL)", [99])
-    .del()
-    .then((ids: any) => {
-      let detalle: any = dataInsert;
-      return trx("fin_detalle_pago").insert(detalle);
-    })
 
-    .then((result: any) => {
-      trx.commit();
-      return true;
-    })
-    .catch((result: any) => {
-      console.log(result);
-      trx.rollback();
-      return false;
-    });
+  let comitar = true;
+
+  for (const row of dataInsert) {
+
+    let result = await conDB
+      .select("_id")
+      .from("fin_detalle_pago")
+      .where({
+        'valor_pago': row.valor_pago,
+        'pago_id': row.pago_id,
+        'estado_pago_id': row.estado_pago_id,
+        'forma_pago_id': row.forma_pago_id,
+        'int_n_pago': row.int_n_pago
+      });
+
+    try {
+
+      if (result.length > 0) {
+        const id = result[0]._id;
+        console.log("encontado");
+        delete row['_id'];
+        console.log(row);
+        await trx("fin_detalle_pago")
+          .where("fin_detalle_pago._id", id)
+          .update(row);
+
+      } else {
+        console.log("No encontado");
+        await trx("fin_detalle_pago").insert(row);
+      }
+
+    } catch (error) {
+      comitar = false;
+      console.log(error);
+    }
+
+  }
+
+  if (comitar) {
+    await trx.commit();
+    console.log("vamos a comitar");
+    return true;
+  } else {
+    await trx.rollback();
+    console.log("vamos a desacer cambios");
+    return false;
+  }
+
 };
+
 
 
 //obtiene la configuracion del periodo
@@ -606,7 +638,7 @@ export const getPagoFactura = async (id_factura: any) => {
       'fin_detalle_pago.franquicia',
       'fin_detalle_pago.cod_aprobacion',
       'fin_detalle_pago.num_recibido'
-      )
+    )
     .from("fin_detalle_pago")
     .join("fin_estado_pago", "fin_detalle_pago.estado_pago_id", "=", "fin_estado_pago._id")
     .join("fin_forma_pago", "fin_detalle_pago.forma_pago_id", "=", "fin_forma_pago._id")
@@ -634,7 +666,7 @@ export const getDescuentoFactura = async (id_factura: any) => {
       'fin_porcetaje_categoria.descripcion AS categoria',
       'fin_porcentaje_soporte.accion',
       'fin_porcentaje_soporte.porcentaje'
-      )
+    )
     .from("fin_factura_descuento")
     .join("fin_porcentaje_soporte", "fin_factura_descuento.porcentaje_soporte_id", "=", "fin_porcentaje_soporte._id")
     .join("fin_porcentaje_estado", "fin_porcentaje_soporte.porcentaje_estado_id", "=", "fin_porcentaje_estado._id")
