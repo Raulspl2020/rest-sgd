@@ -270,7 +270,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
         if (estado_pago == 1) {
           //enviar recibo de pago al correo electronico
-         // complileTemplateReciboPago(codigo_pago);
+          complileTemplateReciboPago(codigo_pago);
         }
 
         guardarLog({
