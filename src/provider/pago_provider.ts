@@ -276,7 +276,7 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
         'estado_pago_id': row.estado_pago_id,
         'forma_pago_id': row.forma_pago_id,
         //'int_n_pago': row.int_n_pago
-      });
+      }).orderBy('estado_pago_id', 'asc');
 
     try {
 

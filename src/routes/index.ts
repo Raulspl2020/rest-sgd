@@ -9,6 +9,7 @@ import routerTransaccion from "../routes/transaccion";
 import routerUsuario from "../routes/usuario";
 import routerTemplate from "../routes/template";
 import routerMatricula from "../routes/matricula";
+import routerFactura from "../routes/factura";
 
 //====================
 //   ROUTES: /api
@@ -31,6 +32,7 @@ app.use("/transaccion", routerTransaccion);
 app.use("/usuario", routerUsuario);
 app.use("/page", routerTemplate);
 app.use("/matricula", routerMatricula);
+app.use("/factura", routerFactura);
 
 // app.use(require("./inicio"));
 
