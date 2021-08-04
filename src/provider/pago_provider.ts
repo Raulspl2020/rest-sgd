@@ -275,7 +275,7 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
         'pago_id': row.pago_id,
         'estado_pago_id': row.estado_pago_id,
         'forma_pago_id': row.forma_pago_id,
-        'int_n_pago': row.int_n_pago
+        //'int_n_pago': row.int_n_pago
       });
 
     try {
