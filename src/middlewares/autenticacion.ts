@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { authTokenService } from '../provider/sys_apolo/factura_provider';
+import { authTokenService } from '../provider/login_provider';
 
 export const verificaToken = (req: any, res: any, next: any) => {
 
