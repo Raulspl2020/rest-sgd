@@ -70,55 +70,55 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
         }
 
 
-       // let estadoPago = await existePago('6', id_matricula);
+        // let estadoPago = await existePago('6', id_matricula);
 
 
 
-            //verifica si ya existe una factura creada con esa matricula y con ese paquete
+        //verifica si ya existe una factura creada con esa matricula y con ese paquete
 
-           let pagoFactura: any = [];
-            let resFactura = await getFacturaByMatricula(id_matricula, '6');
-            //si encuentra factura creada verifica si tiene pagos
-            if(resFactura.length > 0){
-                 pagoFactura = await getPagoFactura(resFactura[0]._id);
+        let pagoFactura: any = [];
+        let resFactura = await getFacturaByMatricula(id_matricula, '6');
+        //si encuentra factura creada verifica si tiene pagos
+        if (resFactura.length > 0) {
+            pagoFactura = await getPagoFactura(resFactura[0]._id);
 
-                //si encuentra pagos exitosos
-                if(pagoFactura.length > 0){
+            //si encuentra pagos exitosos
+            if (pagoFactura.length > 0) {
 
-                   
-                    pagoFactura.forEach((pago:any) => {
-                       pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
+
+                pagoFactura.forEach((pago: any) => {
+                    pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
+                });
+
+                //actualizamos los conceptos de la factura a mostrar
+                resultPaquete.forEach((con: any) => {
+
+                    resFactura.forEach((fact: any) => {
+
+                        if (con.concepto_id == fact.concepto_id) {
+                            con.cantidad = fact.cantidad;
+                            con.descuento = fact.descuento;
+                            con.valor_unidad = fact.valor_unidad;
+                            con.aumento = fact.aumento;
+                        }
+
                     });
 
-                    //actualizamos los conceptos de la factura a mostrar
-                    resultPaquete.forEach((con:any) => {
+                });
 
-                        resFactura.forEach((fact:any) => {
-                            
-                            if(con.concepto_id == fact.concepto_id){
-                                con.cantidad = fact.cantidad;
-                                con.descuento = fact.descuento;
-                                con.valor_unidad = fact.valor_unidad;
-                                con.aumento =  fact.aumento;
-                            }
-    
-                        });
-                        
-                    });
-
-                    //actualizamos el total a pagar
-                    total_a_pagar = 0;
-                    resultPaquete.forEach((element: any, index: number) => {
-                        let subtotal = (element.valor_unidad * element.cantidad);
-                        resultPaquete[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
-                        total_a_pagar = element.subtotal + total_a_pagar;
-                    });
-
-                }
-
-
+                //actualizamos el total a pagar
+                total_a_pagar = 0;
+                resultPaquete.forEach((element: any, index: number) => {
+                    let subtotal = (element.valor_unidad * element.cantidad);
+                    resultPaquete[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
+                    total_a_pagar = element.subtotal + total_a_pagar;
+                });
 
             }
+
+
+
+        }
 
 
 
@@ -187,11 +187,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     resultDescuentos.push(registro);
 
                     porcentaje_descuento = porcentaje_descuento + row.porcentaje;
-                    let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion ;
+                    let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion;
                     auxDescripcion = `+ DESCUENTO ${(row.porcentaje * 100)}% ${desc}`;
                 } else {
                     porcentaje_aumento = porcentaje_aumento + row.porcentaje;
-                    let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion ;
+                    let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion;
                     auxDescripcion = `+ DESCUENTO ${(row.porcentaje * 100)}% ${desc}`;
                 }
             });
@@ -253,7 +253,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                     if (row.tipo == 1) {
                                         precios[index].descuento = precios[index].descuento + row.porcentaje;
                                     } else {
-                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id==1 ||  precios[index].concepto_id==2  ) {
+                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id == 1 || precios[index].concepto_id == 2) {
                                             precios[index].descuento = precios[index].descuento + row.porcentaje;
                                         }
                                     }
@@ -279,8 +279,12 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                             //añade aumento para matricula extraordinaria
                             if (periodo == false) {
-                                precios[index].aumento = precios[index].aumento=  resultConfig.porcentaje_ext;
-                                descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
+                                precios[index].aumento = precios[index].aumento = resultConfig.porcentaje_ext;
+
+                                if (resultConfig.porcentaje_ext != 0 && index == 0) {
+                                    descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
+                                }
+
                             }
                             console.log(precios[index].aumento);
 
@@ -290,7 +294,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                 totaAPagar = totaAPagar + (element.subtotal * element.cantidad);
                             } else {
                                 precios[index].cantidad = resultDB.nro_creditos;
-                              //  precios[index].descuento = porcentaje_descuento;
+                                //  precios[index].descuento = porcentaje_descuento;
                                 precios[index].aumento = porcentaje_aumento + precios[index].aumento;
                                 porcentaje_descuento = 0;
                                 porcentaje_aumento = 0;
@@ -390,7 +394,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                     if (row.tipo == 1) {
                                         precios[index].aumento = precios[index].aumento + row.porcentaje;
                                     } else {
-                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id==1 ||  precios[index].concepto_id==2  ) {
+                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id == 1 || precios[index].concepto_id == 2) {
                                             precios[index].descuento = precios[index].descuento + row.porcentaje;
                                         }
                                     }
@@ -403,8 +407,13 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                             //añade aumento para matricula extraordinaria
                             if (periodo == false) {
+                                let auxDes = descripcionFactura;
                                 precios[index].aumento = precios[index].aumento + resultConfig.porcentaje_ext;
-                                descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
+                                if (resultConfig.porcentaje_ext != 0 && index == 0) {
+                                    descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
+                                }
+
+
                             }
 
                             let totaAPagar = 0;
@@ -476,35 +485,35 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
             //verifica si ya existe una factura creada con esa matricula y con ese paquete
-           // let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
-           let pagoFactura: any = [];
+            // let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
+            let pagoFactura: any = [];
             let resFactura = await getFacturaByMatricula(id_matricula, resultPaquete[0].codigo);
             //si encuentra factura creada verifica si tiene pagos
-            if(resFactura.length > 0){
-                 pagoFactura = await getPagoFactura(resFactura[0]._id);
+            if (resFactura.length > 0) {
+                pagoFactura = await getPagoFactura(resFactura[0]._id);
 
                 //si encuentra pagos exitosos
-                if(pagoFactura.length > 0){
+                if (pagoFactura.length > 0) {
 
-                   
-                    pagoFactura.forEach((pago:any) => {
-                       pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
+
+                    pagoFactura.forEach((pago: any) => {
+                        pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
                     });
 
                     //actualizamos los conceptos de la factura a mostrar
-                    resultPaquete.forEach((con:any) => {
+                    resultPaquete.forEach((con: any) => {
 
-                        resFactura.forEach((fact:any) => {
-                            
-                            if(con.concepto_id == fact.concepto_id){
+                        resFactura.forEach((fact: any) => {
+
+                            if (con.concepto_id == fact.concepto_id) {
                                 con.cantidad = fact.cantidad;
                                 con.descuento = fact.descuento;
                                 con.valor_unidad = fact.valor_unidad;
-                                con.aumento =  fact.aumento;
+                                con.aumento = fact.aumento;
                             }
-    
+
                         });
-                        
+
                     });
 
                     //actualizamos el total a pagar
@@ -520,9 +529,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
             }
-            
 
-            
+
+
 
             return {
                 error: false,
@@ -561,10 +570,10 @@ export const generarpagoMatricula = async (req: any, res: any) => {
         let result: any = await consultarpagoMatricula(req.params.id_matricula.trim());
 
 
-       // let resFactura =  await getFactura();
+        // let resFactura =  await getFactura();
 
 
-         console.log(JSON.stringify(result));
+        console.log(JSON.stringify(result));
         result.categorias = await getCategriaDescuento(1);
         return res.status(200).json(result);
 
