@@ -208,6 +208,8 @@ export const pdfReciboPago = async (req: any, res = response) => {
     let idFactura = req.params.ref;
 
     try {
+        //enviar recibo de pago al correo electronico
+        complileTemplateReciboPago(idFactura);
 
         let factura = await getDataDetalleFacturaById(idFactura);
 
@@ -273,7 +275,7 @@ export const viewConsultaPago = async (req: any, res = response) => {
 
 
 //crea un recibo de pago en pdf y lo envia al correo
-export const complileTemplateReciboPago = async (id_factura:any) => {
+export const complileTemplateReciboPago = async (id_factura: any) => {
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
 
@@ -282,17 +284,35 @@ export const complileTemplateReciboPago = async (id_factura:any) => {
         const hbs = fs.readFileSync('./views/pdf_recibo_pago.hbs', 'utf8');
         let template = exphbs.handlebars.compile(hbs);
 
+
+
+
+
+
         let factura = await getDataDetalleFacturaById(id_factura);
         //creamos la data que lleva la plantilla, o contendio dinamico
         data.factura = factura;
         data.fecha_actual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
         data.urlService = `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${factura.id}`;
+
+
+        await new Promise((resolve, reject) => {
+            QRCode.toDataURL(data.urlService, { errorCorrectionLevel: "L" }, (err: any, src: any) => {
+                if (err) {
+                    data.scrQR = '';
+                } else {
+                    data.scrQR = src;
+                }
+                resolve(true);
+            });
+        });
         //pasamos la data
         let resultHTML = template(data);
         //comvertimos la plantilla html a pdf
         let pdf = await generarHTMLPDFNew(resultHTML);
         //enviamos el PDF al correo del cliente
         let resMail = sendReciboPagoByID(factura.cliente, pdf, factura.categoria, factura.id);
+
 
     } catch (error) {
         console.log(error);
