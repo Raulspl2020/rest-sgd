@@ -208,9 +208,7 @@ export const pdfReciboPago = async (req: any, res = response) => {
     let idFactura = req.params.ref;
 
     try {
-        //enviar recibo de pago al correo electronico
-        complileTemplateReciboPago(idFactura);
-
+        
         let factura = await getDataDetalleFacturaById(idFactura);
 
         data.factura = factura;
