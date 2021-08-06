@@ -275,7 +275,7 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
         'pago_id': row.pago_id,
         'estado_pago_id': row.estado_pago_id,
         'forma_pago_id': row.forma_pago_id,
-        //'int_n_pago': row.int_n_pago
+        'int_n_pago': row.int_n_pago
       }).orderBy('estado_pago_id', 'asc');
 
     try {
@@ -681,5 +681,44 @@ export const getDescuentoFactura = async (id_factura: any) => {
 
 }
 
+
+
+
+//VERIFICADORES
+//si los pagos ya existen realiza un update, de lo contrario un INSERT
+export const actualizarPagoyDetalleVeri = async (id: any, dataInsert: any) => {
+  const trx = await conDB.transaction();
+  return await trx("fin_detalle_pago")
+    .where({"pago_id": id})
+    .whereRaw("(forma_pago_id <> ? OR  forma_pago_id IS NULL)", [99])
+    .del()
+    .then((ids: any) => {
+      let detalle: any = dataInsert;
+      return trx("fin_detalle_pago").insert(detalle);
+    })
+
+    .then((result: any) => {
+      trx.commit();
+      return true;
+    })
+    .catch((result: any) => {
+      console.log(result);
+      trx.rollback();
+      return false;
+    });
+};
+
+
+export const consultaPagosSINNPAGO = async () => {
+  let sql = `select _id as pago_id FROM fin_pago      `;
+
+  let result = await conDB.raw(sql);
+  if (result[0].length > 0) {
+    return result[0];
+  } else {
+    return [];
+  }
+  
+};
 
 

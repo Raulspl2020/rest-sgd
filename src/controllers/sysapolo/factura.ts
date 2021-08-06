@@ -1,11 +1,10 @@
 import { format } from "date-format-parse";
 import { syslistarFacturasPagadas } from "../../provider/sys_apolo/factura_provider";
 import * as moneda from 'currency-formatter';
+import { verificaPagosNpago } from "../../helpers/cron_job";
+
+
 export const getFacturasPagadas = async (req: any, res: any) => {
-
-
-
-
   let det_factua = [];
   let facturas: any = [];
 
@@ -46,7 +45,7 @@ export const getFacturasPagadas = async (req: any, res: any) => {
 
 
 
-    
+
     //recorrer las facturas para llenar el detalle
     for (const factura of facturas) {
       //verifica el pago en zona pagos y actualiza en la db
@@ -87,7 +86,5 @@ export const getFacturasPagadas = async (req: any, res: any) => {
       message: error.message,
     });
   }
-
-
 
 };
