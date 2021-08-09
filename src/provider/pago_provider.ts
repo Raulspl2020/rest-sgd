@@ -117,7 +117,7 @@ export const getPagosOnlinePendientes = async (minutos: number) => {
      WHERE  TIMESTAMPDIFF(MINUTE,fin_pago.fecha,NOW()) >= ?
      AND ( fin_pago.is_online='1' OR fin_pago.is_online IS NULL )
      ORDER BY fin_pago.fecha ASC) AS tabla
-     WHERE (tabla.estado_pago_id NOT IN (1,1000,1002,4000) OR tabla.estado_pago_id IS NULL)  LIMIT 5`;
+     WHERE (tabla.estado_pago_id NOT IN (1,1000,1002,4000) OR tabla.estado_pago_id IS NULL)  LIMIT 10`;
 
   let result = await conDB.raw(sql, [minutos]);
   if (result[0].length > 0) {
@@ -273,7 +273,7 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
       .where({
         'valor_pago': row.valor_pago,
         'pago_id': row.pago_id,
-        'estado_pago_id': row.estado_pago_id,
+        //'estado_pago_id': row.estado_pago_id,
         'forma_pago_id': row.forma_pago_id,
         'int_n_pago': row.int_n_pago
       }).orderBy('estado_pago_id', 'asc');
@@ -281,12 +281,18 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
     try {
 
       if (result.length > 0) {
+        let ids: string[] = [];
+        for (const id of result) {
+          ids.push(id._id);
+        }
+
         const id = result[0]._id;
         console.log("encontado");
         delete row['_id'];
-        console.log(row);
+        console.log(ids);
         await trx("fin_detalle_pago")
-          .where("fin_detalle_pago._id", id)
+          // .where("fin_detalle_pago._id", id)
+          .whereIn('fin_detalle_pago._id', ids)
           .update(row);
 
       } else {
@@ -689,7 +695,7 @@ export const getDescuentoFactura = async (id_factura: any) => {
 export const actualizarPagoyDetalleVeri = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
   return await trx("fin_detalle_pago")
-    .where({"pago_id": id})
+    .where({ "pago_id": id })
     .whereRaw("(forma_pago_id <> ? OR  forma_pago_id IS NULL)", [99])
     .del()
     .then((ids: any) => {
@@ -718,7 +724,7 @@ export const consultaPagosSINNPAGO = async () => {
   } else {
     return [];
   }
-  
+
 };
 
 
