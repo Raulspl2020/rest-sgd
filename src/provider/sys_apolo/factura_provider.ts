@@ -41,7 +41,7 @@ export const syslistarFacturasPagadas = async () => {
         .where({ 'fin_detalle_pago.estado_pago_id': 1, 'fin_pago.sysapolo_verify': '0' })
         .groupBy('fin_detalle_factura._id')
         .orderBy('fin_pago._id', 'ASC')
-        .limit(50);
+        .limit(49);
     return result;
 };
 

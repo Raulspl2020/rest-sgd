@@ -225,7 +225,8 @@
                                                             <div class="fw-bold"> {[pag.forma_pago]} </div>
 
 
-                                                            Código: <span class="text-secondary">{[pag.id]} </span><br>
+                                                            Id: <span class="text-secondary">{[pag.id]} </span><br>
+                                                            Nro pago: <span class="text-secondary">{[pag.int_n_pago]} </span><br>
                                                             Valor pagado: <small class="text-success">$ {[pag.valor_pago
                                                                 ]}</small>
 
@@ -292,6 +293,10 @@
                                                     <tr>
                                                         <th scope="row">REF:</th>
                                                         <td>{[pagoDetalle.pago_id]}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th scope="row">NRO PAGO:</th>
+                                                        <td> <strong> {[pagoDetalle.int_n_pago]}</strong> </td>
                                                     </tr>
                                                     <tr>
                                                         <th scope="row">VALOR PAGADO:</th>

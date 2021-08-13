@@ -203,6 +203,7 @@ export const consultaPagoFacturaCliente = async (id_factura: any) => {
   , fin_detalle_pago.franquicia
   , fin_detalle_pago.cod_aprobacion
   , fin_detalle_pago.num_recibido
+  , fin_detalle_pago.int_n_pago
 FROM
   fin_detalle_pago
   INNER JOIN fin_estado_pago 

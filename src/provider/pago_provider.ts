@@ -643,7 +643,8 @@ export const getPagoFactura = async (id_factura: any) => {
       'fin_detalle_pago.numero_tarjeta',
       'fin_detalle_pago.franquicia',
       'fin_detalle_pago.cod_aprobacion',
-      'fin_detalle_pago.num_recibido'
+      'fin_detalle_pago.num_recibido',
+      'fin_detalle_pago.int_n_pago'
     )
     .from("fin_detalle_pago")
     .join("fin_estado_pago", "fin_detalle_pago.estado_pago_id", "=", "fin_estado_pago._id")

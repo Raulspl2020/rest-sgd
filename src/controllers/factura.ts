@@ -629,6 +629,7 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
 
     let dataPagos = await getPagoFactura(idFactura);
     for (const pago of dataPagos) {
+      console.log(pago);
       pago.fecha = format(pago.fecha, 'DD-MM-YYYY hh:mm:ss A');
       pago.nombre_banco = (pago.nombre_banco == null) ? "NO APLICA" : pago.nombre_banco;
       pago.codigo_transaccion = (pago.codigo_transaccion == null) ? "NO APLICA" : pago.codigo_transaccion;
@@ -637,6 +638,8 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
       pago.franquicia = (pago.franquicia == null) ? "NO APLICA" : pago.franquicia;
       pago.cod_aprobacion = (pago.cod_aprobacion == null) ? "NO APLICA" : pago.cod_aprobacion;
       pago.num_recibido = (pago.num_recibido == null) ? "NO APLICA" : pago.num_recibido;
+      pago.int_n_pago = (pago.int_n_pago == null) ? "NO APLICA" : pago.int_n_pago;
+      
     }
 
     let dataDescuentos = await getDescuentoFactura(idFactura);
