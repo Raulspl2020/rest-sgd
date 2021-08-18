@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { verificaTokenDB } from '../middlewares/autenticacion';
-import { getFacturasPagadas } from '../controllers/sysapolo/factura';
+import { getFacturasPagadas, registrarFacturasPagadaSys } from '../controllers/sysapolo/factura';
 
 const router = Router();
 
-const cod_listar = "sysapolo.factura.listar";
-router.get('/listar',[verificaTokenDB(cod_listar)], getFacturasPagadas);
+router.get('/listar',[verificaTokenDB("sysapolo.factura.listar")], getFacturasPagadas);
+
+
+router.post('/registrarfactura',[verificaTokenDB("sysapolo.factura.registrarfactura")], registrarFacturasPagadaSys);
 
 export default router;

@@ -1,5 +1,5 @@
 import { format } from "date-format-parse";
-import { syslistarFacturasPagadas } from "../../provider/sys_apolo/factura_provider";
+import { syslistarFacturasPagadas, sysregistrarFacturasPagadas } from "../../provider/sys_apolo/factura_provider";
 import * as moneda from 'currency-formatter';
 import { verificaPagosNpago } from "../../helpers/cron_job";
 
@@ -118,6 +118,37 @@ export const getFacturasPagadas = async (req: any, res: any) => {
 //=====================
 
 export const registrarFacturasPagadaSys = async (req: any, res: any) => {
+
+  interface Response {
+    facturas: number[];
+  }
+  console.log(req.body);
+  let body = req.body;
+  let responseData: Response = body || [];
+
+  try {
+    let resultDb = await sysregistrarFacturasPagadas(responseData.facturas);
+
+    if (resultDb) {
+      res.json({
+        error: false,
+        message: "Ejecucion correcta",
+      });
+    } else {
+      throw new Error("No se han podido actualizar las facturas");
+    }
+
+
+
+  } catch (error) {
+    console.log(error);
+    res.json({
+      error: true,
+      message: error.message,
+    });
+  }
+
+
 
 
 }

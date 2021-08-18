@@ -46,3 +46,21 @@ export const syslistarFacturasPagadas = async () => {
 };
 
 
+//cambia el estado (sysaplo_verify: 0 | 1) de la factura cuando ésta ya fue registrada en sysapolo
+export const sysregistrarFacturasPagadas = async (ids: number[]): Promise<boolean> => {
+    const trx = await conDB.transaction();
+    return await trx("fin_pago")
+        .whereIn("fin_pago._id", ids)
+        .update({ "sysapolo_verify": '1' })
+        .then((result: any) => {
+            trx.commit();
+            return true;
+        })
+        .catch((result: any) => {
+            console.log(result);
+            trx.rollback();
+            return false;
+        });
+
+}
+
