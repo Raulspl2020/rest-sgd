@@ -108,6 +108,15 @@ export const pagoPersonalizado = async (req: any, res = response) => {
 
 };
 //====================
+//   /page/pagosvarios 
+//=====================
+export const pagosvariosView = async (req: any, res = response) => {
+    let data: any = {};
+    data.BASE_URL = process.env.BASE_URL.toString();
+    res.render("pago_varios", data);
+
+};
+//====================
 //   /page/pagoMatricula 
 //=====================
 export const pagoMatricula = async (req: any, res = response) => {

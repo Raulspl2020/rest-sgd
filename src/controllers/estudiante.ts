@@ -1,7 +1,7 @@
 import { format } from "date-format-parse";
 import { response } from "express";
 import * as estudianteProvider from '../provider/estudiante_provider';
-import { getEstMatriculados, getMateriasEstudiante, getInfoEstudianteProv } from '../provider/estudiante_provider';
+import { getEstMatriculados, getMateriasEstudiante, getInfoEstudianteProv, getProgramasEstudiante } from '../provider/estudiante_provider';
 
 //====================
 //   /estudiante/programas 
@@ -79,7 +79,6 @@ export const getMatriculaEstudainte = async (req: any, res: any) => {
 
 export const getMateriasPerdidasEst = async (req: any, res: any) => {
 
-
     try {
 
 
@@ -116,7 +115,7 @@ export const getMateriasPerdidasEst = async (req: any, res: any) => {
 
 
 export const getInfoEstudiante = async (req: any, res: any) => {
-    let serviceName ="estudiante.detalle";
+    let serviceName = "estudiante.detalle";
     let ide_estuduante = req.params.ide;
     let fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
     console.log(fullUrl);
@@ -138,12 +137,12 @@ export const getInfoEstudiante = async (req: any, res: any) => {
         for (const row of resultDB) {
             estudiante.ide_persona = row.ide_persona;
             estudiante.tipo_documento = row.tipo_documento;
-            estudiante.fec_expedicion_doc = format(row.fec_expedicion_doc, 'DD-MM-YYYY');   ;
+            estudiante.fec_expedicion_doc = format(row.fec_expedicion_doc, 'DD-MM-YYYY');;
             estudiante.ape1_persona = row.ape1_persona;
             estudiante.ape2_persona = row.ape2_persona;
             estudiante.nom1_persona = row.nom1_persona;
             estudiante.nom2_persona = row.nom2_persona;
-            estudiante.fech_nac_persona = format( row.fech_nac_persona, 'DD-MM-YYYY');
+            estudiante.fech_nac_persona = format(row.fech_nac_persona, 'DD-MM-YYYY');
             estudiante.munucipio_expedicion = row.munucipio_expedicion;
             estudiante.nom_genero = row.nom_genero;
             estudiante.dir_persona = row.dir_persona;
@@ -198,7 +197,7 @@ export const getInfoEstudiante = async (req: any, res: any) => {
                         periodo: row.periodo,
                         semestre: row.semestre,
                         estado: row.nom_estadomatricula,
-                        fecha_matricula : format(row.fecha_matricula, 'DD-MM-YYYY')
+                        fecha_matricula: format(row.fecha_matricula, 'DD-MM-YYYY')
                     });
                 }
             }
@@ -223,5 +222,30 @@ export const getInfoEstudiante = async (req: any, res: any) => {
     }
 
 
+
+}
+
+
+//====================
+//   /estudiante/programas 
+//=====================
+export const getProgramaEstudiante = async (req: any, res: any) => {
+    let id_estudiante = req.params.id_estudiante;
+    try {
+        let resultDB = await getProgramasEstudiante(id_estudiante);
+        console.log(resultDB);
+
+        res.status(200).json({
+            error: false,
+            message: "ejecucion correcta",
+            data: resultDB
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            error: true,
+            message: error.message
+        });
+    }
 
 }

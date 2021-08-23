@@ -204,7 +204,7 @@ export const getMateriasEstudiante = async (periodo: any, programa_per: any, ide
 
 export const getInfoEstudianteProv = async (ide_per: any) => {
 
-let sql = `SELECT
+    let sql = `SELECT
 col_persona.ide_persona
 , col_tipodoc.siglas AS tipo_documento
 , col_persona.fec_expedicion_doc
@@ -259,11 +259,36 @@ INNER JOIN col_colegio
    ON (col_colegio_periodo.cod_colegio = col_colegio.cod_colegio)
      WHERE col_matricula.ide_estudiante=?
      GROUP BY col_matricula.cod_matricula`;
-     let result = await conDB.raw(sql, [ide_per]);
-     if (result[0].length > 0) {
-         return result[0];
-     } else {
-         return false;
-     }
+    let result = await conDB.raw(sql, [ide_per]);
+    if (result[0].length > 0) {
+        return result[0];
+    } else {
+        return false;
+    }
+}
+
+
+
+
+export const getProgramasEstudiante = async (estudiante_id:string) => {
+    let result = await conDB
+        .select(
+            'tec_programa_persona.id_programa_persona'
+            , 'tec_programa_persona.ide_persona'
+            , 'col_colegio.cod_colegio'
+            , 'col_colegio.siglas_colegio'
+            , 'col_nivel_educacion.cod_nivel_educativo'
+            , 'col_nivel_educacion.nom_nivel_educativo'
+            , 'tec_estadoinscripcion.nom_estadoinscripcion AS estado'
+        )
+        .from("tec_programa_persona")
+        .join("tec_institucion_programa", "tec_programa_persona.cod_colegio_programa ", "=", "tec_institucion_programa.cod_colegio_programa")
+        .join("col_nivel_educacion", "tec_institucion_programa.cod_nivel_educativo", "=", "col_nivel_educacion.cod_nivel_educativo")
+        .join("col_colegio", "tec_institucion_programa.cod_colegio", "=", "col_colegio.cod_colegio")
+        .join("tec_estadoinscripcion", "tec_programa_persona.cod_estadoinscripcion", "=", "tec_estadoinscripcion.cod_estadoinscripcion")
+        .where({ 'tec_programa_persona.ide_persona': estudiante_id })
+        .groupBy('tec_institucion_programa.cod_colegio_programa');
+    return result;
+
 }
 

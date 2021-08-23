@@ -50,12 +50,12 @@ FROM
 
 
 //compueba si existe un detalle de pago exitoso por el mismo valor de a factura
-export const existeDetPago = async (pago_id: any, valor:number) => {
+export const existeDetPago = async (pago_id: any, valor: number) => {
 
   let result = await conDB
     .select()
     .from("fin_detalle_pago")
-    .where({'pago_id':pago_id,  'estado_pago_id': 1})
+    .where({ 'pago_id': pago_id, 'estado_pago_id': 1 })
     .whereRaw('valor_pago >=?', [valor])
   if (result.length > 0) {
     return result[0];
@@ -143,13 +143,13 @@ export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) 
 
 //metodos para consultar estados de facturas y pagos
 
-export const consultaFacturaCliente = async (id_cliente: any, tipo:string ='id_cliente') => {
+export const consultaFacturaCliente = async (id_cliente: any, tipo: string = 'id_cliente') => {
 
   let auxSql = "";
-  if(tipo=='id_cliente'){
-    auxSql=" WHERE fin_pago.estudiante_id = ?";
-  }else{
-    auxSql=" WHERE fin_pago._id = ?";
+  if (tipo == 'id_cliente') {
+    auxSql = " WHERE fin_pago.estudiante_id = ?";
+  } else {
+    auxSql = " WHERE fin_pago._id = ?";
   }
 
   let sql = `SELECT
@@ -220,3 +220,31 @@ FROM
     return [];
   }
 };
+
+
+export const getConceptosByConfigActive = async () => {
+  let result = await conDB
+    .select(
+      'fin_paquete._id AS paquete_id'
+      , 'fin_paquete.descripcion AS paquete'
+      , 'fin_detalle_paquete._id'
+      , 'fin_concepto.codigo'
+      , 'fin_concepto.cod_sysapolo'
+      , 'fin_concepto.descripcion AS concepto'
+      , 'fin_detalle_paquete.concepto_id'
+      , 'fin_detalle_paquete.descuento'
+      , 'fin_detalle_paquete.aumento'
+      , 'fin_detalle_paquete.cantidad'
+      , 'fin_detalle_paquete.valor_unidad'
+      , 'fin_detalle_paquete.descuento_ext'
+    )
+    .from("fin_detalle_paquete")
+    .join("fin_paquete", "fin_detalle_paquete.paquete_id", "=", "fin_paquete._id")
+    .join("fin_concepto", "fin_detalle_paquete.concepto_id ", "=", "fin_concepto._id")
+    .join("fin_config", "fin_paquete.config_id ", "=", "fin_config._id")
+
+    .where({ 'fin_config.estado': '1' })
+    .groupBy('fin_detalle_paquete._id');
+  return result;
+
+}
