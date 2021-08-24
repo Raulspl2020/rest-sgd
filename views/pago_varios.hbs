@@ -121,8 +121,8 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="">Programa academico: <span class="text-danger">*</span></label>
-                                        <select v-model="formpago.selTipoIde" class="form-select form-select-sm"
-                                            required aria-label="Default select example" @change="onChange($event)">
+                                        <select v-model="sel_programa" class="form-select form-select-sm" required
+                                            aria-label="Default select example" @change="onChange($event)">
                                             <option disabled value="">Seleccionar</option>
                                             <option :value="row.id_programa_persona" v-for="(row, index) in programas">
                                                 {[row.siglas_colegio]} -
@@ -142,10 +142,10 @@
                                         <label for="">Concepto: <span class="text-danger">*</span></label>
                                         <select v-model="sel_concepto" id="select_concepto"
                                             style="width: 100%; height: 100%;" class="form-select form-select-sm"
-                                            aria-label="Default select example" @change="onChange($event)"
-                                            @click="buscarConceptos($event)">
+                                            aria-label="Default select example" @change="onChange2($event)">
                                             <option disabled value="">Seleccionar</option>
-                                            <option :value="index"  v-for="(row, index) in conceptos">{[row.concepto]} - {[row.valor_unidad]}</option>
+                                            <option :value="index" v-for="(row, index) in conceptos">{[row.concepto]} -
+                                                {[row.valor_unidad]}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -154,8 +154,9 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="">Cantidad: <span class="text-danger">*</span></label>
-                                        <input type="number" value="1" class="form-control form-control-sm" min="1"
-                                            max="10" placeholder="Cantidad">
+                                        <input type="number" value="1" v-model="cantidad"
+                                            class="form-control form-control-sm" min="1" max="10" placeholder="Cantidad"
+                                            @change="calculaValor()">
                                     </div>
                                 </div>
 
@@ -180,7 +181,7 @@
                                         <label for="">Total a pagar:
                                             <span class="text-danger">*</span></label>
                                         <input class="form-control bg-dark" type="text"
-                                            placeholder="Escriba un valor numérico" v-model.number="formpago.txtTotal"
+                                            placeholder="Escriba un valor numérico" v-model.number="total_a_pagar"
                                             multiple id="txtTotal" v-on:keyup="numeroALetras"
                                             style=" color: chartreuse;" />
                                     </div>
@@ -231,17 +232,10 @@
 
     <script type="text/javascript">
 
-        $(document).ready(function () {
 
-            var select_concepto = $('#select_concepto').select2({
-                placeholder: 'Seleccione concepto de pago'
-            });
 
-            select_concepto.on('select2:opening', function (e) {
-                // Do something
-                console.log("Buscando...");
-            });
-        });
+
+
         var app = new Vue({
             el: "#app",
             delimiters: ['{[', ']}'],
@@ -264,9 +258,13 @@
                         txtBoton: "Pago en linea",
                         colorTextoAlert: "text-success"
                     },
+                    total_a_pagar: 0,
+                    cantidad: 1,
                     conceptos: [],
-                    sel_concepto: 2,
+                    sel_concepto: "",
+                    sel_programa: "",
                     programas: [],
+                    valor_unidad: 0,
                     numeroLetras: "CERO PESOS",
                     activarBotonEf: true,
                     txtBotonEf: "Pagar en efectivo",
@@ -329,12 +327,20 @@
                             if (!data.error) {
                                 let conceptos = data.data;
                                 this.conceptos = conceptos;
-                                console.log("Imprimiendo conceptos");
-                                console.log(this.conceptos);
+                                
                             } else {
                                 this.conceptos = [];
                             }
                         });
+                },
+
+                calculaValor() {
+                    console.log("El evento calcula se ejecuta");
+                    if(this.cantidad < 1){
+                        this.cantidad = 1;
+                    }
+                    this.total_a_pagar = this.cantidad * this.valor_unidad;
+                    this.numeroALetras(this.total_a_pagar);
                 },
 
 
@@ -416,10 +422,10 @@
                 continuarPago() {
 
 
-                let dataselect = select_concepto.select2('data');
-                console.log($('#select_concepto').select2('data'));
+                    let dataselect = select_concepto.select2('data');
+                    console.log($('#select_concepto').select2('data'));
 
-                return ;
+                    return;
 
 
                     if (this.formpago.txtTotal < 1000) {
@@ -474,8 +480,10 @@
                     }
                 },
                 numeroALetras(numero) {
+                    console.log("numero a letras");
+                    console.log(numero);
                     this.formpago.colorTextoAlert = "text-success";
-                    this.numeroLetras = numeroALetras(this.formpago.txtTotal, {
+                    this.numeroLetras = numeroALetras(this.total_a_pagar, {
                         plural: "PESOS",
                         singular: "PESO",
                         centPlural: "CENTAVOS",
@@ -487,16 +495,36 @@
                     this.consultarPersona();
                 },
 
-                onChange(event) {
+                onChange2(index) {
 
-                    var optionValue = event.target.value;
-                    var optionText = event.target.options[event.target.options.selectedIndex].text;
-                    console.log(optionText);
-                    console.log(optionValue);
-                    this.formpago.selTipoIdeName = optionText;
+                    this.valor_unidad = this.conceptos[index].valor_unidad;
+                    this.calculaValor();
+                    console.log("argumentos: " + index);
 
                 }
             },
+
+
+        });
+
+
+        $(document).ready(function () {
+
+            var select_concepto = $('#select_concepto').select2({
+                placeholder: 'Seleccione concepto de pago'
+            });
+
+            select_concepto.on('select2:select', function (e) {
+                // Do something
+                console.log("Seleccionado...");
+                var data = e.params.data.id;
+                console.log(data);
+
+                app.onChange2(data);
+                app.calculaValor();
+
+            });
+
         });
 
     </script>
