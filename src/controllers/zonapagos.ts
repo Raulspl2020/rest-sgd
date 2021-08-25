@@ -8,10 +8,11 @@ import { actualizarEstadoPago, actualizarPagoyDetalle, actualizarPagoyDetalleNew
 import { getInfoEstudiante } from "./pago";
 import * as moneda from 'currency-formatter';
 import { generarHTMLPDF } from "../helpers/global";
-import { getFechasPeriodo, getInfoMatricula } from "../provider/matricula_provider";
+import { getFechasPeriodo, getInfoMatricula, getProgramaByIdProPersona } from "../provider/matricula_provider";
 import { ListResponsePago } from "../models/ResponsePago";
 import { v4 as uuidv4 } from 'uuid';
 import { parse, format } from 'date-format-parse';
+import { getInfoUsuario } from "../provider/usuario_provider";
 
 
 //=================================
@@ -132,6 +133,13 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
     };
     infoPagoDB.info_cliente = resultDB;
+    let estudianteDb: any = await getInfoUsuario(matricula.ide_persona);
+    if (estudianteDb.length > 0) {
+      infoPagoDB.info_cliente.ide_genero = estudianteDb[0].ide_genero || null;
+      infoPagoDB.info_cliente.cod_municipio = estudianteDb[0].cod_municipio || null;
+      infoPagoDB.info_cliente.dir_persona = estudianteDb[0].dir_persona || null;
+    }
+
     infoPagoDB.det_factura = detalle_factura;
     infoPagoDB.cod_pago = codigoFactura;
     infoPagoDB.descuentos = descuentos;
@@ -232,7 +240,7 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
 
     let resultConfig = await getConfigPeriodo();
     console.log(resultConfig);
-    let porcentaje_ex =  resultConfig.porcentaje_ext;
+    let porcentaje_ex = resultConfig.porcentaje_ext;
     let new_detalle = await quitarAumentoDetalle(jsonDB.det_factura, 0);
     let new_total_ordinario = await calculaTotalaPagar(new_detalle);
     let new_det2 = await quitarAumentoDetalle(jsonDB.det_factura, porcentaje_ex);
@@ -469,6 +477,17 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
     let codigoFactura = await generarCodigoFactura(cadenaCodigo.trim());
 
 
+    //verificar si existe pago
+    let resultExistePago = await existePago(
+      conceptos[0].codigo,
+      matricula.cod_matricula
+    );
+
+    if (resultExistePago != false) {
+      id_pago =  resultExistePago._id;
+    }
+
+
     conceptos.forEach((concepto: any) => {
       tDetallePago.push({
         pago_id: (id_pago) ? id_pago : null, // si se envia el id se lo asigna
@@ -570,6 +589,207 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
 
 };
 
+
+//===================================
+//   /transaccion/InicioPagosVarios
+//====================================
+export const inicioPagosVarios = async (req: any, res: any) => {
+
+  let fechaActual = new Date();
+  fechaActual.setMonth(fechaActual.getMonth() + 12);
+  let fechaLimitepago = format(fechaActual, 'YYYY-MM-DD');
+
+  let body = req.body;
+  let responseDataZonaPagos: any = {};
+  let isPagoOnline: boolean = (body.isPagoOnline != true) ? false : true;
+  let resultSavePago: any = {};
+  let tDetallePago: any = [];
+  let id_pago: number = null;
+  let str_url = "";
+  let info_cliente: any = {};
+
+
+  try {
+
+    let cadenaCodigo = body.nombre1 + body.nombre2 + body.apellido1 + body.apellido2 + body.id_cliente;
+    let codigoFactura = await generarCodigoFactura(cadenaCodigo.toUpperCase().trim());
+    let resultPaquete = await getPaquete(body.id_paquete);
+    console.log("paquete encontrado : ", body.id_paquete);
+    console.log(resultPaquete);
+    let programa = await getProgramaByIdProPersona(body.id_programa_persona);
+    let estudianteDb: any = await getInfoUsuario(body.id_persona);
+
+    info_cliente = {
+      "cod_matricula": null,
+      "cod_doc": body.tipo_id,
+      "tipo_doc": (body.tipo_id_text == '') ? 'CC' : body.tipo_id_text,
+      "nom_estadomatricula": null,
+      "ide_persona": body.id_persona,
+      "ape1_persona": body.apellido1,
+      "ape2_persona": body.apellido2,
+      "nom1_persona": body.nombre1,
+      "nom2_persona": body.nombre2,
+      "email_persona": body.email_persona,
+      "cel_persona": body.cel_persona,
+      "siglas_colegio": null,
+      "cod_colegio": null,
+      "nom_periodo": null,
+      "cod_periodo": null,
+      "nom_nivel_educativo": null,
+      "cod_nivel_edu": null,
+      "nro_creditos": null
+    }
+
+    if (programa.length > 0) {
+      info_cliente.siglas_colegio = programa[0].siglas_colegio;
+      info_cliente.cod_colegio = programa[0].cod_colegio;
+      info_cliente.nom_periodo = programa[0].nom_periodo;
+      info_cliente.cod_periodo = programa[0].cod_periodo;
+      info_cliente.nom_nivel_educativo = programa[0].nom_nivel_educativo;
+      info_cliente.cod_nivel_edu = programa[0].cod_nivel_edu;
+    }
+
+    if (estudianteDb.length > 0) {
+      info_cliente.ide_genero = estudianteDb[0].ide_genero;
+      info_cliente.cod_municipio = estudianteDb[0].cod_municipio;
+      info_cliente.dir_persona = estudianteDb[0].dir_persona;
+    }
+
+    resultPaquete[0].categoria_id = 0;
+
+
+    //GUARDAR EL PAGO EN LA DB
+    let tPago: any = {
+      codigo: codigoFactura,
+      descripcion: body.des_concepto,
+      json_response: null,
+      estado_id: 200,
+      estudiante_id: body.id_persona,
+      // matricula_id: matricula.cod_matricula,
+      valor: body.total,
+      // periodo_id: matricula.cod_periodo,
+      cod_paquete: resultPaquete[0].codigo,
+      categoria_pago_id: resultPaquete[0].categoria_id,
+    };
+
+
+    //crear un nuevo pago
+    resultPaquete.forEach((concepto: any) => {
+      tDetallePago.push({
+        pago_id: null, // si se envia el id se lo asigna
+        concepto_id: concepto.concepto_id,
+        descuento: concepto.descuento,
+        aumento: concepto.aumento,
+        valor_unidad: concepto.valor_unidad + body.total,
+        cantidad: concepto.cantidad,
+      });
+    });
+
+    //preparamos la data para guardar
+    resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+    console.log(resultSavePago);
+    //   no se guardó exitosamente
+    if (resultSavePago == false) {
+      throw new Error("No se ha podido guardar el pago");
+    }
+    id_pago = resultSavePago[0];
+
+
+
+
+
+    //actualizamos los datos en la DB
+    let json_detalle: any = {
+      "general": {
+        "fecha_limite_pago": fechaLimitepago,
+        "fecha_actual": format(new Date(), 'DD-MM-YYYY hh:mm:ss A'),
+        "fecha_fin_ordinaria": fechaLimitepago,
+        "fecha_fin_extraordinaria": fechaLimitepago,
+        "des_pago": body.des_concepto
+      },
+      "info_cliente": info_cliente,
+      'det_factura': resultPaquete,
+      "descuentos": [],
+      "cod_pago": codigoFactura,
+      "total_a_pagar_s": moneda.format(body.total, { locale: 'es-CO' }).replace('$', '').trim(),
+      "total_a_pagar_i": parseInt(Math.round(body.total).toString())
+
+    };
+
+    let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], body.total, fechaLimitepago);
+    //acualizar codigo de barras en la base de datos y el json con la referencia
+    let dataPagoUpdate = {
+      'codigo_barras': codigo1,
+      'json_response': JSON.stringify(json_detalle)
+    };
+    let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+
+
+
+    //INICAMOS EL PAGO CON ZONAPAGOS
+    if (isPagoOnline) {
+      //preparamos los datos para enviar a zonapagos
+      let infoPago = new Pago({
+        flt_total_con_iva: parseInt(body.total),
+        flt_valor_iva: 0,
+        str_id_pago: id_pago,
+        str_descripcion_pago: body.des_concepto,
+        str_email: body.email_persona,
+        str_id_cliente: body.id_persona,
+        str_tipo_id: body.tipo_id,
+        str_nombre_cliente: body.nombre1 + " " + body.nombre2,
+        str_apellido_cliente: body.apellido1 + " " + body.apellido2,
+        str_telefono_cliente: body.cel_persona,
+        str_opcional1: "0", //codigo paquete
+        str_opcional2: "", //valor en letras
+        str_opcional3: "", //matricula
+        str_opcional4: "", //periodo
+        str_opcional5: "",
+      });
+
+      //recortamos el tamaño de la descripcion
+      let finpago2: Pago = new Pago(infoPago);
+      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
+
+      let bodyZonapagos = dataConfigPago(finpago2);
+      responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
+    } else {
+
+      //llenamos el idpago al detalle
+      resultPaquete.forEach((det: any) => (det.valor_unidad = parseInt(body.total)));
+
+
+      str_url = process.env.BASE_URL + '/transaccion/GenerarPagoCodigoBarras/' + codigo1;
+      responseDataZonaPagos = {
+        "int_codigo": 1,
+        "str_cod_error": "",
+        "str_descripcion_error": "",
+        "str_url": str_url,
+      }
+
+    }
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Ejecucion correcta",
+      error: false,
+      pago_id: id_pago,
+      data: responseDataZonaPagos
+    });
+
+
+
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: true,
+      message: "El servicio no esta disponible: " + error.message,
+    });
+  }
+
+}
 
 //===================================
 //   /transaccion/InicioPagoGeneral
@@ -844,6 +1064,12 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
       fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
     };
     arrayDB.info_cliente = resultDB;
+    let estudianteDb: any = await getInfoUsuario(resultDB.ide_persona);
+    if (estudianteDb.length > 0) {
+      arrayDB.info_cliente.ide_genero = estudianteDb[0].ide_genero || null;
+      arrayDB.info_cliente.cod_municipio = estudianteDb[0].cod_municipio || null;
+      arrayDB.info_cliente.dir_persona = estudianteDb[0].dir_persona || null;
+    }
     arrayDB.det_factura = resultPaquete;
     arrayDB.descuentos = descuentos
     arrayDB.cod_pago = "",
@@ -905,7 +1131,7 @@ export const Verificadorpago = async (pago_id: any) => {
         detPago.push({
           '_id': uuidv4(),
           'pago_id': id_pago,
-          'int_n_pago':  (det.int_n_pago=='') ? null : det.int_n_pago,
+          'int_n_pago': (det.int_n_pago == '') ? null : det.int_n_pago,
           'valor_pago': (det.dbl_valor_pagado == '') ? 0 : det.dbl_valor_pagado,
           'total_pago': (det.dbl_total_pago == '') ? 0 : det.dbl_total_pago,
           'valor_iva_pago': (det.dbl_valor_iva_pagado == '') ? 0 : det.dbl_valor_iva_pagado,

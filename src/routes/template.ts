@@ -4,7 +4,7 @@ import { vistaHolaMundo, pagoPersonalizado, pagoMatricula, pagoInscripcion, view
 const router = Router();
 
 router.get('/inicio', vistaHolaMundo);
-router.get('/PagoPersonalizado', pagoPersonalizado);
+router.get('/pagosvarios', pagoPersonalizado);
 router.get('/PagoMatricula/:id_matricula', pagoMatricula);
 router.get('/PagoInscripcion/:id_matricula', pagoInscripcion);
 router.get('/ConsultaEstadoPago/:codigo', viewConsultaPago);
@@ -15,6 +15,7 @@ router.get('/DetalleFactura/:ref/:tipo', pdfFacturaView);
 router.get('/admindescuento', htmlAdminDescuentoView);
 router.get('/descargarplantilladesceunto', descargarPlantillaDesceunto);
 router.get('/DescargarReciboPago/:ref', pdfReciboPago);
-router.get('/pagosvarios', pagosvariosView);
+router.get('/PagoPersonalizado', pagosvariosView);
 
 export default router;
+

@@ -69,17 +69,16 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="">Primer Nombre: <span class="text-danger">*</span></label>
-                                        <input v-model.trim="formpago.txtNom1" type="text"
-                                            placeholder="Nombre1 cliente" class="form-control"
-                                            value="" />
+                                        <input v-model.trim="formpago.txtNom1" type="text" placeholder="Nombre1 cliente"
+                                            class="form-control" value="" />
                                     </div>
                                 </div>
 
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="">Segundo Nombre: </label>
-                                        <input type="text" v-model.trim="formpago.txtNom2" class="form-control"
-                                            value="" placeholder="Nombre2 cliente" />
+                                        <input type="text" v-model.trim="formpago.txtNom2" class="form-control" value=""
+                                            placeholder="Nombre2 cliente" />
                                     </div>
                                 </div>
 
@@ -88,16 +87,15 @@
                                     <div class="form-group">
                                         <label for="">Primer Apellido: <span class="text-danger">*</span></label>
                                         <input v-model.trim="formpago.txtApe1" type="text"
-                                            placeholder="Apellido1 cliente" class="form-control"
-                                            value="" />
+                                            placeholder="Apellido1 cliente" class="form-control" value="" />
                                     </div>
                                 </div>
 
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="">Segundo Apellido: </label>
-                                        <input type="text" v-model.trim="formpago.txtApe2" class="form-control"
-                                            value="" placeholder="Apellido2 cliente" />
+                                        <input type="text" v-model.trim="formpago.txtApe2" class="form-control" value=""
+                                            placeholder="Apellido2 cliente" />
                                     </div>
                                 </div>
                             </div>
@@ -108,8 +106,7 @@
                                         <label for="">Correo electronico:
                                             <span class="text-danger">*</span></label>
                                         <input type="email" placeholder="Email del cliente"
-                                            v-model.trim="formpago.txtEmail" class="form-control"
-                                            value="" />
+                                            v-model.trim="formpago.txtEmail" class="form-control" value="" />
                                     </div>
                                 </div>
 
@@ -166,11 +163,11 @@
 
                             <div class="row mt-2">
                                 <div class="col-md-8">
-                                            <button class="btn btn-outline-info" data-bs-toggle="tooltip"
-                                                @click="inicarPago(false)" data-bs-placement="top"
-                                                :disabled="!activarBotonEf" title="Genera PDF para pago en efectivo">
-                                                <i class="fa fa-barcode"></i> {[txtBotonEf]}
-                                            </button>
+                                    <button class="btn btn-outline-info" data-bs-toggle="tooltip"
+                                        @click="inicarPago(false)" data-bs-placement="top" :disabled="!activarBotonEf"
+                                        title="Genera PDF para pago en efectivo">
+                                        <i class="fa fa-barcode"></i> {[txtBotonEf]}
+                                    </button>
                                 </div>
                                 <div class="col-md-4 ">
                                     <div style="float: right;">
@@ -179,7 +176,7 @@
                                             <i id="icon" v-if="!formpago.activarBoton"
                                                 class="fa fa-spinner fa-pulse"></i>
 
-                                            {[ formpago.txtBoton ]}  <i class="fa fa-credit-card"></i> 
+                                            {[ formpago.txtBoton ]} <i class="fa fa-credit-card"></i>
                                         </button>
                                     </div>
 
@@ -242,7 +239,7 @@
                             if (!data.error) {
                                 let user = data.data;
                                 this.formpago.txtNom1 = user.nombre1;
-                                  this.formpago.txtNom2 = user.nombre2;
+                                this.formpago.txtNom2 = user.nombre2;
                                 this.formpago.txtApe1 = user.apellido1;
                                 this.formpago.txtApe2 = user.apellido2;
                                 this.formpago.txtEmail = user.email_persona;
@@ -261,9 +258,9 @@
                         });
                 },
 
-                inicarPago(isPagoOnline=true) {
+                inicarPago(isPagoOnline = true) {
 
-                    console.log( document.getElementById('#comboTipoID') );
+                    console.log(document.getElementById('#comboTipoID'));
 
                     if (this.formpago.txtTotal < 1000) {
                         this.numeroLetras = "Ingrese un valor mayor que 1000";
@@ -272,10 +269,10 @@
                         this.activarBotonEf = false;
                         this.formpago.activarBoton = false;
 
-                        if(isPagoOnline){
+                        if (isPagoOnline) {
                             this.formpago.activarBoton = false;
                             this.formpago.txtBoton = "Procesando...";
-                        }else{
+                        } else {
                             this.activarBotonEf = false;
                             this.txtBotonEf = "Procesando...";
                         }
@@ -283,7 +280,7 @@
 
 
                         let data = {
-                            "isPagoOnline" : isPagoOnline,
+                            "isPagoOnline": isPagoOnline,
                             "total": this.formpago.txtTotal,
                             "des_concepto": this.formpago.txtConcepto,
                             "email_persona": this.formpago.txtEmail,
@@ -315,21 +312,21 @@
                                     this.formpago.activarBoton = true;
                                     this.formpago.txtBoton = "Pago en linea";
                                     this.activarBotonEf = true;
-                                    this.txtBotonEf ="Pago en efectivo";
+                                    this.txtBotonEf = "Pago en efectivo";
                                 } else {
 
-                                    if(isPagoOnline){
+                                    if (isPagoOnline) {
                                         this.formpago.activarBoton = false;
                                         this.formpago.txtBoton = "Redireccionando...";
-                                    }else{
+                                    } else {
                                         this.activarBotonEf = false;
-                                        this.txtBotonEf ="Redireccionando...";
+                                        this.txtBotonEf = "Redireccionando...";
                                     }
                                     window.location = data.data.str_url;
 
                                 }
 
-                            }).catch((err)=>{
+                            }).catch((err) => {
                                 console.log(err);
                             });
                     }
@@ -383,7 +380,7 @@
 
                                 }
 
-                            }).catch((err)=>{
+                            }).catch((err) => {
                                 console.log(err);
                             });
                     }
@@ -398,9 +395,9 @@
                     });
                 },
 
-            procesarFormulario(){},
+                procesarFormulario() { },
 
-            onChange(event) {
+                onChange(event) {
 
                     var optionValue = event.target.value;
                     var optionText = event.target.options[event.target.options.selectedIndex].text;

@@ -215,4 +215,41 @@ FROM
 
 
 
+//obtiene el programa asociado a un id_programa_persona, usado para añadir programa a la info cliente
+export const getProgramaByIdProPersona = async (id_programa_persona: any) => {
+
+    let result = await conDB
+        .select(
+            'tec_programa_persona.id_programa_persona'
+            , 'col_matricula.cod_matricula'
+            , 'col_nivel_educacion.cod_nivel_educativo'
+            , 'col_nivel_educacion.nom_nivel_educativo'
+            , 'col_colegio.cod_colegio'
+            , 'col_colegio.siglas_colegio'
+            , 'col_periodo.cod_periodo'
+            , 'col_periodo.nom_periodo'
+        )
+        .from("tec_programa_persona")
+        .join("tec_institucion_programa", "tec_programa_persona.cod_colegio_programa", "=", "tec_institucion_programa.cod_colegio_programa")
+        .join("col_nivel_educacion", "tec_institucion_programa.cod_nivel_educativo", "=", "col_nivel_educacion.cod_nivel_educativo")
+        .join("col_matricula", "col_matricula.id_programa_persona", "=", "tec_programa_persona.id_programa_persona")
+        .join("col_colegio_periodo", "col_matricula.cod_colegio_periodo", "=", "col_colegio_periodo.cod_colegio_periodo")
+        .join("col_colegio", "col_colegio_periodo.cod_colegio", "=", "col_colegio.cod_colegio")
+        .join("col_periodo", "col_colegio_periodo.cod_periodo", "=", "col_periodo.cod_periodo")
+        .where({ 'tec_programa_persona.id_programa_persona': id_programa_persona })
+        .orderBy('col_matricula.cod_matricula', 'DESC')
+        .limit(1);
+
+
+    if (result.length > 0) {
+        return result;
+    } else {
+        return [];
+    }
+
+}
+
+
+
+
 

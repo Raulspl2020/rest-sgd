@@ -3,10 +3,10 @@ import cors from 'cors';
 const router = Router();
 import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento } from '../controllers/transaccion';
 import { check } from 'express-validator';
-import { validarCampos, validatorCampos,validarIdPago,consultaFacturaMid,registrarPagoMid,reversarPagoMid,actualizarPago, pagoPersonalizadoMid } from '../middlewares/validar-campos';
+import { validarCampos, validatorCampos,validarIdPago,consultaFacturaMid,registrarPagoMid,reversarPagoMid,actualizarPago, pagoPersonalizadoMid, pagoVariosMid } from '../middlewares/validar-campos';
 import { existePagoDB, getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
 import {consultaEstadoFactura, consultaFacturaService, detalleFacturaByID, registrarPagoService, reversarPagoService } from '../controllers/factura';
-import { generarPagoCodigoBarras, generarPagoCodigoBarrasGeneral, inicioPagoGeneral, inicioPagoInscripcion, inicioPagoMatricula } from '../controllers/zonapagos';
+import { generarPagoCodigoBarras, generarPagoCodigoBarrasGeneral, inicioPagoGeneral, inicioPagoInscripcion, inicioPagoMatricula, inicioPagosVarios } from '../controllers/zonapagos';
 
 
 
@@ -70,6 +70,7 @@ router.post('/DetalleFactura/:ref', detalleFacturaByID);
 router.post('/InicioPagoMatricula', inicioPagoMatricula);
 router.post('/InicioPagoInscripcion', inicioPagoInscripcion);
 router.post('/InicioPagoGeneral',[pagoPersonalizadoMid], inicioPagoGeneral);
+router.post('/InicioPagosVarios',[pagoVariosMid], inicioPagosVarios);
 router.get('/GenerarPagoCodigoBarras/:codigo', generarPagoCodigoBarras);
 
 export default router;

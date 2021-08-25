@@ -47,9 +47,26 @@ export const contactoUsuatio = async (idUsuario:string) => {
 //consulta la informacion basica de un estudiante 
 export const getInfoUsuario = async (id: any) => {
     let result = await conDB
-        .select("col_persona.ide_persona","col_persona.tipo_doc", "col_persona.email_persona", "col_persona.cel_persona", "col_tipodoc.siglas as des_tipo_doc","col_persona.ape1_persona as apellido1","col_persona.ape2_persona  as apellido2","col_persona.nom1_persona as nombre1","col_persona.nom2_persona as nombre2","col_persona.fech_nac_persona","col_persona.fec_expedicion_doc")
+        .select(
+            "col_persona.ide_persona",
+            "col_persona.tipo_doc",
+            "fech_nac_persona",
+            "col_persona.email_persona",
+            "col_persona.cel_persona",
+            "col_persona.ide_genero",
+            "col_persona.dir_persona",
+            "col_tipodoc.siglas as des_tipo_doc",
+            "col_persona.ape1_persona as apellido1",
+            "col_persona.ape2_persona  as apellido2",
+            "col_persona.nom1_persona as nombre1",
+            "col_persona.nom2_persona as nombre2",
+            "mun_nac.cod_municipio",
+            "mun_nac.cod_dep",
+            "col_persona.fech_nac_persona",
+            "col_persona.fec_expedicion_doc")
         .from("col_persona")
         .join("col_tipodoc", "col_persona.tipo_doc", "=","col_tipodoc.tipo_doc")
+        .join("col_municipios as mun_nac", "col_persona.cod_mpio_residencia", "="," mun_nac.cod_municipio")
         .leftJoin("col_municipios", "col_persona.cod_mun_exp","=","col_municipios.cod_municipio")
         .where({ "col_persona.ide_persona": id });
     if (result.length > 0) {
