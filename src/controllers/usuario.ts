@@ -1,6 +1,9 @@
 import { response } from 'express';
+import { enviaMail } from '../helpers/mail';
+import { comprobarJWT, generarJWT } from '../helpers/jwt';
 
 import * as usuarioProvider from '../provider/usuario_provider';
+import { updateDatauserContact, updatePersonaCodeVerify } from '../provider/usuario_provider';
 //====================
 //   /usuario/auditoria 
 //=====================
@@ -127,13 +130,13 @@ export const getInfoBasicUser = async (req: any, res = response) => {
     }
 
     try {
-        let result:UserBasicInfo[] = await usuarioProvider.getInfoUsuario(ideUsuario);
+        let result: UserBasicInfo[] = await usuarioProvider.getInfoUsuario(ideUsuario);
         console.log(result);
 
         let json: any = {};
         if (result.length > 0) {
 
-            result[0].apellido2 =  (result[0].apellido2==null) ? "": result[0].apellido2;
+            result[0].apellido2 = (result[0].apellido2 == null) ? "" : result[0].apellido2;
             result[0].nombre2 = result[0].nombre2 || "";
 
             res.status(200).json({
@@ -157,3 +160,134 @@ export const getInfoBasicUser = async (req: any, res = response) => {
     }
 
 };
+
+
+//====================
+//   /usuario/updateinfouser 
+//=====================
+export const updateInfoUser = async (req: any, res = response) => {
+    let body = req.body;
+
+    try {
+
+        let codigo: number = parseInt((Math.random() * (9999 - 1000) + 1000).toString());
+
+        let newJWT = await generarJWT({
+            'id_usuario': body.id_usuario,
+            'email': body.email,
+            'celular': body.celular,
+            'direccion': body.direccion,
+            'codigo': codigo
+        }, '5m');
+
+        updatePersonaCodeVerify(body.id_usuario, codigo);
+
+        const mailAuth = {
+            user: process.env.EMAIL,
+            pass: process.env.EMAIL_PASS,
+        };
+
+        let dataMail = {
+            from_name: body.from_name,
+            enviar_a: body.email,
+            asunto: "Verificación correco electronico - Código: " + codigo,
+            mensaje: `
+Cordial saludo,
+
+<p>Número de verificación: <strong><h3>${codigo}</h3></strong></p>
+
+<p>Este correo electrónico se ha enviado de forma automática para confirmar la
+identidad del usuario que ha solicitado registrar una dirección de correo electrónico en SIGEDIN.<p>
+
+<p>
+Para continuar con el registro en SIGEDIN de la dirección del correo electrónico ${body.email},
+usa el numero de verificación o haz click sobre el boton.</p>
+
+<a href="${process.env.BASE_URL}/usuario/verifytokenmail/${newJWT}" style="display:block;width:90%;max-width:350px;line-height:45px;border-radius:5px;background:#e67e22;color:white;text-align:center;margin:2em auto 1em" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://dashboard.epayco.co/api/registro/crear/cliente/5c72d08f77159a0930e5533e17512e21&amp;source=gmail&amp;ust=1630080987404000&amp;usg=AFQjCNG-Ejm3JqcXyREg5IOTHMVn2sHGbQ">Validar Correo</a>
+
+<p>
+*Si confirmas este correo electrónico desde iPhone o Android pulsa el
+siguiente enlace para proceder con la confirmación. </p>
+
+${process.env.BASE_URL}/usuario/verifytokenmail/${newJWT}
+        `
+        };
+
+
+        let mailOptions = {
+            'from': `Sigedin-ITP <${mailAuth.user}>`,
+            'to': dataMail.enviar_a,
+            'subject': dataMail.asunto,
+            'html': dataMail.mensaje
+            //'text': dataMail.mensaje
+        };
+
+        let response = await enviaMail(mailOptions, mailAuth);
+
+        if (!response) {
+            res.status(401).json({
+                message: response,
+                error: true,
+            });
+        } else {
+            res.status(200).json({
+                message: "E-mail de verificacion enviado exitosamente",
+                error: false,
+                token: newJWT,
+            });
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Servicio no disponible temporalmente",
+            error: true
+        });
+    }
+}
+
+//====================
+//   /usuario/verifytokenmail 
+//=====================
+export const verifyTokenMail = async (req: any, res = response) => {
+    let body = req.body;
+    let tokenMail = req.params.token;
+
+
+    try {
+
+        let [valido, dataToken] = comprobarJWT(tokenMail);
+        let usuario = dataToken.usuario;
+        if (valido) {
+            //actualizar datos en ña DB
+            let resultDB = await updateDatauserContact(usuario.id_usuario, {
+                'email_persona': usuario.email,
+                'dir_persona': usuario.direccion,
+                'cel_persona': usuario.celular,
+                'email_verify': '1'
+            });
+
+            if (resultDB > 0) {
+                //mostrar vista ferificacion correcta
+            } else {
+                // no se encontro la direccion
+            }
+
+        }
+
+        res.status(200).json({
+            message: "Envia correo con token",
+            error: false,
+            valido,
+            dataToken
+
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Envia correo con token",
+            error
+        });
+    }
+
+}

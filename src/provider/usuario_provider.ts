@@ -1,6 +1,6 @@
-import { conAuth, conDB  } from '../config/database';
+import { conAuth, conDB } from '../config/database';
 
-export const getUserRol = async(idUsuario:string) => {
+export const getUserRol = async (idUsuario: string) => {
     let sql = `SELECT
     sec_users.login
     ,sec_users.name
@@ -17,16 +17,16 @@ export const getUserRol = async(idUsuario:string) => {
     WHERE (sec_users.login = ? OR sec_users.email=? OR sec_users.email_institucion=? )`;
     return await conAuth.raw(sql, [idUsuario, idUsuario, idUsuario]);
 };
-export const auditoria = async(id:string) => {
+export const auditoria = async (id: string) => {
 
     return await conAuth
-        .where({'username': id,'action':'login'})
-        .select('id', 'inserted_date', 'username','ip_user')
+        .where({ 'username': id, 'action': 'login' })
+        .select('id', 'inserted_date', 'username', 'ip_user')
         .from('sc_log_accesosistema');
 };
 
-export const contactoUsuatio = async (idUsuario:string) => {
-    let  sql = `
+export const contactoUsuatio = async (idUsuario: string) => {
+    let sql = `
     (SELECT col_persona.ide_persona, col_persona.tipo_doc, col_persona.nom1_persona AS nombre1,col_persona.nom2_persona AS nombre2,
         col_persona.ape1_persona AS apellido1,col_persona.ape2_persona AS apellido2, col_persona.email_persona, col_persona.cel_persona
         FROM col_persona
@@ -65,9 +65,9 @@ export const getInfoUsuario = async (id: any) => {
             "col_persona.fech_nac_persona",
             "col_persona.fec_expedicion_doc")
         .from("col_persona")
-        .join("col_tipodoc", "col_persona.tipo_doc", "=","col_tipodoc.tipo_doc")
-        .join("col_municipios as mun_nac", "col_persona.cod_mpio_residencia", "="," mun_nac.cod_municipio")
-        .leftJoin("col_municipios", "col_persona.cod_mun_exp","=","col_municipios.cod_municipio")
+        .join("col_tipodoc", "col_persona.tipo_doc", "=", "col_tipodoc.tipo_doc")
+        .join("col_municipios as mun_nac", "col_persona.cod_mpio_residencia", "=", " mun_nac.cod_municipio")
+        .leftJoin("col_municipios", "col_persona.cod_mun_exp", "=", "col_municipios.cod_municipio")
         .where({ "col_persona.ide_persona": id });
     if (result.length > 0) {
         return result;
@@ -76,6 +76,28 @@ export const getInfoUsuario = async (id: any) => {
     }
 
 }
+
+
+//actualiza los datos de contacto en la DB
+export const updateDatauserContact = async (ide_persona: any, data: any) => {
+    let result = await conDB("col_persona")
+        .where("col_persona.ide_persona", ide_persona)
+        .update(data)
+    return result;
+}
+
+
+//actualiza los datos de contacto en la DB
+export const updatePersonaCodeVerify = async (ide_persona: any, code: any) => {
+    let result = await conDB("col_persona")
+        .where("col_persona.ide_persona", ide_persona)
+        .update({
+            'codigo_activacion': code
+        })
+    return result;
+}
+
+
 
 
 

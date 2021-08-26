@@ -13,6 +13,7 @@ import QRCode from 'qrcode';
 import { consultarTercero } from '../provider/sys_apolo/tercero_provider';
 import { getDataDetalleFacturaById } from './factura';
 import { sendReciboPagoByID } from './mail';
+import { getInfoUsuario } from '../provider/usuario_provider';
 
 
 
@@ -58,10 +59,6 @@ export const vistaHolaMundo = async (req: any, res: any) => {
 
         let resultHTML = template(data);
 
-
-
-
-
         console.log(resultHTML);
 
         let pdf = await generarHTMLPDFNew(resultHTML);
@@ -88,14 +85,24 @@ export const vistaHolaMundo = async (req: any, res: any) => {
         console.log(error);
     }
 
+};
 
 
+//====================
+//   /page/actualizarcontacto 
+//=====================
+export const userUpdateContactView = async (req: any, res = response) => {
+    let data: any = {};
 
-
-
-
+    let id_user = req.params.id_user;
+    let resultDB =  await getInfoUsuario(id_user);
+    data.BASE_URL = process.env.BASE_URL.toString();
+    console.log(resultDB);
+    data.user = resultDB[0];
+    res.render("actualizar_contacto", data);
 
 };
+
 
 
 //====================
@@ -107,6 +114,8 @@ export const pagoPersonalizado = async (req: any, res = response) => {
     res.render("pago_general", data);
 
 };
+
+
 //====================
 //   /page/pagosvarios 
 //=====================
@@ -242,17 +251,7 @@ export const pdfReciboPago = async (req: any, res = response) => {
         res.send(error.message);
     }
 
-
-
-
-
-
 }
-
-
-
-
-
 
 
 //====================
