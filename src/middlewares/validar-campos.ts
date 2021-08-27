@@ -252,3 +252,29 @@ export const pagoVariosMid = (req: any, res: any, next: any) => {
     });
   }
 };
+
+
+//valida los campos enviados desde el formualrio de pago personalizado
+export const verifiDataContacMid = (req: any, res: any, next: any) => {
+  console.log("Disparando middleware");
+  console.log(req.body);
+  const validationRule = {
+    id_usuario : "required|string",
+    email : "required|email",
+    celular :  "present|numeric",
+    direccion : "present|string",
+  };
+
+
+  let validation = new Validator(req.body, validationRule);
+
+  if (validation.passes()) {
+    next();
+  } else {
+    res.status(412).send({
+      error: true,
+      message: "Hay campos obligatorios sin completar",
+      errors: validation.errors.all(),
+    });
+  }
+};

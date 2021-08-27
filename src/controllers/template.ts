@@ -97,7 +97,6 @@ export const userUpdateContactView = async (req: any, res = response) => {
     let id_user = req.params.id_user;
     let resultDB =  await getInfoUsuario(id_user);
     data.BASE_URL = process.env.BASE_URL.toString();
-    console.log(resultDB);
     data.user = resultDB[0];
     res.render("actualizar_contacto", data);
 

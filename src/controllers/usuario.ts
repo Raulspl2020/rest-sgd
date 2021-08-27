@@ -231,7 +231,7 @@ ${process.env.BASE_URL}/usuario/verifytokenmail/${newJWT}
             });
         } else {
             res.status(200).json({
-                message: "E-mail de verificacion enviado exitosamente",
+                message: "E-mail de verificación enviado exitosamente, por favor revisa tu correo electrónico",
                 error: false,
                 token: newJWT,
             });
@@ -252,42 +252,49 @@ export const verifyTokenMail = async (req: any, res = response) => {
     let body = req.body;
     let tokenMail = req.params.token;
 
+    let usuario: any = {};
+
 
     try {
 
         let [valido, dataToken] = comprobarJWT(tokenMail);
-        let usuario = dataToken.usuario;
+
         if (valido) {
+            usuario = dataToken?.usuario;
+            usuario.mensaje = "";
+            usuario.valido = valido;
             //actualizar datos en ña DB
-            let resultDB = await updateDatauserContact(usuario.id_usuario, {
+
+            let dataDB = {
                 'email_persona': usuario.email,
                 'dir_persona': usuario.direccion,
                 'cel_persona': usuario.celular,
-                'email_verify': '1'
-            });
-
-            if (resultDB > 0) {
-                //mostrar vista ferificacion correcta
-            } else {
-                // no se encontro la direccion
+                'email_verify': '1',
+                'codigo_activacion': 0
+            };
+            if(usuario.direccion==''){
+                delete dataDB.dir_persona;
+            }
+            if(usuario.celular==''){
+                delete dataDB.cel_persona;
             }
 
+
+            let resultDB = await updateDatauserContact(usuario.id_usuario,dataDB);
+
+            res.render('estado_verificacion_email', usuario);
+
+
+        } else {
+            usuario.valido = valido;
+            usuario.mensaje = "EL token de verificación o codigo de activación ha expirado";
+            res.render('estado_verificacion_email', usuario);
         }
 
-        res.status(200).json({
-            message: "Envia correo con token",
-            error: false,
-            valido,
-            dataToken
-
-        });
 
     } catch (error) {
         console.log(error);
-        res.status(500).json({
-            message: "Envia correo con token",
-            error
-        });
+        usuario.mensaje = "Servcio no disponible temporalmemte";
+        res.render('estado_verificacion_email', usuario);
     }
-
 }
