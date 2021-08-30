@@ -102,4 +102,16 @@ export const updatePersonaCodeVerify = async (ide_persona: any, code: any) => {
 
 
 
+//consulta la informacion basica de un estudiante 
+export const getTipoDoc = async (id: any) => {
+    let result = await conDB
+        .select("*")
+        .from("col_tipodoc")
+        .where({ "tipo_doc": id })
+        .first();
+    return result;
+
+}
+
+
 

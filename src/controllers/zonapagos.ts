@@ -680,7 +680,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
         concepto_id: concepto.concepto_id,
         descuento: concepto.descuento,
         aumento: concepto.aumento,
-        valor_unidad: concepto.valor_unidad + body.total,
+        valor_unidad: concepto.valor_unidad,
         cantidad: concepto.cantidad,
       });
     });

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { inicarPorceso } from '../controllers/sysapolo/factura';
 import { generarPagoCodigoBarras } from '../controllers/pago';
 import { vistaHolaMundo, pagoPersonalizado, pagoMatricula, pagoInscripcion, viewConsultaPago, viewPDFPago, consultaEstadoPagoView, pdfFacturaView, htmlFacturaView, htmlAdminDescuentoView, descargarPlantillaDesceunto, pdfReciboPago, pagosvariosView, userUpdateContactView } from '../controllers/template';
 const router = Router();
@@ -17,6 +18,9 @@ router.get('/descargarplantilladesceunto', descargarPlantillaDesceunto);
 router.get('/DescargarReciboPago/:ref', pdfReciboPago);
 router.get('/PagoPersonalizado', pagosvariosView);
 router.get('/actualizarcontacto/:id_user', userUpdateContactView);
+
+//desarrollada solo para probar el guardado de datos en sysapolo, pendiente borrar
+router.get('/verificadorsys/:referencia', inicarPorceso);
 
 export default router;
 
