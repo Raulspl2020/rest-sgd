@@ -192,6 +192,7 @@ export const inicarPorceso = async (req: any, res: any) => {
 
 export const registroFacturaSysApolo = async (ref: number) => {
 
+
   try {
 
     let jsonData: any = {};
@@ -239,8 +240,14 @@ export const registroFacturaSysApolo = async (ref: number) => {
         let execute = await updateTerceroByID(cliente.ide_persona, tercero);
       } else {
         //si no se encontro el cliente se debe crearlo
+        console.log("se creará un nuevo tercero");
+        
+
 
         let resultCreateTer = await createTercero(terceroSys);
+        console.log(resultCreateTer);
+
+        return resultCreateTer;
 
 
 
@@ -258,6 +265,7 @@ export const registroFacturaSysApolo = async (ref: number) => {
 
     } else {
       //no se encuentra la factura en sigedin
+      console.log(`La factura ${ref} no existe`);
     }
 
 

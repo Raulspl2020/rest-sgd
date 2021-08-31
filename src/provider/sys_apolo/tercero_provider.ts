@@ -1,6 +1,7 @@
 import { ClienteSysApolo } from "../../interfaces/clientes.interface";
 import { conSysApolo } from "../../config/database";
 const sql = require("mssql");
+import { parse, format } from 'date-format-parse';
 
 
 export const consultarTercero = async () => {
@@ -59,8 +60,10 @@ export const getCodTercero = async () => {
 //permite crear un tercero en sysapolo
 export const createTercero = async (tercero: ClienteSysApolo) => {
         const cnn = await conSysApolo();
-
+        
         const CodTerQuery = await getCodTercero();
+        console.log(CodTerQuery);
+        console.log(tercero);
 
 
 
@@ -79,11 +82,15 @@ export const createTercero = async (tercero: ClienteSysApolo) => {
                 seg_apellido,
                 pri_nombre,
                 otr_nombre,
+                cla_ter,
                 dir_ter,
                 tel_ter,
                 email,
-                ide_mun
-                sex_tercero
+                ide_mun,
+                sex_tercero,
+                est_tercero,
+                salario_mensual,
+                fec_ingreso
                 ) VALUES (
                         '${CodTerQuery.recordset[0].cod_ter}',
                         '${tercero.ide_tipo_identificacion}',
@@ -95,12 +102,19 @@ export const createTercero = async (tercero: ClienteSysApolo) => {
                         '${tercero.seg_apellido}',
                         '${tercero.pri_nombre}',
                         '${tercero.otr_nombre}',
+                        'S',
                         '${tercero.dir_ter}',
                         '${tercero.tel_ter}',
                         '${tercero.email}',
                         '${tercero.ide_mun}',
-                        '${tercero.sex_tercero}'
+                        '${tercero.sex_tercero}',
+                        '',
+                        '0',
+                        '${format(new Date(), 'YYYY-MM-DD HH:mm:ss')}'
+
                 )`;
+
+                console.log(query);
 
         transaction.begin((err: any) => {
                 let rolledBack = false
@@ -115,6 +129,7 @@ export const createTercero = async (tercero: ClienteSysApolo) => {
                                                 transaction.rollback((err: any) => {
                                                         // ... error checks
                                                         console.log("ejecutando rollback");
+                                                        console.log(err);
                                                 })
                                         }
                                 } else {
