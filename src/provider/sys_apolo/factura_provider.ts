@@ -1,4 +1,5 @@
-import { conDB } from "../../config/database";
+import { conDB, conSysApolo } from "../../config/database";
+import { Int } from "mssql";
 
 //verifica si un usuario con token tiene permiso para consumir el servicio
 export const syslistarFacturasPagadas = async () => {
@@ -111,3 +112,23 @@ export const sysGetFacturaPagadaByID = async (id_factura: number) => {
     return result;
 };
 
+
+// metodos usados para obtener informacion de la base de datos de sysapolo
+
+//verifica si existe una factura en sysApolo
+export const consultarFacturaByID = async (id: number) => {
+    const pool = await conSysApolo();
+    let result1 = await pool.request()
+        .input('id', Int, id)
+        .query('select * from vup_fact_concepto_escolar_encabezado where num_recibo = @id')
+    return result1.recordset;
+}
+
+
+//permite consultal el consecutivo de la factura para crear
+export const getCodFactura = async () => {
+    const cnn = await conSysApolo();
+    let pool = await cnn;
+    let result = await pool.request().query(`SELECT cod_factura = MAX(REPLACE(STR(ide_fact_concepto_enc+1, 5), SPACE(1), '0')) FROM vup_fact_concepto_escolar_encabezado`);
+    return result.recordset[0];
+}

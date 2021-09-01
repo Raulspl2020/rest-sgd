@@ -1,6 +1,5 @@
 import Knex from 'knex';
-const sql = require("mssql");
-
+import { connect } from "mssql";
 const db: any = {
   desarrollo: {
     host: process.env.MYSQL_DEV_SGD_HOST,
@@ -59,7 +58,7 @@ const sqlConfig = {
   user: process.env.MSSQL_DEV_USER,
   password: process.env.MSSQL_DEV_PASS,
   server: process.env.MSSQL_DEV_SERVER.toString(),
-  database:process.env.MSSQL_DEV_DATABASE,
+  database: process.env.MSSQL_DEV_DATABASE,
   pool: {
     max: 10,
     min: 0,
@@ -75,7 +74,7 @@ const sqlConfig = {
 //establece una coneccion con sqlserver
 const conSysApolo = async () => {
   try {
-    let conexion = await sql.connect(sqlConfig)
+    let conexion = await connect(sqlConfig)
     return conexion;
   } catch (err) {
     console.log(err);

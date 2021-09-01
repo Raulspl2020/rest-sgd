@@ -22,7 +22,7 @@ export interface ClienteSysApolo {
     fec_nacimiento?: Date,
     est_tercero?: string,
     cod_centro_costo?: string,
-    fec_ingreso?: Date,
+    fec_ingreso?: string,
     salario_mensual?: number,
     cod_entidad_reciproca?: string
 }
@@ -43,6 +43,7 @@ export interface ClienteSigedin {
     cod_colegio: string,
     nom_periodo?: string,
     cod_periodo?: number,
+    cod_nivel_edu?: number,
     nom_nivel_educativo?: string,
     nro_creditos?: any,
     ide_genero?: string,

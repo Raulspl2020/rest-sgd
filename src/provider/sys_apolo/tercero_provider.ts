@@ -58,95 +58,93 @@ export const getCodTercero = async () => {
 
 
 //permite crear un tercero en sysapolo
-export const createTercero = async (tercero: ClienteSysApolo) => {
+export const createTercero = async (tercero: ClienteSysApolo): Promise<boolean | any> => {
         const cnn = await conSysApolo();
-        
         const CodTerQuery = await getCodTercero();
-        console.log(CodTerQuery);
-        console.log(tercero);
+        tercero.cod_ter = CodTerQuery.recordset[0].cod_ter;
 
+        return new Promise((resolve, reject) => {
 
-
-
-        const transaction = new sql.Transaction(cnn);
-
-
-        const query: string = `INSERT INTO TERCERO (
-                cod_ter,
-                ide_tipo_identificacion,
-                nit_ter,
-                num_identificacion,
-                dig_verificacion,
-                nom_ter,
-                pri_apellido,
-                seg_apellido,
-                pri_nombre,
-                otr_nombre,
-                cla_ter,
-                dir_ter,
-                tel_ter,
-                email,
-                ide_mun,
-                sex_tercero,
-                est_tercero,
-                salario_mensual,
-                fec_ingreso
-                ) VALUES (
-                        '${CodTerQuery.recordset[0].cod_ter}',
-                        '${tercero.ide_tipo_identificacion}',
-                        ' ${tercero.nit_ter}',
-                        '${tercero.num_identificacion}',
-                        '${tercero.dig_verificacion}',
-                        '${tercero.nom_ter}',
-                        '${tercero.pri_apellido}',
-                        '${tercero.seg_apellido}',
-                        '${tercero.pri_nombre}',
-                        '${tercero.otr_nombre}',
-                        'S',
-                        '${tercero.dir_ter}',
-                        '${tercero.tel_ter}',
-                        '${tercero.email}',
-                        '${tercero.ide_mun}',
-                        '${tercero.sex_tercero}',
-                        '',
-                        '0',
-                        '${format(new Date(), 'YYYY-MM-DD HH:mm:ss')}'
-
-                )`;
+                const transaction = new sql.Transaction(cnn);
+                const query: string = `INSERT INTO TERCERO (
+                        cod_ter,
+                        ide_tipo_identificacion,
+                        nit_ter,
+                        num_identificacion,
+                        dig_verificacion,
+                        nom_ter,
+                        pri_apellido,
+                        seg_apellido,
+                        pri_nombre,
+                        otr_nombre,
+                        cla_ter,
+                        dir_ter,
+                        tel_ter,
+                        email,
+                        ide_mun,
+                        sex_tercero,
+                        est_tercero,
+                        salario_mensual,
+                        fec_ingreso,
+                        tip_tercero
+                        ) VALUES (
+                                '${CodTerQuery.recordset[0].cod_ter}',
+                                '${tercero.ide_tipo_identificacion}',
+                                ' ${tercero.nit_ter}',
+                                '${tercero.num_identificacion}',
+                                '${tercero.dig_verificacion}',
+                                '${tercero.nom_ter}',
+                                '${tercero.pri_apellido}',
+                                '${tercero.seg_apellido}',
+                                '${tercero.pri_nombre}',
+                                '${tercero.otr_nombre}',
+                                '${tercero.cla_ter}',
+                                '${tercero.dir_ter}',
+                                '${tercero.tel_ter}',
+                                '${tercero.email}',
+                                '${tercero.ide_mun}',
+                                '${tercero.sex_tercero}',
+                                '${tercero.est_tercero}',
+                                '${tercero.salario_mensual}',
+                                '${tercero.fec_ingreso}',
+                                '${tercero.tip_tercero}'
+        
+                        )`;
 
                 console.log(query);
 
-        transaction.begin((err: any) => {
-                let rolledBack = false
-                transaction.on('rollback', (aborted: any) => {
-                        rolledBack = true
-                });
 
-                let result = new sql.Request(transaction)
-                        .query(query, (err: any, result: any) => {
-                                if (err) {
-                                        if (!rolledBack) {
-                                                transaction.rollback((err: any) => {
-                                                        // ... error checks
-                                                        console.log("ejecutando rollback");
-                                                        console.log(err);
-                                                })
-                                        }
-                                } else {
-                                        transaction.commit((err: any) => {
-                                                // ... error checks
-                                                console.log("ejecutando commit");
 
-                                        })
-                                }
+                transaction.begin((err: any) => {
+                        let rolledBack = false
+                        transaction.on('rollback', (aborted: any) => {
+                                console.log(aborted);
+                                rolledBack = true
                         });
 
-                return result;
+                        let result = new sql.Request(transaction)
+                                .query(query, (err: any, result: any) => {
+                                        if (err) {
+                                                if (!rolledBack) {
+                                                        transaction.rollback((err2: any) => {
+                                                                // ... error checks
+                                                                console.log("ejecutando rollback");
+                                                                reject([false, err]);
+                                                        })
+                                                }
+                                        } else {
+                                                transaction.commit((err2: any) => {
+                                                        // ... error checks
+                                                        console.log("ejecutando commit");
+                                                        resolve([true, CodTerQuery.recordset[0].cod_ter]);
+
+                                                })
+                                        }
+                                });
+
+                });
+
         });
-
-
-
-
 
 
 }

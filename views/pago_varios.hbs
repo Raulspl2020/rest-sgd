@@ -90,7 +90,8 @@
                                     <div class="form-group">
                                         <label for="">Apellidos: <span class="text-danger">*</span></label>
                                         <input v-model.trim="formpago.txtApe1" type="text"
-                                            placeholder="Apellidos del estudiante" class="form-control" disabled value="" />
+                                            placeholder="Apellidos del estudiante" class="form-control" disabled
+                                            value="" />
                                     </div>
                                 </div>
                             </div>
@@ -144,8 +145,10 @@
                                             style="width: 100%; height: 100%;" class="form-select form-select-sm"
                                             aria-label="Default select example">
                                             <option disabled value="">Seleccionar</option>
-                                            <option :value="row.paquete_id" v-for="(row, index) in conceptos">{[row.concepto]} -
-                                                {[row.valor_unidad]}</option>
+                                            <option :value="row.paquete_id" v-for="(row, index) in conceptos"
+                                                :title="row.concepto_id">
+                                                {[row.concepto]} -
+                                                ${[row.valor_unidad]}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -280,7 +283,7 @@
             },
             methods: {
                 consultarPersona() {
-               
+
 
                     fetch(`{{BASE_URL}}/usuario/infobasica/${this.formpago.txtId}`)
                         .then((response) => response.json())
@@ -320,7 +323,7 @@
                         .then((data) => {
                             if (!data.error) {
                                 let programas = data.data;
-                                this.programas = programas;                             
+                                this.programas = programas;
                             } else {
                                 this.programas = [];
                             }
@@ -347,7 +350,9 @@
                     if (this.cantidad < 1) {
                         this.cantidad = 1;
                     }
+                    console.log(this.valor_unidad);
                     this.total_a_pagar = this.cantidad * this.valor_unidad;
+                    console.log(this.total_a_pagar);
                     this.numeroALetras(this.total_a_pagar);
                 },
 
@@ -371,7 +376,7 @@
                         }
 
 
-                        
+
                         let data = {
                             "isPagoOnline": isPagoOnline,
                             "total": this.total_a_pagar,
@@ -446,18 +451,20 @@
                     this.consultarPersona();
                 },
 
-                onChange2(paquete_id,event) {
+                onChange2(paquete_id, id_concepto, event) {
 
-                    for(const rr of this.conceptos){
+                    console.log("el paquete id es:", paquete_id, " y el valor");
+                    console.log(event);
 
-                        if(rr.paquete_id==paquete_id){
-                            this.valor_unidad = rr.valor_unidad;
+                    for (const rr of this.conceptos) {
+
+                        if (rr.paquete_id == paquete_id && rr.concepto_id == id_concepto) {
                             this.valor_unidad = rr.valor_unidad;
                         }
 
                     }
 
-                    
+
                     this.calculaValor();
 
                     var optionText = event.target.options[event.target.options.selectedIndex].text;
@@ -487,11 +494,17 @@
 
             select_concepto.on('select2:select', function (e) {
                 // Do something
+                //el paquete id
                 var data = e.params.data.id;
+                var id_concepto = e.params.data.title;
 
-                app.onChange2(data,e);
+                app.onChange2(data, id_concepto, e);
                 app.calculaValor();
 
+            });
+
+            select_concepto.on('select2:open', function (e) {
+                $('input.select2-search__field').prop('placeholder', 'Escriba el concepto o valor a buscar...');
             });
 
         });
