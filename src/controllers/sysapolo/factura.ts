@@ -1,12 +1,13 @@
 import { parse, format } from 'date-format-parse';
-import { consultarFacturaByID, getCodFactura, sysGetFacturaPagadaByID, syslistarFacturasPagadas, sysregistrarFacturasPagadas } from "../../provider/sys_apolo/factura_provider";
+import { consultarFacturaByID, consultarPuntoPago, createReciboPago, getCodFactura, sysGetFacturaPagadaByID, syslistarFacturasPagadas, sysregistrarFacturasPagadas } from "../../provider/sys_apolo/factura_provider";
 import * as moneda from 'currency-formatter';
 import { verificaPagosNpago } from "../../helpers/cron_job";
 import { consultarTerceroByID, createTercero, updateTerceroByID } from "../../provider/sys_apolo/tercero_provider";
 import { ClienteSigedin, ClienteSysApolo } from "../../interfaces/clientes.interface";
 import { getTipoDoc } from "../../provider/usuario_provider";
-import { FacturaSysApolo } from '../../interfaces/facturas.interface';
-
+import { FacturaDetalleSysApolo, FacturaSysApolo } from '../../interfaces/facturas.interface';
+import { f_strDigitoVerificacionNIT } from "../../helpers/sysApolo";
+import { guardarLogFacturaSys } from '../../provider/log_provider';
 
 //====================
 //   /factura/listar
@@ -192,7 +193,8 @@ export const inicarPorceso = async (req: any, res: any) => {
 //PROCESO QUE SE EJECUTA EN SEGUNDO PLANO PARA PERMITIR A SIGEDIN REGISTRAR UNA FACTURA EN SYS-APOLO
 
 export const registroFacturaSysApolo = async (ref: number) => {
-
+  let ID_CLIENTE: string;
+  let DATA: any;
 
   try {
 
@@ -201,14 +203,14 @@ export const registroFacturaSysApolo = async (ref: number) => {
 
     //inicialmente obtenemos todos los datos de la factura
     let resultDB = await sysGetFacturaPagadaByID(ref);
-    console.log(resultDB);
+    // console.log(resultDB);
 
     //si encuentra la factura en sigedin
     if (resultDB.length > 0) {
       jsonData = JSON.parse(resultDB[0].json_response);
 
       let cliente: ClienteSigedin = jsonData.info_cliente;
-
+      ID_CLIENTE = cliente.ide_persona;
 
       let sysDBresult1 = await consultarTerceroByID(cliente.ide_persona);
 
@@ -223,7 +225,7 @@ export const registroFacturaSysApolo = async (ref: number) => {
         cod_doc = tipoDoc.cod_sysapolo;
       }
 
-      if (clientSysDBArray.length > 10) {
+      if (clientSysDBArray.length > 0) {
         terceroSys = clientSysDBArray[0];
         //si se encuentra el cliente actualizamos la informacion basica
 
@@ -237,7 +239,7 @@ export const registroFacturaSysApolo = async (ref: number) => {
           dir_ter: cliente.dir_persona || '',
           tel_ter: cliente.cel_persona || '',
           email: cliente.email_persona || '',
-          ide_mun: cliente.cod_municipio || '',
+          ide_mun: cliente.cod_municipio || '86001',
           sex_tercero: cliente.ide_genero || ''
         }
 
@@ -246,11 +248,14 @@ export const registroFacturaSysApolo = async (ref: number) => {
         //si no se encontro el cliente se debe crearlo
         console.log("se creará un nuevo tercero");
 
+        // esta funcion global genera un digito de verificacion segun DIAN para cada tercero
+        const digitoVer = f_strDigitoVerificacionNIT(cliente.ide_persona);
+
         let terCrear: ClienteSysApolo = {
           ide_tipo_identificacion: cod_doc,
-          nit_ter: cliente.ide_persona,
+          nit_ter: cliente.ide_persona + "-" + digitoVer,
           num_identificacion: cliente.ide_persona,
-          dig_verificacion: '1', //corregir esto
+          dig_verificacion: digitoVer,
           nom_ter: `${cliente.ape1_persona} ${cliente.ape2_persona} ${cliente.nom1_persona} ${cliente.ape2_persona}`.trim(),
           rep_legal: '',
           pri_apellido: cliente.ape1_persona,
@@ -267,8 +272,8 @@ export const registroFacturaSysApolo = async (ref: number) => {
           est_tercero: '1',
           fec_ingreso: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
           salario_mensual: 0,
-
         };
+
 
         let [isCreateTercero, resultTercero]: boolean | any = await createTercero(terCrear);
         if (isCreateTercero) {
@@ -278,26 +283,55 @@ export const registroFacturaSysApolo = async (ref: number) => {
         } else {
           //no se pudo crear el tercero en sysApolo
           throw new Error(resultTercero);
-
         }
 
       }
 
-
       //cuanto ya tenemos listo el tercero inicamos con la verificacion y creacion de la factura en sysApolo 
-
       let facturaSys = await consultarFacturaByID(ref);
+      console.log("vericar la fatuea si existe");
+      console.log(facturaSys);
 
 
-      if (facturaSys.length > 10) {
+      if (facturaSys.length > 0) {
+        //ACTUALIZAR ESTADO FACTURA EN SIGEDIN
+        sysregistrarFacturasPagadas([ref]);
         //se debe actualziar las factutas, cambiar el estado en sigedin para que no se registre 2 veces
         throw new Error(`La factura ${ref} ya se encuentra registrada en sysapolo`);
 
       } else {
         //registramos la factura con el detalle directamente
 
-        //obtenemos un consecutivo desde la db
+        //obtenemos un consecutivo desde la db SQLServer
         let { cod_factura } = await getCodFactura();
+        //se consulta el punto de pago usando como parametro el año de pago y el nro de cuenta bancaria
+        let resultPuntoPago = await consultarPuntoPago(parseInt(format(resultDB[0].fecha_pago, 'YYYY')), resultDB[0].cuenta_banco);
+        console.log("el punto de pago es");
+        console.log(resultPuntoPago);
+
+        if (resultPuntoPago.length == 0) {
+          throw new Error(`No se encontraron puntos de pago para el año ${parseInt(format(resultDB[0].fecha_pago, 'YYYY'))} y la cuenta ${resultDB[0].cuenta_banco}`);
+        }
+
+        const cod_punto_pago = resultPuntoPago[0].cod_punto_pago;
+
+        //recorremos los conceptos de la factura obtenida para crear el detalle del recibo a registrar en sysapolo
+        let DetFactSys: FacturaDetalleSysApolo[] = [];
+
+        for (const con of resultDB) {
+          let subtotal: number = (con.valor_unidad * con.cantidad) - ((con.valor_unidad * con.cantidad) * con.descuento) + ((con.valor_unidad * con.cantidad) * con.aumento);
+          let detalle: FacturaDetalleSysApolo = {
+            ide_fact_concepto_enc: cod_factura,
+            ide_concepto: con.cod_concepto_sys,
+            cantidad: 1,
+            valor_concepto: subtotal,
+            sub_total: subtotal
+          };
+          //los conceptos con subtotal sobre cero no se registran sysApolo
+          if (subtotal > 0) {
+            DetFactSys.push(detalle);
+          }
+        }
 
         let facturaSys: FacturaSysApolo = {
           ide_fact_concepto_enc: parseInt(cod_factura),
@@ -305,47 +339,62 @@ export const registroFacturaSysApolo = async (ref: number) => {
           fec_recibo: format(resultDB[0].fecha_pago, 'YYYY-MM-DD HH:mm:ss'),
           cod_ter: terceroSys.cod_ter,
           ide_usuario: 41,
-          det_recibo: resultDB[0].desc_factura,
+          det_recibo: `${resultDB[0].categoria} - ${cliente.nom_nivel_educativo} - ${resultDB[0].forma_pago} - ${resultDB[0].codigo_transaccion} - ${format(resultDB[0].fecha_pago, 'YYYY-MM-DD HH:mm:ss')}`,
           valor_concepto: resultDB[0].valor_pago,
           valor_recaudo: resultDB[0].valor_pago,
           pagado: 'S',
-          ide_banco: 1, // refiere al codigo de convenio
+          ide_banco: 1, // refiere al codigo de convenio, por ahora es estatico, hasta que se adquiera un nuevo codigo de recaudo
           cod_colegio: parseInt(cliente.cod_colegio),
           cod_forma_pago: resultDB[0].forma_pago_id,
           cod_nivel_educativo: cliente.cod_nivel_edu,
-
-          cod_punto_pago: 1 //vup_punto_pago
+          cod_punto_pago: cod_punto_pago
         }
 
-        console.log(facturaSys);
+        DATA = facturaSys;
+        DATA.detalle = DetFactSys;
 
-        return facturaSys;
+        //ejecutamos la instruccion en sobre la base de datos SQLServer
+        let [resp, error, sql]: boolean | any | string = await createReciboPago(facturaSys, DetFactSys);
 
+        if (resp) {
+          //actualizar estado en base de datos
+          sysregistrarFacturasPagadas([ref]);
 
-
+          guardarLogFacturaSys({
+            factura_id: ref,
+            cliente_id: ID_CLIENTE,
+            estado: 1,
+            mensaje: "OK",
+            fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+            data: JSON.stringify(DATA)
+          });
+        } else {
+          //guardar log error
+          throw new Error(error + " " + sql);
+        }
+        return resp;
 
       }
-
-
-
-
-
-
-      return facturaSys;
 
     } else {
       //no se encuentra la factura en sigedin
       console.log(`La factura ${ref} no existe`);
-      throw new Error(`La factura ${ref} no existe`);
+      throw new Error(`La factura ${ref} no existe, o ya se encuentra registrada`);
     }
 
 
-
-
-
-
   } catch (error) {
+
     console.log(error);
+    guardarLogFacturaSys({
+      factura_id: ref,
+      estado: 0,
+      cliente_id: ID_CLIENTE,
+      mensaje: error.message,
+      fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+      data: JSON.stringify(DATA)
+    });
+    return false;
   }
 
 

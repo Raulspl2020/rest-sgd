@@ -95,7 +95,7 @@ export const userUpdateContactView = async (req: any, res = response) => {
     let data: any = {};
 
     let id_user = req.params.id_user;
-    let resultDB =  await getInfoUsuario(id_user);
+    let resultDB = await getInfoUsuario(id_user);
     data.BASE_URL = process.env.BASE_URL.toString();
     data.user = resultDB[0];
     res.render("actualizar_contacto", data);
@@ -225,7 +225,7 @@ export const pdfReciboPago = async (req: any, res = response) => {
     let idFactura = req.params.ref;
 
     try {
-        
+
         let factura = await getDataDetalleFacturaById(idFactura);
 
         data.factura = factura;
@@ -295,6 +295,9 @@ export const complileTemplateReciboPago = async (id_factura: any) => {
 
 
         let factura = await getDataDetalleFacturaById(id_factura);
+        if (factura.verify == 1) {
+            throw new Error(`la factura ${factura.id} ya fue notificada`);
+        }
         //creamos la data que lleva la plantilla, o contendio dinamico
         data.factura = factura;
         data.fecha_actual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');

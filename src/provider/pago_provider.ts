@@ -570,6 +570,7 @@ export const getFactura = async (id_factura: any) => {
       'fin_pago.fecha',
       'fin_pago.estudiante_id',
       'fin_pago.valor',
+      'fin_pago.sysapolo_verify',
       'fin_pago.json_response',
       'fin_detalle_factura.concepto_id',
       'fin_concepto.codigo AS codigo_concepto',

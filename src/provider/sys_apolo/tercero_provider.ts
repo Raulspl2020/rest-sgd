@@ -115,6 +115,7 @@ export const createTercero = async (tercero: ClienteSysApolo): Promise<boolean |
 
 
 
+
                 transaction.begin((err: any) => {
                         let rolledBack = false
                         transaction.on('rollback', (aborted: any) => {

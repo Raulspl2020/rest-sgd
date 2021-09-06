@@ -439,7 +439,7 @@ const generarCodigoFactura = async (cadena: string) => {
 
 
 //====================
-//   /page/InicioPagoInscripcion
+//   /transaccion/InicioPagoInscripcion
 //=====================
 export const inicioPagoInscripcion = async (req: any, res: any) => {
 
@@ -994,7 +994,6 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
 
   try {
     let result = await getInfoMatricula(id_matricula);
-
     resultDB = result[0][0];
 
 

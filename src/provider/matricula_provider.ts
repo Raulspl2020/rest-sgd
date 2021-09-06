@@ -18,7 +18,7 @@ export const getInfoMatricula = async (cod_matricula: any) => {
     , col_periodo.nom_periodo
     , col_periodo.cod_periodo
     , col_nivel_educacion.nom_nivel_educativo
-    , col_nivel_educacion.cod_nivel_edu 
+    , col_nivel_educacion.cod_nivel_educativo as cod_nivel_edu 
     ,SUM(IF(
         col_colegio_asignatura_matricula.cod_estadomateria IN (1, 2, 3, 5)
         AND col_colegio_asignatura_matricula.cod_formaacademica = 1,

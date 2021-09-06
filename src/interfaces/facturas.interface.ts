@@ -19,21 +19,21 @@ export interface  FacturaSysApolo {
 
 
 export interface FacturaDetalleSysApolo {
-    ide_fact_concepto_det: number,
-    ide_fact_concepto_enc: number,
+    ide_fact_concepto_det?: number,
+    ide_fact_concepto_enc?: number,
     ide_concepto: number,
     cantidad: number,
     valor_concepto: number,
     sub_total: number,
-    ide_contabilidad_debito_causacion: number, //-1
-    ide_contabilidad_credito_causacion: number, //-1
-    ide_encabezado_contabilidad_causacion: number, //-1
-    ide_contabilidad_debito_recaudo: number, //-1
-    ide_contabilidad_credito_recaudo: number, //-1
-    ide_encabezado_contabilidad_recaudo: number, //-1
-    ide_presupuesto_recurso: number, //-1
-    cod_centro_costo_deb_causacion: number, //-1
-    cod_centro_costo_cre_causacion: number, //-1
-    cod_centro_costo_deb_recaudo: number, //-1
-    cod_centro_costo_cre_recaudo: number //-1
+    ide_contabilidad_debito_causacion?: number, //-1
+    ide_contabilidad_credito_causacion?: number, //-1
+    ide_encabezado_contabilidad_causacion?: number, //-1
+    ide_contabilidad_debito_recaudo?: number, //-1
+    ide_contabilidad_credito_recaudo?: number, //-1
+    ide_encabezado_contabilidad_recaudo?: number, //-1
+    ide_presupuesto_recurso?: number, //-1
+    cod_centro_costo_deb_causacion?: number, //-1
+    cod_centro_costo_cre_causacion?: number, //-1
+    cod_centro_costo_deb_recaudo?: number, //-1
+    cod_centro_costo_cre_recaudo?: number //-1
 }

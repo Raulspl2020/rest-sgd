@@ -10,6 +10,8 @@ import { ListResponsePago } from "../models/ResponsePago";
 import { Verificadorpago } from "./zonapagos";
 import * as moneda from 'currency-formatter';
 import { complileTemplateReciboPago } from "./template";
+import { sysregistrarFacturasPagadas } from "../provider/sys_apolo/factura_provider";
+import { registroFacturaSysApolo } from "./sysapolo/factura";
 
 //====================
 //   /transaccion/consultaFactura
@@ -240,6 +242,13 @@ export const registrarPagoService = async (req: any, res: any) => {
       let resultUpdatePago = await actualizarPagoyDetalle(Referencia_pago, tPago, detPago);
 
       if (resultUpdatePago != false) {
+
+        //registra la factura en sysApolo
+        //await registroFacturaSysApolo(Referencia_pago);
+        //enviar recibo de pago al correo electronico
+        //complileTemplateReciboPago(Referencia_pago);
+        setTimeout(() => complileTemplateReciboPago(Referencia_pago), 60000);
+
         responseData.Codigo_Estado = "0";
         responseData.Severidad = "I";
         responseData.Descripcion = "Se realizó exitosamente la actualización del pago.";
@@ -290,8 +299,6 @@ export const registrarPagoService = async (req: any, res: any) => {
         'host': req.headers['x-forwarded-for'] || req.connection.remoteAddress
       });
 
-      //enviar recibo de pago al correo electronico
-      complileTemplateReciboPago(Referencia_pago);
 
       res.status(200).json(responseData);
 
@@ -393,6 +400,7 @@ export const reversarPagoService = async (req: any, res: any) => {
       //preparamos la data para guardar
       let tPago: any = {
         'estado_id': 200,
+        'sysapolo_verify': 0,
         'fecha_update': format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
         'fecha_reverso': format(parse(Fecha_reverso + " " + horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
         'valor_reverso': Valor_pagado,
@@ -602,7 +610,8 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
           "codigo": pago.codigo,
           "descripcion": pago.desc_factura,
           "categoria": pago.categoria,
-          "fecha": pago.fecha
+          "fecha": pago.fecha,
+          "verify": pago.sysapolo_verify
         };
         let json_response = JSON.parse(pago.json_response);
         cliente = json_response.info_cliente;
@@ -639,7 +648,7 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
       pago.cod_aprobacion = (pago.cod_aprobacion == null) ? "NO APLICA" : pago.cod_aprobacion;
       pago.num_recibido = (pago.num_recibido == null) ? "NO APLICA" : pago.num_recibido;
       pago.int_n_pago = (pago.int_n_pago == null) ? "NO APLICA" : pago.int_n_pago;
-      
+
     }
 
     let dataDescuentos = await getDescuentoFactura(idFactura);
