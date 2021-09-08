@@ -1,5 +1,6 @@
 import Knex from 'knex';
 import { connect } from "mssql";
+import mongoose from 'mongoose';
 const db: any = {
   desarrollo: {
     host: process.env.MYSQL_DEV_SGD_HOST,
@@ -82,4 +83,22 @@ const conSysApolo = async () => {
   }
 }
 
-export { conDB, conAuth, conSysApolo };
+const mongo_cnn_url = ():string => {
+  return `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_DB_PORT}/${process.env.MONGO_DB_NAME}`
+}
+
+//conectar a base de datos mongo
+const conMongo = async () => {
+
+  try {
+    console.log("starting connection",mongo_cnn_url())
+    await mongoose.connect(mongo_cnn_url());
+    console.log("base de datos MONGO online");
+  } catch (error) {
+    throw new Error("Error de conexion: " + error);
+
+  }
+
+}
+
+export { conDB, conAuth, conSysApolo, conMongo };

@@ -6,6 +6,8 @@ import { enviaMail } from "../helpers/mail";
 import path from "path";
 import { generarJWT, comprobarJWT, decodingJWT } from "../helpers/jwt";
 import { Usuario } from "../models/Usuario";
+import { guardarTokenUsuario } from "../provider/login_provider";
+import format from "date-format-parse/lib/format";
 
 //====================
 //   /login/googleauth 
@@ -98,6 +100,13 @@ export const auth = async (req: any, res: any = response) => {
 
             let saludo = "Bienvenido";
             let token = await generarJWT(usuario);
+            //guardar token en DB
+            await guardarTokenUsuario({
+                'token': token,
+                user_id: usuario.id,
+                fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+                cliente_id: null
+            });
 
             data = {
                 usuario,

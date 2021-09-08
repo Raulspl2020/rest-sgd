@@ -10,6 +10,7 @@ import bodyParser from 'body-parser';
 import fileUpload from 'express-fileupload';
 import path from 'path';
 import cron from 'node-cron';
+import { conMongo } from '../config/database';
 
 class Server {
 
@@ -33,7 +34,7 @@ class Server {
 
 
         cron.schedule('*/15 * * * *', () => {
-       // cron.schedule('* * * * *', () => {
+            // cron.schedule('* * * * *', () => {
             verificaPagosPendientesOnline().then((result) => {
                 // console.log(result);
             });
@@ -58,10 +59,11 @@ class Server {
         this.app.use(bodyParser.json());
         //File-upploads
         this.app.use(fileUpload(
-            {useTempFiles : false,
-            tempFileDir : '/tmp/',
-            createParentPath: true
-        }
+            {
+                useTempFiles: false,
+                tempFileDir: '/tmp/',
+                createParentPath: true
+            }
 
         ));
         //carpeta publica
@@ -69,6 +71,8 @@ class Server {
     }
 
     async dbConnection() {
+
+        await conMongo();
 
         // try {
 
