@@ -6,8 +6,8 @@ import { verificaToken } from '../middlewares/autenticacion';
 //====================
 //   /inicio
 //=====================
-router.get('/inicio', verificaToken, (req:any, res:any) => {
+router.get('/', verificaToken, (req: any, res: any) => {
     res.json(req.usuario);
 });
 
-module.exports = router;
+export default router;

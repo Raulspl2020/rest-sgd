@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-export const generarJWT = (payload:any, caducidad = process.env.CADUCIDAD_TOKEN) => {
+export const generarJWT = (payload:any, caducidad = process.env.CADUCIDAD_TOKEN) : Promise<string> => {
     return new Promise((resolve, reject) => {
 
         jwt.sign({ usuario: payload }, process.env.SECRET_KEY, { expiresIn: caducidad, }, (err:any, token:string) => {
@@ -29,7 +29,7 @@ export const comprobarJWT = (token:string) => {
         const data = jwt.verify(token, process.env.SECRET_KEY);
         return [true, data];
     } catch (error) {
-        return [false, null];
+        return [false, error];
     }
 };
 

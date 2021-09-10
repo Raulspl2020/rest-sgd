@@ -1,21 +1,79 @@
 import jwt from 'jsonwebtoken';
+import { Usuario } from '../models/Usuario';
+import Sesion from '../models/Mongo/Sesion';
 import { authTokenService } from '../provider/login_provider';
+import { comprobarJWT, decodingJWT, generarJWT } from '../helpers/jwt';
+import { v4 as uuidv4 } from 'uuid';
 
-export const verificaToken = (req: any, res: any, next: any) => {
+export const verificaToken = async (req: any, res: any, next: any) => {
 
-    let token = req.get('token');
-    jwt.verify(token, process.env.SECRET_KEY, (err: any, decoded: any) => {
-        console.log('token: ' + decoded);
-        if (err) {
+    try {
+        let token = req.get('token');
+        console.log(token);
+        const { usuario, exp }: { usuario: Usuario, exp: number } = await decodingJWT(token);
+        req.usuario = usuario;
+        console.log("vamos a comprobar el token");
+        let [esValido, data] = comprobarJWT(token);
+        console.log("vamos terminamos de com", esValido);
+
+        if (esValido) {
+            console.log("vamos abuscar el la DB");
+            let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id});
+            console.log(sesion);
+            if (!sesion) {
+                return res.status(401).json({
+                    error: true,
+                    message: "Sesion expirada"
+                });
+            } else {
+                return next();
+            }
+        }
+
+        console.log(data.name);
+
+        //renovar token solo si ya expiro
+        if (data.name === 'TokenExpiredError') {
+            console.log("el token expiro");
+
+            let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id });
+            if (!sesion) {
+                return res.status(401).json({
+                    error: true,
+                    message: "Sesion expirada"
+                });
+            } else {
+                const session_id = uuidv4();
+                usuario.sesion_id = session_id;
+
+                let refreshToken = await generarJWT(usuario);
+                const { exp } = await decodingJWT(refreshToken);
+                
+                sesion.token = refreshToken;
+                sesion.fecha_caducidad = new Date(exp * 1000);
+                sesion.sesion_id = session_id;
+                await sesion.save();
+                res.set('refresh-token', refreshToken);
+                return next();
+            }
+
+        } else {
             return res.status(401).json({
                 error: true,
-                data: err,
+                data,
                 message: "Token invalido"
             });
+
         }
-        req.usuario = decoded.usuario;
-        next();
-    });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(401).json({
+            error: true,
+            message: "Token invalido, error interno"
+        });
+    }
+
 
 };
 
@@ -42,7 +100,29 @@ export const verificaTokenDB = (scope: string) => async (req: any, res: any, nex
     }
 
 
+};
 
+
+export const renovarToken = (scope: string) => async (req: any, res: any, next: any) => {
+
+    let token = req.get('token');
+
+    try {
+        if (!token) {
+            throw new Error("El token es obligatorio");
+        }
+        let resultDB = await authTokenService(scope, token);
+        if (resultDB.length > 0) {
+            next();
+        } else {
+            throw new Error("Permiso denegado");
+        }
+    } catch (error) {
+        return res.status(401).json({
+            error: true,
+            message: error.message
+        });
+    }
 
 
 };

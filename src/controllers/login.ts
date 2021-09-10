@@ -6,8 +6,10 @@ import { enviaMail } from "../helpers/mail";
 import path from "path";
 import { generarJWT, comprobarJWT, decodingJWT } from "../helpers/jwt";
 import { Usuario } from "../models/Usuario";
-import { guardarTokenUsuario } from "../provider/login_provider";
+import { getServiceByRol, guardarTokenUsuario } from "../provider/login_provider";
 import format from "date-format-parse/lib/format";
+import Sesion from "../models/Mongo/Sesion";
+import { v4 as uuidv4 } from 'uuid';
 
 //====================
 //   /login/googleauth 
@@ -36,6 +38,9 @@ export const googleAuth = async (req: any, res: any) => {
         const userDb = await loginProvider.getUserGoogle(googleUser.email);
 
         if (userDb[0].length > 0) {
+            const session_id = uuidv4();
+            let scopes: string[] = [];
+
             let roles = userDb[0];
             let tipo_user: any = [];
 
@@ -43,11 +48,25 @@ export const googleAuth = async (req: any, res: any) => {
                 tipo_user.push(element['description']);
             });
 
+            let scopesDD = await getServiceByRol(tipo_user);
 
-            let usuario: Usuario = { id: roles[0].login, nombre: roles[0].name, picture: googleUser.picture, email: roles[0].email, active: roles[0].active, google: true, rol: tipo_user };
+            scopesDD.forEach((element: any) => {
+                scopes.push(element['cod_service']);
+            });
 
 
 
+            let usuario: Usuario = {
+                id: roles[0].login,
+                nombre: roles[0].name,
+                picture: googleUser.picture,
+                email: roles[0].email,
+                active: roles[0].active,
+                google: true,
+                rol: tipo_user,
+                sesion_id: session_id,
+                permisos: scopes
+            };
 
             let newJWT = await generarJWT(usuario);
             res.json({
@@ -92,21 +111,46 @@ export const auth = async (req: any, res: any = response) => {
 
         if (row[0].length > 0) {
 
+            const session_id = uuidv4();
+            let scopes: string[] = [];
+
             roles.forEach((element: any) => {
                 tipo_user.push(element['description']);
             });
 
-            let usuario: Usuario = { id: roles[0].login, nombre: roles[0].name, email: roles[0].email, active: roles[0].active, google: false, rol: tipo_user };
+            let scopesDD = await getServiceByRol(tipo_user);
+
+            scopesDD.forEach((element: any) => {
+                scopes.push(element['cod_service']);
+            });
+
+
+            let usuario: Usuario = {
+                id: roles[0].login,
+                nombre: roles[0].name,
+                email: roles[0].email,
+                active: roles[0].active,
+                google: false,
+                sesion_id: session_id,
+                rol: tipo_user,
+                permisos: scopes
+            };
 
             let saludo = "Bienvenido";
-            let token = await generarJWT(usuario);
+            let token: string = await generarJWT(usuario,'10000');
             //guardar token en DB
-            await guardarTokenUsuario({
-                'token': token,
+
+            let { exp } = await decodingJWT(token);
+
+            const sesion = new Sesion({
+                token: token,
                 user_id: usuario.id,
-                fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
-                cliente_id: null
+                sesion_id: session_id,
+                fecha_creacion: new Date(),
+                fecha_caducidad: new Date(exp * 1000)
             });
+
+            await sesion.save();
 
             data = {
                 usuario,
@@ -133,6 +177,21 @@ export const auth = async (req: any, res: any = response) => {
 };
 
 
+//devuelve un nuevo token a partir de uno anterior 
+export const renovarToken = async (token: string): Promise<string> => {
+
+    try {
+        const { usuario }: { usuario: Usuario } = await decodingJWT(token);
+        let refrehsToken = await generarJWT(usuario);
+        return refrehsToken;
+    } catch (error) {
+        console.log(error);
+        throw new Error(error);
+    }
+
+}
+
+
 
 //====================
 //   /login/renewtoken 
@@ -157,10 +216,7 @@ export const renewToken = async (req: any, res = response) => {
                 tipo_user.push(element['description']);
             });
 
-
             let usuario: Usuario = { id: roles[0].login, nombre: roles[0].name, email: roles[0].email, active: roles[0].active, google: false, rol: tipo_user };
-
-
 
             refrehsToken = await generarJWT(usuario);
             codeStatus = 202;

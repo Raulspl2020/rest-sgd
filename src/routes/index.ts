@@ -10,6 +10,7 @@ import routerUsuario from "../routes/usuario";
 import routerTemplate from "../routes/template";
 import routerMatricula from "../routes/matricula";
 import routerFactura from "../routes/factura";
+import routerInicio from "../routes/inicio";
 
 //====================
 //   ROUTES: /api
@@ -33,7 +34,6 @@ app.use("/usuario", routerUsuario);
 app.use("/page", routerTemplate);
 app.use("/matricula", routerMatricula);
 app.use("/factura", routerFactura);
-
-// app.use(require("./inicio"));
+app.use("/inicio", routerInicio);
 
 export default app;

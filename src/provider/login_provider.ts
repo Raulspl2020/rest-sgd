@@ -71,6 +71,25 @@ export const authTokenService = async (cod_service: any, token: any) => {
     return result;
 };
 
+//obtiene los permisos que uno o mas roles tiene asignados
+export const getServiceByRol = async (roles: any) => {
+    let result = await conAuth
+        .select(
+            'sec_groups.group_id',
+            'sec_groups.description AS grupo',
+            'api_service.id_service',
+            'api_service.nombre',
+            'api_service.descripcion',
+            'api_service.cod_service'
+        )
+        .from("api_service_group")
+        .join("api_service", "api_service_group.service_id", "=", "api_service.id_service")
+        .join("sec_groups", "api_service_group.service_group_id", "=", "sec_groups.group_id")
+        .whereIn('sec_groups.description', roles)
+        .groupBy('api_service.id_service');
+    return result;
+};
+
 
 //guarda el token en la DB para mantener la sesion
 export const guardarTokenUsuario = async (dataInsert: any) => {
