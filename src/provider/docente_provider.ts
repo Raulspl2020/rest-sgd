@@ -63,7 +63,7 @@ export const getHorarioAsigantura = async (cod_colegio_asignatura_docente: numbe
 
 
 //obtiene los estudiantes registrados en una asignatura
-export const getEstudaintesCarga = async (cod_colegio_asignatura_docente: number) => {
+export const obtenerEstudaintesCarga = async (cod_colegio_asignatura_docente: number) => {
     let result = await conDB
         .select(
             'col_boletin.cod_boletin',

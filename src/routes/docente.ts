@@ -1,6 +1,6 @@
 import { Router } from 'express';
 const router = Router();
-import {getAsignaturasDocente } from '../controllers/docente';
+import { getAsignaturasDocente, getEstudiantesCarga } from '../controllers/docente';
 
 //====================
 //   /estudiante 
@@ -8,6 +8,7 @@ import {getAsignaturasDocente } from '../controllers/docente';
 
 
 router.get('/cargaacademica/:id_docente/:periodo', getAsignaturasDocente);
+router.get('/listarestudiantes/:id_carga', getEstudiantesCarga);
 
 
 
