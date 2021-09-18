@@ -3,6 +3,7 @@ import { Int, Transaction, Request, VarChar } from "mssql";
 const sql = require("mssql");
 import { FacturaSysApolo } from "../../interfaces/facturas.interface";
 import { FacturaDetalleSysApolo } from "../../interfaces/facturas.interface";
+import { query } from "express-validator";
 
 //verifica si un usuario con token tiene permiso para consumir el servicio
 export const syslistarFacturasPagadas = async () => {
@@ -304,6 +305,69 @@ export const createReciboPago = async (encabezado: FacturaSysApolo, detalle: Fac
 
 
 
+                    }
+                });
+
+        });
+
+
+    });
+
+}
+
+
+
+//eliminar detalle y factura de sysapolo
+
+export const eliminarReciboPago = async (encabezado: FacturaSysApolo) => {
+    const cnn = await conSysApolo();
+
+
+    return new Promise((resolve, reject) => {
+        let transaction = new sql.Transaction(cnn);
+
+        const query1: string = `DELETE FROM vup_fact_concepto_escolar_detalle WHERE ide_fact_concepto_enc=${encabezado.ide_fact_concepto_enc} `;
+
+        const query2 = `DELETE FROM vup_fact_concepto_escolar_encabezado WHERE ide_fact_concepto_enc=${encabezado.ide_fact_concepto_enc}`;
+
+        transaction.begin((error: any) => {
+
+            let rolledBack = false
+            transaction.on('rollback', (aborted: any) => {
+                console.log(aborted);
+                rolledBack = true
+            });
+
+            let result = new sql.Request(transaction)
+                .query(query1, (err: any, result: any) => {
+
+                    if (err) {
+                        if (!rolledBack) {
+                            transaction.rollback((err2: any) => {
+                                // ... error checks
+                                console.log("ejecutando rollback");
+                                reject([false, err, query1 + " ; " + query2]);
+                            })
+                        }
+                    } else {
+                        //ejecutar la siguiente consulta
+                        let result2 = new sql.Request(transaction)
+                            .query(query2, (err: any, result: any) => {
+
+                                if (err) {
+                                    transaction.rollback((err2: any) => {
+                                        reject([false, err, query1 + " ; " + query2]);
+                                    });
+                                } else {
+                                    transaction.commit((err2: any) => {
+                                        // ... error checks
+                                        console.log("ejecutando commit");
+                                        resolve([true, null]);
+
+                                    })
+                                }
+
+                            });
                     }
                 });
 

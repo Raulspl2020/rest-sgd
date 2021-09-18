@@ -11,7 +11,7 @@ import { Verificadorpago } from "./zonapagos";
 import * as moneda from 'currency-formatter';
 import { complileTemplateReciboPago } from "./template";
 import { sysregistrarFacturasPagadas } from "../provider/sys_apolo/factura_provider";
-import { registroFacturaSysApolo } from "./sysapolo/factura";
+import { eliminarFacturaSysApolo, registroFacturaSysApolo } from "./sysapolo/factura";
 
 //====================
 //   /transaccion/consultaFactura
@@ -327,9 +327,6 @@ export const registrarPagoService = async (req: any, res: any) => {
 
 
 
-
-
-
 //===================================
 //   /transaccion/reversarPagos
 //===================================
@@ -371,8 +368,6 @@ export const reversarPagoService = async (req: any, res: any) => {
         throw new Error("No se encontraron facturas pagadas para reverso");
       }
 
-
-
       //verificar si existen pagos
       let resultDBPago = await consultarPagoFactura(
         {
@@ -384,7 +379,6 @@ export const reversarPagoService = async (req: any, res: any) => {
       if (!resultDBPago) {
         throw new Error("No se encontraron pagos realizados para la factura " + Referencia_pago);
       }
-
 
 
       let detPago: any = {
@@ -400,7 +394,7 @@ export const reversarPagoService = async (req: any, res: any) => {
       //preparamos la data para guardar
       let tPago: any = {
         'estado_id': 200,
-        'sysapolo_verify': 0,
+        'sysapolo_verify': '0',
         'fecha_update': format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
         'fecha_reverso': format(parse(Fecha_reverso + " " + horaActual, "DD/MM/YYYY HH:mm:ss"), 'YYYY-MM-DD HH:mm:ss'),
         'valor_reverso': Valor_pagado,
@@ -413,6 +407,9 @@ export const reversarPagoService = async (req: any, res: any) => {
         responseData.Codigo_Estado = "0";
         responseData.Severidad = "I";
         responseData.Descripcion = "Se realizó exitosamente el reverso del pago";
+
+        eliminarFacturaSysApolo(Referencia_pago);
+
       } else {
         responseData.Codigo_Estado = "1";
         responseData.Severidad = "W";

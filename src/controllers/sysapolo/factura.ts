@@ -1,5 +1,5 @@
 import { parse, format } from 'date-format-parse';
-import { consultarFacturaByID, consultarPuntoPago, createReciboPago, getCodFactura, sysGetFacturaPagadaByID, syslistarFacturasPagadas, sysregistrarFacturasPagadas } from "../../provider/sys_apolo/factura_provider";
+import { consultarFacturaByID, consultarPuntoPago, createReciboPago, eliminarReciboPago, getCodFactura, sysGetFacturaPagadaByID, syslistarFacturasPagadas, sysregistrarFacturasPagadas } from "../../provider/sys_apolo/factura_provider";
 import * as moneda from 'currency-formatter';
 import { verificaPagosNpago } from "../../helpers/cron_job";
 import { consultarTerceroByID, createTercero, updateTerceroByID } from "../../provider/sys_apolo/tercero_provider";
@@ -173,8 +173,35 @@ export const inicarPorceso = async (req: any, res: any) => {
       result
     });
 
+  } catch (error) {
+    console.log(error);
+    res.json({
+      error: true,
+      message: error.message,
+    });
+  }
+
+}
 
 
+
+
+export const inicarPorcesoDel = async (req: any, res: any) => {
+
+
+  let body = req.body;
+  let referencia = req.params.referencia;
+
+
+  try {
+
+    let result = await eliminarFacturaSysApolo(parseInt(referencia))
+
+    res.json({
+      error: false,
+      referencia,
+      result
+    });
 
   } catch (error) {
     console.log(error);
@@ -185,6 +212,7 @@ export const inicarPorceso = async (req: any, res: any) => {
   }
 
 }
+
 
 
 
@@ -342,12 +370,13 @@ export const registroFacturaSysApolo = async (ref: number) => {
           det_recibo: `${resultDB[0].categoria} - ${cliente.nom_nivel_educativo} - ${resultDB[0].forma_pago} - ${resultDB[0].codigo_transaccion} - ${format(resultDB[0].fecha_pago, 'YYYY-MM-DD HH:mm:ss')}`,
           valor_concepto: resultDB[0].valor_pago,
           valor_recaudo: resultDB[0].valor_pago,
-          pagado: 'S',
+          pagado: 'N',
           ide_banco: 1, // refiere al codigo de convenio, por ahora es estatico, hasta que se adquiera un nuevo codigo de recaudo
           cod_colegio: parseInt(cliente.cod_colegio),
           cod_forma_pago: resultDB[0].forma_pago_id,
           cod_nivel_educativo: cliente.cod_nivel_edu,
-          cod_punto_pago: cod_punto_pago
+          cod_punto_pago: cod_punto_pago,
+          crea_registro: 2 // 1: sigedin, 1: sysapolo //siempre va 1
         }
 
         DATA = facturaSys;
@@ -395,6 +424,56 @@ export const registroFacturaSysApolo = async (ref: number) => {
       data: JSON.stringify(DATA)
     });
     return false;
+  }
+
+
+}
+
+
+
+
+//PROCESO QUE SE EJECUTA EN SEGUNDO PLANO PARA PERMITIR A SIGEDIN ELIMINAR UNA FACTURA EN SYSAPOLO
+
+export const eliminarFacturaSysApolo = async (ref: number) => {
+
+  //buscamos la factura en sysapolo, para obtener los ids a eliminar en detalle
+  let facturaSys: FacturaSysApolo[] = await consultarFacturaByID(ref);
+
+
+  if (facturaSys.length > 0) {
+    const ide_fact_concepto_enc: number = facturaSys[0].ide_fact_concepto_enc;
+
+    //primero debemos eliminar los detalles de la factura y posteriormente la factura
+
+    //ejecutamos la transaccion en sobre la base de datos SQLServer
+    let [resp, error, sql]: boolean | any | string = await eliminarReciboPago(facturaSys[0]);
+
+    if (resp) {
+      guardarLogFacturaSys({
+        factura_id: ref,
+        estado: 1,
+        mensaje: `Factura ${facturaSys[0].ide_fact_concepto_enc} anulada exitosamente`,
+        fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        data: JSON.stringify(facturaSys)
+      });
+      return resp;
+
+    } else {
+      //guardar log error
+      guardarLogFacturaSys({
+        factura_id: ref,
+        estado: 0,
+        mensaje: `Factura ${facturaSys[0].ide_fact_concepto_enc} no se pudo anular`,
+        fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        data: JSON.stringify(facturaSys)
+      });
+      throw new Error(error + " " + sql);
+
+    }
+
+
+  } else {
+    throw new Error(`La factura ${ref} no se encontró en sysapolo`);
   }
 
 

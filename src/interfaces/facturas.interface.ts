@@ -13,7 +13,8 @@ export interface  FacturaSysApolo {
     ide_banco: number,
     cod_colegio: number,
     cod_forma_pago: number,
-    cod_nivel_educativo: number
+    cod_nivel_educativo: number,
+    crea_registro: number
 
 }
 
