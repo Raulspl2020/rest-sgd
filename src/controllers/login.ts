@@ -1,5 +1,5 @@
 import { response } from "express";
-import { validarGoogleIdToken } from "../helpers/google-verify-token";
+import { validarGoogleIdToken, validateGoogleIdToken } from "../helpers/google-verify-token";
 import * as loginProvider from "../provider/login_provider";
 import { getUserRol } from '../provider/usuario_provider';
 import { enviaMail } from "../helpers/mail";
@@ -15,7 +15,15 @@ import { v4 as uuidv4 } from 'uuid';
 //   /login/googleauth 
 //=====================
 export const googleAuth = async (req: any, res: any) => {
-    let token = req.body.token;
+    let token: string = null;
+    if (!req.query.token) {
+        token = req.body.token;
+    }else{
+        token = req.query.token;
+    }
+
+
+
     if (!token) {
         return res.json({
             error: true,
@@ -23,7 +31,8 @@ export const googleAuth = async (req: any, res: any) => {
         });
     }
 
-    const googleUser = await validarGoogleIdToken(token);
+    const googleUser = await validateGoogleIdToken(token);
+    console.log(googleUser);
 
     if (!googleUser) {
         return res.status(401).json({
@@ -69,6 +78,20 @@ export const googleAuth = async (req: any, res: any) => {
             };
 
             let newJWT = await generarJWT(usuario);
+
+            let { exp } = await decodingJWT(newJWT);
+
+            const sesion = new Sesion({
+                token: newJWT,
+                user_id: usuario.id,
+                sesion_id: session_id,
+                fecha_creacion: new Date(),
+                fecha_caducidad: new Date(exp * 1000)
+            });
+
+            await sesion.save();
+
+
             res.json({
                 error: false,
                 usuario: usuario,
@@ -82,6 +105,7 @@ export const googleAuth = async (req: any, res: any) => {
             });
         }
     } catch (error) {
+        console.log(error);
         res.json({
             error: true,
             message: error.message,
@@ -137,7 +161,7 @@ export const auth = async (req: any, res: any = response) => {
             };
 
             let saludo = "Bienvenido";
-            let token: string = await generarJWT(usuario,'10000');
+            let token: string = await generarJWT(usuario);
             //guardar token en DB
 
             let { exp } = await decodingJWT(token);
@@ -200,50 +224,78 @@ export const renewToken = async (req: any, res = response) => {
     let tokenOld = req.body.token;
     let data = {};
     try {
-        const dataToken = await decodingJWT(tokenOld);
-        let refrehsToken = null;
+        let refreshToken = null;
+        const { usuario, exp }: { usuario: Usuario, exp: number } = await decodingJWT(tokenOld);
+        let [esValido, data] = comprobarJWT(tokenOld);
 
-        let row = await getUserRol(dataToken.usuario.id);
-        let roles = row[0];
-        console.log(roles);
-        let tipo_user: any = [];
-        let codeStatus;
+        if (esValido) {
+            console.log("vamos a buscar el la DB");
+            let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id, token: tokenOld });
+            console.log(sesion);
+            if (!sesion) {
+                return res.status(401).json({
+                    error: true,
+                    message: "Sesion expirada"
+                });
+            } else {
+                //renovar token
+                refreshToken = await generarJWT(usuario);
+                const { exp } = await decodingJWT(refreshToken);
 
-
-
-        if (row[0].length > 0) {
-            roles.forEach((element: any) => {
-                tipo_user.push(element['description']);
-            });
-
-            let usuario: Usuario = { id: roles[0].login, nombre: roles[0].name, email: roles[0].email, active: roles[0].active, google: false, rol: tipo_user };
-
-            refrehsToken = await generarJWT(usuario);
-            codeStatus = 202;
-            data = {
-                error: false,
-                usuario,
-                refrehsToken
-
+                sesion.token = refreshToken;
+                sesion.fecha_caducidad = new Date(exp * 1000);
+                await sesion.save();
+                return res.status(201).json({
+                    error: false,
+                    usuario,
+                    refreshToken
+                });
             }
         } else {
-            data = {
-                message: "Usuario no encontrado",
-                error: true,
-            };
-            codeStatus = 401;
+            //renovar token solo si ya expiro
+            if (data.name === 'TokenExpiredError') {
+                console.log("el token expiro");
+
+                let sesion = await Sesion.findOne({ token: tokenOld });
+                if (!sesion) {
+                    return res.status(401).json({
+                        error: true,
+                        message: "Sesion expirada"
+                    });
+                } else {
+
+                    refreshToken = await generarJWT(usuario);
+                    const { exp } = await decodingJWT(refreshToken);
+                    sesion.token = refreshToken;
+                    sesion.fecha_caducidad = new Date(exp * 1000);
+                    await sesion.save();
+
+                    return res.status(201).json({
+                        error: false,
+                        usuario,
+                        refreshToken
+
+                    });
+                }
+
+            } else {
+                return res.status(401).json({
+                    error: true,
+                    data,
+                    message: "Token invalido, no se ha podido renovar el token"
+                });
+
+            }
         }
 
-
-        return res.status(codeStatus).json(data);
-
-    } catch (dataErr) {
+    } catch (det_error) {
         return res.status(500).json({
             error: true,
             message: "No se ha podido renovar el token",
-            dataErr
+            det_error: det_error.message
         });
     }
+
 
     //  const usuario = await Usuario.findById(uid);
 };

@@ -18,7 +18,7 @@ export const verificaToken = async (req: any, res: any, next: any) => {
 
         if (esValido) {
             console.log("vamos abuscar el la DB");
-            let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id});
+            let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id, token: token});
             console.log(sesion);
             if (!sesion) {
                 return res.status(401).json({
@@ -36,22 +36,19 @@ export const verificaToken = async (req: any, res: any, next: any) => {
         if (data.name === 'TokenExpiredError') {
             console.log("el token expiro");
 
-            let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id });
+            let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id, token: token });
             if (!sesion) {
                 return res.status(401).json({
                     error: true,
                     message: "Sesion expirada"
                 });
             } else {
-                const session_id = uuidv4();
-                usuario.sesion_id = session_id;
 
                 let refreshToken = await generarJWT(usuario);
                 const { exp } = await decodingJWT(refreshToken);
                 
                 sesion.token = refreshToken;
                 sesion.fecha_caducidad = new Date(exp * 1000);
-                sesion.sesion_id = session_id;
                 await sesion.save();
                 res.set('refresh-token', refreshToken);
                 return next();
