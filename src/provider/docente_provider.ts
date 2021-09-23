@@ -95,7 +95,30 @@ export const obtenerEstudaintesCarga = async (cod_colegio_asignatura_docente: nu
         .join("tec_plandeestudios", "tec_programa_persona.cod_planestudios", "=", "tec_plandeestudios.cod_planestudios")
         .join("tec_estadomatricula", "col_matricula.cod_estadomatricula", "=", "tec_estadomatricula.cod_estadomatricula")
         .where({ 'col_boletin.cod_colegio_asignatura_docente': cod_colegio_asignatura_docente })
-        .orderBy([{ column: 'col_persona.ape1_persona' }, { column: 'col_persona.ape2_persona' },  { column: 'col_persona.nom1_persona' }, { column: 'col_persona.nom2_persona' }]);
+        .orderBy([{ column: 'col_persona.ape1_persona' }, { column: 'col_persona.ape2_persona' }, { column: 'col_persona.nom1_persona' }, { column: 'col_persona.nom2_persona' }]);
 
+    return result;
+};
+
+
+//obtiene los 5 ultimos periodos donde el docente tiene carga academica
+export const obtenerPeriodosDocente = async (ide_docente: string) => {
+    let result = await conDB
+        .select(
+            'col_colegio_periodo.cod_colegio_periodo',
+            'col_colegio.cod_colegio',
+            'col_colegio.siglas_colegio',
+            'col_periodo.cod_periodo',
+            'col_periodo.nom_periodo'
+        )
+        .from("col_colegio_asignatura_docente")
+        .join("col_curso_grupo", "col_colegio_asignatura_docente.ide_curso_grupo", "=", "col_curso_grupo.ide_curso_grupo")
+        .join("col_colegio_periodo", "col_curso_grupo.cod_colegio_periodo", "=", "col_colegio_periodo.cod_colegio_periodo")
+        .join("col_colegio", "col_colegio_periodo.cod_colegio", "=", "col_colegio.cod_colegio")
+        .join("col_periodo", "col_colegio_periodo.cod_periodo", "=", "col_periodo.cod_periodo")
+
+        .where({ 'col_colegio_asignatura_docente.ide_persona': ide_docente })
+        .groupBy('col_colegio_periodo.cod_colegio_periodo')
+        .orderBy('col_periodo.cod_periodo', 'DESC');
     return result;
 };

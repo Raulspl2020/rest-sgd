@@ -1,5 +1,5 @@
 import { format } from "date-format-parse";
-import { getCargaAcademica, getHorarioAsigantura, obtenerEstudaintesCarga } from "../provider/docente_provider";
+import { getCargaAcademica, getHorarioAsigantura, obtenerEstudaintesCarga, obtenerPeriodosDocente } from "../provider/docente_provider";
 
 //====================
 //   /docente/cargaacademica 
@@ -104,3 +104,32 @@ export const getEstudiantesCarga = async (req: any, res: any) => {
 
 
 }
+
+
+
+
+export const getPeriodosDocente = async (req: any, res: any) => {
+    try {
+
+        let id_docente: string = req.params.id_docente;
+
+        let periodosDocDB = await obtenerPeriodosDocente(id_docente);
+        res.status(200).json({
+            error: false,
+            message: "ejecucion correcta",
+            data: periodosDocDB
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Algo salio mal",
+            data: [],
+            error: true,
+            det_error: error,
+        });
+    }
+
+
+}
+
