@@ -5,6 +5,7 @@ const app = express();
 import routerMail from "../routes/mail";
 import routerLogin from "../routes/login";
 import routerEstudiante from "../routes/estudiante";
+import routerDocente from "../routes/docente";
 import routerTransaccion from "../routes/transaccion";
 import routerUsuario from "../routes/usuario";
 import routerTemplate from "../routes/template";
@@ -35,5 +36,6 @@ app.use("/page", routerTemplate);
 app.use("/matricula", routerMatricula);
 app.use("/factura", routerFactura);
 app.use("/inicio", routerInicio);
+app.use("/docente", routerDocente);
 
 export default app;
