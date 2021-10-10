@@ -244,7 +244,7 @@ export const registrarPagoService = async (req: any, res: any) => {
       if (resultUpdatePago != false) {
 
         //registra la factura en sysApolo
-        //await registroFacturaSysApolo(Referencia_pago);
+        await registroFacturaSysApolo(Referencia_pago);
         //enviar recibo de pago al correo electronico
         //complileTemplateReciboPago(Referencia_pago);
         setTimeout(() => complileTemplateReciboPago(Referencia_pago), 60000);
