@@ -84,41 +84,41 @@ export const getHorarioDocente = async (req: any, res: any) => {
     let periodo: string = req.params.periodo;
 
     interface Dia {
-        nom_dia : string,
+        nom_dia: string,
         cod_dia: number,
-        abrev_dia :  string
-        horas? : any
+        abrev_dia: string
+        horas?: any
 
     }
 
     interface Hora {
 
-        desc_hora? : string,
+        desc_hora?: string,
         hora_inicial: number,
-        hora_final :  string
-        abrev_hora? : any,
-        dias ? : Dia[]
+        hora_final: string
+        abrev_hora?: any,
+        dias?: any
     }
 
     try {
         const cargaDB = await getHorarioSemana(id_docente.trim(), periodo.trim());
 
-        let dias : Dia[] = [];
-        let horas : Hora[] = [];
+        let dias: Dia[] = [];
+        let horas: Hora[] = [];
 
         //obtenemos los dias
         for (let row of cargaDB) {
-            let encontrado =  false;
+            let encontrado = false;
 
-            for(const dia of dias){
-                if(row.dia == dia.nom_dia){
+            for (const dia of dias) {
+                if (row.dia == dia.nom_dia) {
                     encontrado = true;
                 }
             }
-            if(!encontrado){
-                const  d: Dia = {
+            if (!encontrado) {
+                const d: Dia = {
                     nom_dia: row.dia,
-                    cod_dia:  row.cod_dia,
+                    cod_dia: row.cod_dia,
                     abrev_dia: row.abre_dia,
                 }
                 dias.push(d);
@@ -128,50 +128,40 @@ export const getHorarioDocente = async (req: any, res: any) => {
 
         //obtener las horas
         for (let row of cargaDB) {
-            let encontrado =  false;
+            let encontrado = false;
 
-            for(const hora of horas){
-                if((row.hora_inicial === hora.hora_inicial) && (row.hora_final === hora.hora_final)){
+            for (const hora of horas) {
+                if ((row.hora_inicial === hora.hora_inicial) && (row.hora_final === hora.hora_final)) {
                     encontrado = true;
                 }
             }
-            if(!encontrado){
-                const  h: Hora = {
-                    abrev_hora : row.abrev_hora,
+            if (!encontrado) {
+
+                //llenamos a cada dia las horas
+
+                let arrayHoras: any[] = [];
+
+                for (let row2 of cargaDB) {
+                    if ((row2.hora_inicial == row.hora_inicial) && (row2.hora_final == row.hora_final)) {
+                        arrayHoras.push(row2);
+                    }
+                }
+
+                const h: Hora = {
+                    abrev_hora: row.abrev_hora,
                     hora_inicial: row.hora_inicial,
                     hora_final: row.hora_final,
                     desc_hora: row.desc_hora,
+                    dias: arrayHoras
                 }
                 horas.push(h);
             }
         }
 
-
-        //llenamos a cada dia las horas
-        for(let dia of dias){
-            let arrayHoras:any[] = [];
-            for (let row of cargaDB) {
-                if(dia.nom_dia == row.dia){
-                    arrayHoras.push(row);
-                }
-            }
-            dia.horas =  arrayHoras;
-
-        }   
-
-
-
-
-
-
-        
-
-
         res.status(200).json({
             error: false,
             message: "ejecucion correcta",
-            cargaDB,
-            //data: dias
+            dias,
             horas
         });
 
