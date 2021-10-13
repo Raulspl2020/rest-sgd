@@ -20,14 +20,11 @@ export const validar = async (user: any, pass: any) => {
 };
 
 export const getUser = async (user: any) => {
-    let query = conAuth
+    let query = await conAuth
         .where({ 'login': user })
         .orWhere({ 'email': user })
         .select('login', 'name', 'email', 'active', 'activation_code')
-        .from("sec_users").first().then((result) => {
-            console.log("aqui esta el result");
-            console.log(result);
-        });
+        .from("sec_users").first();
     return query;
 
 };
@@ -51,11 +48,12 @@ export const getUserGoogle = async (user: any) => {
     return await conAuth.raw(sql, [user, user, user]);
 };
 
-export const updatePass = async (user: any, pass: any) => {
+export const updatePass = async (user: string, pass: string) => {
     return await conAuth("sec_users")
-        .where("login", user.login)
+        .where("login", user)
         .update({ pswd: md5(pass) });
 };
+
 
 //verifica si un usuario con token tiene permiso para consumir el servicio
 export const authTokenService = async (cod_service: any, token: any) => {

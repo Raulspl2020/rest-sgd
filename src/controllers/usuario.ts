@@ -4,6 +4,9 @@ import { comprobarJWT, generarJWT } from '../helpers/jwt';
 
 import * as usuarioProvider from '../provider/usuario_provider';
 import { updateDatauserContact, updatePersonaCodeVerify } from '../provider/usuario_provider';
+import { Usuario } from '../models/Usuario';
+import { validar } from '../provider/login_provider';
+import { updatePass } from '../provider/login_provider';
 //====================
 //   /usuario/auditoria 
 //=====================
@@ -162,6 +165,89 @@ export const getInfoBasicUser = async (req: any, res = response) => {
 };
 
 
+
+//====================
+//   /usuario/contacto 
+//=====================
+export const updateContactUser = async (req: any, res = response) => {
+    const usuario: Usuario = req.usuario;
+    const body = req.body;
+    try {
+        const data = {
+            cel_persona: body.cel_persona,
+            email_persona: body.email_persona,
+            dir_persona: body.dir_persona,
+            email_institucion: body.email_institucion
+
+        };
+
+        let result = await updateDatauserContact(usuario.id, data);
+        console.log(result);
+
+        res.status(200).json({
+            message: "Datos actualizados correctamente",
+            error: false,
+        });
+
+
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Algo salio mal",
+            error: true,
+            det_error: error.message,
+        });
+    }
+}
+
+
+
+
+//====================
+//  POST /usuario/changepassword 
+//=====================
+export const changePassword = async (req: any, res = response) => {
+    const usuario: Usuario = req.usuario;
+    const body = req.body;
+    try {
+        const data = {
+            password_old: body.password_old,
+            password_new: body.password_new,
+
+        };
+
+        let row = await validar(usuario.id, data.password_old);
+
+        if (row[0].length > 0) {
+            let result = await updatePass(usuario.id, data.password_new);
+
+            res.status(200).json({
+                message: "Contraseña actualizada exitosamente",
+                error: false,
+                result
+            });
+
+        } else {
+            res.status(401).json({
+                message: "Contraseña anterior incorrecta",
+                error: true,
+            });
+        }
+
+
+    } catch (det_error) {
+        console.log(det_error);
+        res.status(500).json({
+            message: "Algo salio mal",
+            error: true,
+            det_error
+        });
+    }
+}
+
+
+
+
 //====================
 //   /usuario/updateinfouser 
 //=====================
@@ -272,15 +358,15 @@ export const verifyTokenMail = async (req: any, res = response) => {
                 'email_verify': '1',
                 'codigo_activacion': 0
             };
-            if(usuario.direccion==''){
+            if (usuario.direccion == '') {
                 delete dataDB.dir_persona;
             }
-            if(usuario.celular==''){
+            if (usuario.celular == '') {
                 delete dataDB.cel_persona;
             }
 
 
-            let resultDB = await updateDatauserContact(usuario.id_usuario,dataDB);
+            let resultDB = await updateDatauserContact(usuario.id_usuario, dataDB);
 
             res.render('estado_verificacion_email', usuario);
 

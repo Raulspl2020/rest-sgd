@@ -18,7 +18,7 @@ export const googleAuth = async (req: any, res: any) => {
     let token: string = null;
     if (!req.query.token) {
         token = req.body.token;
-    }else{
+    } else {
         token = req.query.token;
     }
 
@@ -308,12 +308,8 @@ export const correoRecuperacion = async (req: any, res: any) => {
     let user: any = {};
     console.log(body);
     try {
-        if (Object.entries(body).length > 2) {
-            user = body;
-        } else {
-            user = await loginProvider.getUser(body.login);
-            user = JSON.parse(JSON.stringify(user));
-        }
+
+        user = await loginProvider.getUser(body.login);
 
         let tokenMail = await generarJWT(user, "900000");
         console.log("listo para enviar: " + process.env.BASE_URL.toString());
@@ -367,6 +363,7 @@ export const correoRecuperacion = async (req: any, res: any) => {
             });
         }
     } catch (error) {
+        console.log(error);
         res.status(500).json({
             message: "Error al enviar el email",
             data: error,
@@ -393,7 +390,7 @@ export const saveNewPass = async (req: any, res: any) => {
         }
 
         console.log(dataToken);
-        let result = await loginProvider.updatePass(dataToken.usuario, body.pass);
+        let result = await loginProvider.updatePass(dataToken.usuario.login, body.pass);
         res.status(200).json({
             error: false,
             message: "Guardado exitosamente",

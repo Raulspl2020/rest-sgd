@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { verifiDataContacMid } from '../middlewares/validar-campos';
-import { getAuditoriaUsuario,getInfoBasicUser,getInfoUser,getUserContacto, updateInfoUser, verifyTokenMail } from '../controllers/usuario';
+import { changePassword, getAuditoriaUsuario,getInfoBasicUser,getInfoUser,getUserContacto, updateContactUser, updateInfoUser, verifyTokenMail } from '../controllers/usuario';
 const router = Router();
 
 import { verificaToken } from '../middlewares/autenticacion';
+import { validaChangePassword, validaupdateContactUser } from '../middlewares/usuario_middleware';
 
 
 router.get('/auditoria/:ideUsuario', verificaToken, getAuditoriaUsuario);
@@ -13,5 +14,11 @@ router.get('/contacto/:ideUsuario', getUserContacto);
 router.get('/infobasica/:ideUsuario', getInfoBasicUser);
 router.post('/updateinfouser',[verifiDataContacMid], updateInfoUser);
 router.get('/verifytokenmail/:token', verifyTokenMail);
+
+router.post('/contacto', [verificaToken,validaupdateContactUser],updateContactUser);
+
+router.post('/changepassword',[verificaToken, validaChangePassword], changePassword);
+
+
 
 export default router;

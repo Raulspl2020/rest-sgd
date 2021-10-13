@@ -168,3 +168,23 @@ export const obtenerPeriodosDocente = async (ide_docente: string) => {
         .orderBy('col_periodo.cod_periodo', 'DESC');
     return result;
 };
+
+
+
+//crea una nueva sesion de asistencia
+export const crearSesionAsistencia = async (dataInsert: any) => {
+    let result = conDB("tec_syllabussesion").insert(dataInsert);
+    return result;
+};
+
+//elimina la sesion creada por el docente
+export const delSesionAsistencia = async (dataInsert: any) => {
+
+    return await conDB("tec_syllabussesion")
+        .where({
+            'id_syllabussesion': dataInsert.id_syllabussesion,
+            'persona_id': dataInsert.persona_id,
+        })
+        .del();
+
+};

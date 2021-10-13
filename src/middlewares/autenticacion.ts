@@ -12,14 +12,11 @@ export const verificaToken = async (req: any, res: any, next: any) => {
         console.log(token);
         const { usuario, exp }: { usuario: Usuario, exp: number } = await decodingJWT(token);
         req.usuario = usuario;
-        console.log("vamos a comprobar el token");
         let [esValido, data] = comprobarJWT(token);
-        console.log("vamos terminamos de com", esValido);
 
         if (esValido) {
-            console.log("vamos abuscar el la DB");
+
             let sesion = await Sesion.findOne({ sesion_id: usuario.sesion_id, token: token});
-            console.log(sesion);
             if (!sesion) {
                 return res.status(401).json({
                     error: true,
@@ -30,7 +27,6 @@ export const verificaToken = async (req: any, res: any, next: any) => {
             }
         }
 
-        console.log(data.name);
 
         //renovar token solo si ya expiro
         if (data.name === 'TokenExpiredError') {
