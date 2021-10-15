@@ -571,6 +571,7 @@ export const getFactura = async (id_factura: any) => {
       'fin_pago.estudiante_id',
       'fin_pago.valor',
       'fin_pago.sysapolo_verify',
+      'fin_pago.email_send',
       'fin_pago.json_response',
       'fin_detalle_factura.concepto_id',
       'fin_concepto.codigo AS codigo_concepto',
@@ -729,5 +730,17 @@ export const consultaPagosSINNPAGO = async () => {
   }
 
 };
+
+
+//actualiza en pago con el email_send cuado se notifica al cliente
+export const updateEmailSend = async (id_pago:number) => {
+  let result = await conDB("fin_pago").where({ '_id': id_pago }).update({
+    'email_send' : '1'
+  });
+  return result;
+
+};
+
+
 
 

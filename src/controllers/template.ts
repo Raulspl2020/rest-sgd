@@ -2,7 +2,7 @@ import { response } from 'express';
 import { createQR, generarHTMLPDF, generarHTMLPDFNew } from '../helpers/global';
 import stream from 'stream';
 import path from 'path';
-import { getDescuentoFactura, getFactura, getPagoFactura } from '../provider/pago_provider';
+import { getDescuentoFactura, getFactura, getPagoFactura, updateEmailSend } from '../provider/pago_provider';
 import * as moneda from 'currency-formatter';
 
 import { format } from 'date-format-parse';
@@ -295,7 +295,7 @@ export const complileTemplateReciboPago = async (id_factura: any) => {
 
 
         let factura = await getDataDetalleFacturaById(id_factura);
-        if (factura.verify == 1) {
+        if (factura.email_send == '1') {
             throw new Error(`la factura ${factura.id} ya fue notificada`);
         }
         //creamos la data que lleva la plantilla, o contendio dinamico
@@ -319,11 +319,18 @@ export const complileTemplateReciboPago = async (id_factura: any) => {
         //comvertimos la plantilla html a pdf
         let pdf = await generarHTMLPDFNew(resultHTML);
         //enviamos el PDF al correo del cliente
-        let resMail = sendReciboPagoByID(factura.cliente, pdf, factura.categoria, factura.id);
+        let resMail = await sendReciboPagoByID(factura.cliente, pdf, factura.categoria, factura.id);
 
+        //si el correo se envia correctamente, actualizamos en base de datos
+        if(resMail){
+            updateEmailSend(parseInt(id_factura));
+        }
+
+        return resMail;
 
     } catch (error) {
         console.log(error);
+        return false;
     }
 
 }
