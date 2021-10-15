@@ -226,7 +226,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 // resultPaquete = await getPaquete( 1);
 
 
-                if (resultPaquete != false) {
+                if (resultPaquete != false && resultPaquete !=undefined) {
 
                     descripcionFactura = " " + resultPaquete[0].paquete + " + " + auxDescripcion
 
@@ -358,7 +358,12 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     resultPaquete = await getPaquete(5);
                 }
 
-                if (resultPaquete != false) {
+                console.log("se obtuvo el paquete");
+                console.log(resultPaquete);
+
+                console.log(resultDB.cod_nivel_edu );
+
+                if (resultPaquete != false && resultPaquete !=undefined) {
 
 
                     descripcionFactura = "" + resultPaquete[0].paquete + auxDescripcion
@@ -568,7 +573,7 @@ export const generarpagoMatricula = async (req: any, res: any) => {
 
     try {
         let result: any = await consultarpagoMatricula(req.params.id_matricula.trim());
-
+        console.log("Hasta aqui todo bien");
 
         // let resFactura =  await getFactura();
 

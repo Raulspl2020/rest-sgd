@@ -637,6 +637,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       "cod_periodo": null,
       "nom_nivel_educativo": null,
       "cod_nivel_edu": null,
+      "cod_nivel_educativo": null,
       "nro_creditos": null
     }
 
@@ -646,7 +647,8 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       info_cliente.nom_periodo = programa[0].nom_periodo;
       info_cliente.cod_periodo = programa[0].cod_periodo;
       info_cliente.nom_nivel_educativo = programa[0].nom_nivel_educativo;
-      info_cliente.cod_nivel_edu = programa[0].cod_nivel_educativo;
+      info_cliente.cod_nivel_edu = programa[0].cod_nivel_edu;
+      info_cliente.cod_nivel_educativo = programa[0].cod_nivel_educativo;
     }
 
     if (estudianteDb.length > 0) {

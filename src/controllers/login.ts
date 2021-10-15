@@ -22,8 +22,6 @@ export const googleAuth = async (req: any, res: any) => {
         token = req.query.token;
     }
 
-
-
     if (!token) {
         return res.json({
             error: true,
@@ -88,8 +86,8 @@ export const googleAuth = async (req: any, res: any) => {
                 fecha_creacion: new Date(),
                 fecha_caducidad: new Date(exp * 1000)
             });
-
-            await sesion.save();
+            //no es necesario esperar que se guarde
+            sesion.save();
 
 
             res.json({
@@ -174,7 +172,8 @@ export const auth = async (req: any, res: any = response) => {
                 fecha_caducidad: new Date(exp * 1000)
             });
 
-            await sesion.save();
+            //no es necesario esperar que se guarde
+            sesion.save();
 
             data = {
                 usuario,

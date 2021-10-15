@@ -43,7 +43,8 @@ export interface ClienteSigedin {
     cod_colegio: string,
     nom_periodo?: string,
     cod_periodo?: number,
-    cod_nivel_edu?: number,
+    cod_nivel_edu?: number, // nivel de educacion
+    cod_nivel_educativo?: number, //programa academico
     nom_nivel_educativo?: string,
     nro_creditos?: any,
     ide_genero?: string,

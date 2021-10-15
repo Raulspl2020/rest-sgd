@@ -41,7 +41,6 @@ export const validateGoogleIdToken = async (token: string): Promise<any> => {
 
     try {
         let response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
-        console.log("El codifo de estado es", response.status);
         if (response.status == 200) {
             let payload = await response.json();
             return {

@@ -374,7 +374,7 @@ export const registroFacturaSysApolo = async (ref: number) => {
           ide_banco: 1, // refiere al codigo de convenio, por ahora es estatico, hasta que se adquiera un nuevo codigo de recaudo
           cod_colegio: parseInt(cliente.cod_colegio),
           cod_forma_pago: resultDB[0].forma_pago_id,
-          cod_nivel_educativo: cliente.cod_nivel_edu,
+          cod_nivel_educativo: cliente.cod_nivel_educativo,
           cod_punto_pago: cod_punto_pago,
           crea_registro: 2 // 1: sigedin, 1: sysapolo //siempre va 1
         }

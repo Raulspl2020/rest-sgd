@@ -244,6 +244,7 @@ export const getConceptosByConfigActive = async () => {
     .join("fin_config", "fin_paquete.config_id ", "=", "fin_config._id")
 
     .where({ 'fin_config.estado': '1' })
+    .whereNotIn('fin_paquete.codigo', [1, 2, 3,4])
     .groupBy('fin_detalle_paquete._id');
   return result;
 
