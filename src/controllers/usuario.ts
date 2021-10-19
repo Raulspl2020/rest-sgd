@@ -114,7 +114,7 @@ export const getInfoUser = async (req: any, res = response) => {
 
 
 //====================
-//   /usuario/infobasica 
+//   /usuario/infobasica/:id_user
 //=====================
 export const getInfoBasicUser = async (req: any, res = response) => {
     let body = req.body;
@@ -163,6 +163,64 @@ export const getInfoBasicUser = async (req: any, res = response) => {
     }
 
 };
+
+
+
+
+//====================
+//   /usuario/infobasica
+//=====================
+export const getInfoBasicUsuario = async (req: any, res = response) => {
+    let ideUsuario : string = req.params.ideUsuario;
+    const usuario: Usuario = req.usuario;
+
+    interface UserBasicInfo {
+        ide_persona: string;
+        tipo_doc: string;
+        des_tipo_doc: string;
+        apellido1: string;
+        apellido2?: string;
+        nombre1: string;
+        nombre2?: string;
+        fech_nac_persona?: string;
+        fec_expedicion_doc?: string;
+        cel_persona?: string;
+        email_persona?: string;
+        email_institucion?: string;
+    }
+
+    try {
+        let result: UserBasicInfo[] = await usuarioProvider.getInfoUsuario(usuario.id);
+        console.log(result);
+
+        if (result.length > 0) {
+
+            result[0].apellido2 = (result[0].apellido2 == null) ? "" : result[0].apellido2;
+            result[0].nombre2 = result[0].nombre2 || "";
+
+            res.status(200).json({
+                message: "Ejecución correcta",
+                data: result[0],
+                error: false,
+            });
+        } else {
+            res.status(404).json({
+                message: "No se encontraron resultados",
+                error: true,
+            });
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Algo salio mal",
+            error: true,
+            det_error: error.message,
+        });
+    }
+
+};
+
+
 
 
 
@@ -228,7 +286,7 @@ export const changePassword = async (req: any, res = response) => {
             });
 
         } else {
-            res.status(401).json({
+            res.status(406).json({
                 message: "Contraseña anterior incorrecta",
                 error: true,
             });

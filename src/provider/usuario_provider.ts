@@ -52,6 +52,7 @@ export const getInfoUsuario = async (id: any) => {
             "col_persona.tipo_doc",
             "fech_nac_persona",
             "col_persona.email_persona",
+            "col_persona.email_institucion",
             "col_persona.cel_persona",
             "col_persona.ide_genero",
             "col_persona.dir_persona",
