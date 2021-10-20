@@ -484,7 +484,7 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
     );
 
     if (resultExistePago != false) {
-      id_pago =  resultExistePago._id;
+      id_pago = resultExistePago._id;
     }
 
 
@@ -596,8 +596,22 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
 export const inicioPagosVarios = async (req: any, res: any) => {
 
   let fechaActual = new Date();
-  fechaActual.setMonth(fechaActual.getMonth() + 12);
+  //fechaActual.setMonth(fechaActual.getMonth() + 12);
+  
+
+
+
+  let dt = new Date();
+
+
+  let month = dt.getMonth() + 1;
+  let year = dt.getFullYear();
+  let day = dt.getDay();
+  let daysInMonth = new Date(year, month, 0).getDate();
+  fechaActual.setDate(daysInMonth);
   let fechaLimitepago = format(fechaActual, 'YYYY-MM-DD');
+  let fechaLimitepago2 = format(fechaActual, 'DD-MM-YYYY');
+
 
   let body = req.body;
   let responseDataZonaPagos: any = {};
