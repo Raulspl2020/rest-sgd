@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validaGuardarSesionAsistencia } from '../middlewares/docente_middleware';
 const router = Router();
-import { eliminarSesionAsistencia, getAsignaturasDocente, getEstudiantesCarga, getHorarioDocente, getPeriodosDocente, guardarSesionAsistencia } from '../controllers/docente';
+import { eliminarSesionAsistencia, getAsignaturasDocente, getEstudiantesCarga, getHorarioDocente, getPeriodosDocente, guardarSesionAsistencia, listarSesionesPorCarga } from '../controllers/docente';
 import { verificaToken } from '../middlewares/autenticacion';
 
 //====================
@@ -16,6 +16,7 @@ router.get('/periodos/:id_docente', [verificaToken], getPeriodosDocente);
 
 router.post('/sesion', [verificaToken,validaGuardarSesionAsistencia], guardarSesionAsistencia);
 router.delete('/sesion/:id_sesion', [verificaToken], eliminarSesionAsistencia);
+router.get('/sesiones/:id_carga', [verificaToken], listarSesionesPorCarga);
 
 
 

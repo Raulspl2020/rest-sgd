@@ -188,3 +188,14 @@ export const delSesionAsistencia = async (dataInsert: any) => {
         .del();
 
 };
+
+//obtine las sesiones creadas en una carga academica
+export const listarSesionesByCarga = async (id_carga: number, docente_id : string) => {
+
+    return await conDB("tec_syllabussesion")
+        .where({
+            'cod_colegio_asignatura_docente': id_carga,
+            'persona_id': docente_id,
+        });
+
+};

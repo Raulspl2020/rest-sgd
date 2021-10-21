@@ -1,6 +1,6 @@
 import { format } from "date-format-parse";
 import { Usuario } from "../models/Usuario";
-import { crearSesionAsistencia, delSesionAsistencia, getCargaAcademica, getHorarioAsigantura, getHorarioSemana, obtenerEstudaintesCarga, obtenerPeriodosDocente } from "../provider/docente_provider";
+import { crearSesionAsistencia, delSesionAsistencia, getCargaAcademica, getHorarioAsigantura, getHorarioSemana, listarSesionesByCarga, obtenerEstudaintesCarga, obtenerPeriodosDocente } from "../provider/docente_provider";
 
 //====================
 //   /docente/cargaacademica 
@@ -240,6 +240,35 @@ export const eliminarSesionAsistencia = async (req: any, res: any) => {
         }
 
         let resCargaDB = await delSesionAsistencia(data);
+
+        res.status(200).json({
+            error: false,
+            message: "ejecucion correcta",
+            data: resCargaDB,
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Algo salio mal",
+            error: true,
+            det_error: error,
+        });
+    }
+
+
+}
+//====================
+//  GET /docente/sesiones 
+//=====================
+export const listarSesionesPorCarga = async (req: any, res: any) => {
+
+    let id_carga: number = parseInt(req.params.id_carga);
+    const usuario: Usuario = req.usuario;
+
+    try {
+
+        let resCargaDB = await listarSesionesByCarga(id_carga,usuario.id);
 
         res.status(200).json({
             error: false,
