@@ -181,10 +181,10 @@
                 <td colspan="2">
                     <ul>
 
-                        {{!-- {{#each det_factura }}
-                        <span style="font-size: 8px;">{{ concepto }} : </span>
-                        {{/each}} --}}
-                        <span style="font-size: 8px;">{{des_pago}}</span>
+                        {{#each det_factura }}
+                        <span style="font-size: 8px;">* {{ concepto }} -- CANTIDAD: {{cantidad}} </span>  <span style="font-size: 8px;">VALOR UNIDAD: ${{ valor_unidad}}</span> <br>
+                        {{/each}}
+                        {{!-- <span style="font-size: 8px;">{{des_pago}}</span> --}}
 
 
                     </ul>
@@ -279,10 +279,9 @@
                 <td colspan="2">
                     <ul>
 
-                        {{!-- {{#each det_factura }}
-                        <span style="font-size: 8px;">{{ concepto }} : </span>
-                        {{/each}} --}}
-                        <span style="font-size: 8px;">{{des_pago}}</span>
+                        {{#each det_factura }}
+                        <span style="font-size: 8px;">* {{ concepto }} -- CANTIDAD: {{cantidad}} </span>  <span style="font-size: 8px;">VALOR UNIDAD: ${{ valor_unidad}}</span> <br>
+                        {{/each}}
 
 
                     </ul>
@@ -377,10 +376,9 @@
                 <td colspan="2">
                     <ul>
 
-                        {{!-- {{#each det_factura }}
-                        <span style="font-size: 8px;">{{ concepto }} : </span>
-                        {{/each}} --}}
-                        <span style="font-size: 8px;">{{des_pago}}</span>
+                        {{#each det_factura }}
+                        <span style="font-size: 8px;">* {{ concepto }} -- CANTIDAD: {{cantidad}} </span>  <span style="font-size: 8px;">VALOR UNIDAD: ${{ valor_unidad}}</span> <br>
+                        {{/each}}
 
 
                     </ul>

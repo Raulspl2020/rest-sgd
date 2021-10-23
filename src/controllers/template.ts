@@ -228,6 +228,16 @@ export const pdfReciboPago = async (req: any, res = response) => {
 
         let factura = await getDataDetalleFacturaById(idFactura);
 
+            //crear un nuevo pago
+        if(factura.pagos.length>0){
+            factura.pagos.forEach((item: any) => {
+                item.total_pago = "$ "+ moneda.format(item.total_pago, { locale: 'es-CO' }).replace('$', '').trim();
+                item.valor_pago = "$ "+ moneda.format(item.valor_pago, { locale: 'es-CO' }).replace('$', '').trim();
+    
+            });
+        }
+
+
         data.factura = factura;
         data.fecha_actual = format(new Date(), 'DD-MM-YYYY hh:mm:ss A');
         //data.fecha_actual = nDate;

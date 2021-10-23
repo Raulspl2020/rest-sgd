@@ -621,6 +621,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
   let id_pago: number = null;
   let str_url = "";
   let info_cliente: any = {};
+  const totalRequest: number =  body.total;
 
 
   try {
@@ -696,9 +697,12 @@ export const inicioPagosVarios = async (req: any, res: any) => {
         concepto_id: concepto.concepto_id,
         descuento: concepto.descuento,
         aumento: concepto.aumento,
-        valor_unidad: concepto.valor_unidad,
+        valor_unidad: (concepto.concepto_id==0) ? parseInt(Math.round(body.total).toString()): concepto.valor_unidad,
         cantidad: concepto.cantidad,
       });
+      if(concepto.concepto_id==0){
+        concepto.valor_unidad= parseInt(Math.round(body.total).toString());
+      }
     });
 
     //preparamos la data para guardar

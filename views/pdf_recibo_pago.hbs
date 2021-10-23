@@ -48,20 +48,22 @@
         }
 
         .table-border td {
-            border: 1px solid #000000;
             padding: 2px;
             margin: 0px;
+            border: 1px dotted #01579b ;
             border-collapse: collapse;
+            border-spacing: 0px;
+
         }
 
         .table-border th {
             border: 1px solid #000000;
-            background: #80d8ff;
+            background: #00b0ff;
             padding: 2px;
+            border: 1px dotted #01579b ;
             border-collapse: collapse;
-
+            border-spacing: 0px;
         }
-
 
 
 
@@ -184,7 +186,8 @@
                 <td colspan="2" style="margin: 0px; padding: 0px;">
 
 
-                    <table style="border: 0px solid black; border-collapse: collapse; width: 100%;">
+                    <table style="border: 0px solid black; border-collapse: collapse; width: 100%;" cellpadding="0"
+            cellspacing="0">
                         <tr style="border-top: 0px solid;">
                             <th style="border-top: 0px solid;">Descripción</th>
                             <th style="border-top: 0px solid;">Valor Und</th>
@@ -226,7 +229,7 @@
                 <td rowspan="2" colspan="2" style="width: 70%;">
                     <small style="font-size: 10px; ">Recibo de pago generado a travez de <strong>Sigedin</strong>, valíde la autenticidad de este recibo escaneando el código QR, o a travéz del siguiente enlace: <span style="color: midnightblue;">{{urlService}}</span></small>
                 </td>
-                <td rowspan="2" style="background: #8bc34a; font-size: 12px;"> TOTAL: <Strong
+                <td rowspan="2" style="background: #64dd17; font-size: 12px;"> TOTAL: <Strong
                         style="float: right;">$ {{
                         factura.total_a_pagar_s }}</Strong> </td>
 
