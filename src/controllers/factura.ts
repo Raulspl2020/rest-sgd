@@ -12,6 +12,11 @@ import * as moneda from 'currency-formatter';
 import { complileTemplateReciboPago } from "./template";
 import { sysregistrarFacturasPagadas } from "../provider/sys_apolo/factura_provider";
 import { eliminarFacturaSysApolo, registroFacturaSysApolo } from "./sysapolo/factura";
+import { response } from "express";
+import * as fs from 'fs';
+import readline from "readline";
+import { subirArchivo } from "../helpers/subir-archivo";
+import { DetallePago } from "../interfaces/facturas.interface";
 
 //====================
 //   /transaccion/consultaFactura
@@ -610,7 +615,7 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
           "fecha": pago.fecha,
           "verify": pago.sysapolo_verify,
           "email_send": pago.email_send,
-          
+
         };
         let json_response = JSON.parse(pago.json_response);
         cliente = json_response.info_cliente;
@@ -670,4 +675,123 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
 }
 
 
+//==========================================================
+//  SERVICIOS PARA CARGAR ARCHIVOS PLANOS .MR5
+//==========================================================
 
+
+//====================
+//   /transaccion/soporteDescuento
+//=====================
+export const uploadMR5 = async (req: any, res = response) => {
+  let metadatos: any = null;
+  let id_config: any = null;
+  let pagos: DetallePago[] = [];
+
+
+  try {
+
+    let body = req.body;
+
+    //subir el archivo si existe
+    if (req.files && req.files.archivo) {
+      const carpeta = `archivosplanos/`;
+      const { archivo } = req.files;
+      console.log(archivo);
+
+      const file2 = readline.createInterface({
+        input: fs.createReadStream(archivo.tempFilePath),
+        output: process.stdout,
+        terminal: false
+      });
+
+      pagos =  await leerLienas(file2);
+      //enviar a base de datos
+      //verificar si existe factura con_ mismafecha, mismo codigo de transaccion, misma referencia, misma forma de pago, mismo valor
+      //contar facturas registradas en ese dia
+      //
+
+
+
+
+
+
+      console.log(pagos);
+
+
+
+    }
+
+
+
+
+
+
+    res.status(200).json({
+      message: "Enviado exitosamente",
+      error: false,
+      pagos
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Servicio no disponible temporalmente",
+      error: true,
+      det_error: error.message
+    });
+  }
+
+}
+
+
+const leerLienas =  async(file2: readline.Interface) : Promise<DetallePago[]> =>{
+  let pagos: DetallePago[] = [];
+  let fecha = "";
+      return new Promise((resolve, reject) => {
+
+        try {
+          //leemos el archivo linea por linea
+          file2.on('line', function (line: string) {
+            line = line.trim();
+
+            if (line.substr(0, 2) === '01') {
+              fecha = line.substr(12, 8);
+            }
+
+            if (line.substr(0, 2) === '06') {
+              console.log(line);
+              let _id = uuidv4();
+              let pago_id = parseInt(line.substr(2, 48));
+              let cadena_pago = line.substr(50, 14);
+              let entero_pago = cadena_pago.substr(0, 14 - 2);
+              let decimal_pago = cadena_pago.substr(14 - 2, 14);
+              let valor_pago = parseFloat(entero_pago + "." + decimal_pago);
+              let fecha_pago = format(parse(fecha, "YYYYMMDD"), 'YYYY-MM-DD HH:mm:ss');
+              let codigo_transaccion = parseInt(line.substr(68, 6));
+
+              pagos.push({
+                _id: _id,
+                pago_id: pago_id,
+                valor_pago: valor_pago,
+                fecha: fecha_pago,
+                codigo_transaccion: codigo_transaccion,
+                estado_pago_id: 1,
+                forma_pago_id: 99,
+                banco_recaudo_id: 1, //si los pagos llegan a otras cuentas se debe cambiar
+                tipo_registro: '0'
+
+              });
+            }
+
+          });
+
+          file2.on('close', ()=> resolve (pagos));
+
+        } catch (error) {
+          reject([]);
+          console.log(error);
+        }
+
+      });
+}

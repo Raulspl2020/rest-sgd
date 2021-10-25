@@ -38,3 +38,18 @@ export interface FacturaDetalleSysApolo {
     cod_centro_costo_deb_recaudo?: number, //-1
     cod_centro_costo_cre_recaudo?: number //-1
 }
+
+//sigedin
+export interface DetallePago {
+    _id?: string,
+    pago_id?: number,
+    valor_pago?: number,
+    total_pago?: number,
+    fecha?: string,
+    estado_pago_id?: number,
+    forma_pago_id?: number,
+    codigo_transaccion?: number,
+    banco_recaudo_id?: number,
+    tipo_registro?: string
+
+  }

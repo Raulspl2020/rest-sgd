@@ -60,7 +60,7 @@ class Server {
         //File-upploads
         this.app.use(fileUpload(
             {
-                useTempFiles: false,
+                useTempFiles: true,
                 tempFileDir: '/tmp/',
                 createParentPath: true
             }
