@@ -17,6 +17,7 @@ import * as fs from 'fs';
 import readline from "readline";
 import { subirArchivo } from "../helpers/subir-archivo";
 import { DetallePago } from "../interfaces/facturas.interface";
+import Cargue from "../models/Mongo/Cargue";
 
 //====================
 //   /transaccion/consultaFactura
@@ -696,9 +697,7 @@ export const uploadMR5 = async (req: any, res = response) => {
 
     //subir el archivo si existe
     if (req.files && req.files.archivo) {
-      const carpeta = `archivosplanos/`;
       const { archivo } = req.files;
-      console.log(archivo);
 
       const file2 = readline.createInterface({
         input: fs.createReadStream(archivo.tempFilePath),
@@ -727,36 +726,45 @@ export const uploadMR5 = async (req: any, res = response) => {
             registroFacturaSysApolo(item.pago_id);
             setTimeout(() => complileTemplateReciboPago(item.pago_id), 60000);
           };
+
+          //si se inserta correctamente se guarda el contenido del archivo en mongo
+          const contenidoArchivo = fs.readFileSync(archivo.tempFilePath, { encoding: 'utf8', });
+          let cargue  =  new Cargue({
+            contenido : contenidoArchivo,
+            estado :  1,
+            fecha_cargue :  new Date(),
+            host : req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+            metadatos :  JSON.stringify(archivo),
+            pagos : JSON.stringify(pagoSinRegistrar),
+          });
+
+          cargue.save();
+
+        }else{
+          throw new Error("Error al registrar los pagos en la DB");
         }
 
 
+        res.status(200).json({
+          message: `Se han registrado ${pagoSinRegistrar.length} pagos`,
+          error: false,
+          pagos: pagoSinRegistrar
+        });
+    
 
       } else {
         console.log("no se encontraron pagos para registrar");
+
+        res.status(200).json({
+          message: "No se encontraron pagos para registrar",
+          error: false,
+          pagos: pagoSinRegistrar
+        });
       }
-
-
-
-
-
-
-      console.log(pagoSinRegistrar);
-
 
 
     }
 
-
-
-
-
-
-    res.status(200).json({
-      message: "Enviado exitosamente",
-      error: false,
-      pagos,
-      pagoSinRegistrar
-    });
 
   } catch (error) {
     console.log(error);
