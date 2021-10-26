@@ -1,4 +1,6 @@
+import { DetallePago } from "../interfaces/facturas.interface";
 import { conDB } from "../config/database";
+import format from "date-format-parse/lib/format";
 
 //consulta la factura si esta disponible
 export const consultaFacturaBanco = async (id: any) => {
@@ -249,3 +251,51 @@ export const getConceptosByConfigActive = async () => {
   return result;
 
 }
+
+
+//buscar pago
+export const existeDetPagoWhere = async (pago : DetallePago) : Promise<boolean> => {
+
+  let result = await conDB
+    .select()
+    .from("fin_detalle_pago")
+    .where({ 'pago_id': pago.pago_id, 'estado_pago_id': 1, 'codigo_transaccion' : pago.codigo_transaccion, 'forma_pago_id': pago.forma_pago_id, 'valor_pago': pago.valor_pago})
+    .whereRaw(' DATE(fecha)  =DATE(?)', [pago.fecha])
+  if (result.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+export const insertPagoMR5 = async (pagos: DetallePago[]):Promise<boolean> => {
+  const trx = await conDB.transaction();
+  let fechaUpdate = new Date();
+
+  try {
+
+    const resultDB1 =  await trx("fin_detalle_pago").insert(pagos);
+    let tPago: any = {
+      estado_id: 1,
+      fecha_update: format( fechaUpdate,'YYYY-MM-DD HH:mm:ss'),
+    };
+
+    for(const item of pagos){
+  
+    const resultDB2  =  await  trx("fin_pago")
+      .where("fin_pago._id", item.pago_id)
+      .update(tPago)
+    };
+
+    trx.commit();
+    return true;
+  
+    
+  } catch (error) {
+    console.log(error);
+    trx.rollback();
+    return false;
+  }
+
+};

@@ -1,5 +1,5 @@
 import { parse, format } from "date-format-parse";
-import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, existeDetPago, reversarPagoyDetalle } from "../provider/factura_provider";
+import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, existeDetPago, existeDetPagoWhere, insertPagoMR5, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { guardarLog } from "../provider/log_provider";
 import { getConfigPeriodo, getDescuento, getDescuentoFactura, getFactura, getPagoFactura, updateEstadoDescuentoFac } from "../provider/pago_provider";
@@ -249,7 +249,7 @@ export const registrarPagoService = async (req: any, res: any) => {
       if (resultUpdatePago != false) {
 
         //registra la factura en sysApolo
-        await registroFacturaSysApolo(Referencia_pago);
+        registroFacturaSysApolo(Referencia_pago);
         //enviar recibo de pago al correo electronico
         //complileTemplateReciboPago(Referencia_pago);
         setTimeout(() => complileTemplateReciboPago(Referencia_pago), 60000);
@@ -687,6 +687,7 @@ export const uploadMR5 = async (req: any, res = response) => {
   let metadatos: any = null;
   let id_config: any = null;
   let pagos: DetallePago[] = [];
+  let pagoSinRegistrar: DetallePago[] = [];
 
 
   try {
@@ -705,18 +706,41 @@ export const uploadMR5 = async (req: any, res = response) => {
         terminal: false
       });
 
-      pagos =  await leerLienas(file2);
-      //enviar a base de datos
+      pagos = await leerLienas(file2);
       //verificar si existe factura con_ mismafecha, mismo codigo de transaccion, misma referencia, misma forma de pago, mismo valor
-      //contar facturas registradas en ese dia
-      //
+
+      //despues de tener la lista de pagos excluimos los que ya se encuentran registrados en sigedin
+      for (const item of pagos) {
+        const existePago = await existeDetPagoWhere(item);
+        if (!existePago) {
+          pagoSinRegistrar.push(item);
+        }
+      };
+
+
+      if (pagoSinRegistrar.length > 0) {
+        //el siguiente paso es registrar los pagos en la base de datos y notificar al correo
+        let insertDB = await insertPagoMR5(pagoSinRegistrar);
+
+        if (insertDB) {
+          for (const item of pagoSinRegistrar) {
+            registroFacturaSysApolo(item.pago_id);
+            setTimeout(() => complileTemplateReciboPago(item.pago_id), 60000);
+          };
+        }
+
+
+
+      } else {
+        console.log("no se encontraron pagos para registrar");
+      }
 
 
 
 
 
 
-      console.log(pagos);
+      console.log(pagoSinRegistrar);
 
 
 
@@ -730,7 +754,8 @@ export const uploadMR5 = async (req: any, res = response) => {
     res.status(200).json({
       message: "Enviado exitosamente",
       error: false,
-      pagos
+      pagos,
+      pagoSinRegistrar
     });
 
   } catch (error) {
@@ -745,53 +770,53 @@ export const uploadMR5 = async (req: any, res = response) => {
 }
 
 
-const leerLienas =  async(file2: readline.Interface) : Promise<DetallePago[]> =>{
+const leerLienas = async (file2: readline.Interface): Promise<DetallePago[]> => {
   let pagos: DetallePago[] = [];
   let fecha = "";
-      return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
 
-        try {
-          //leemos el archivo linea por linea
-          file2.on('line', function (line: string) {
-            line = line.trim();
+    try {
+      //leemos el archivo linea por linea
+      file2.on('line', function (line: string) {
+        line = line.trim();
 
-            if (line.substr(0, 2) === '01') {
-              fecha = line.substr(12, 8);
-            }
+        if (line.substr(0, 2) === '01') {
+          fecha = line.substr(12, 8);
+        }
 
-            if (line.substr(0, 2) === '06') {
-              console.log(line);
-              let _id = uuidv4();
-              let pago_id = parseInt(line.substr(2, 48));
-              let cadena_pago = line.substr(50, 14);
-              let entero_pago = cadena_pago.substr(0, 14 - 2);
-              let decimal_pago = cadena_pago.substr(14 - 2, 14);
-              let valor_pago = parseFloat(entero_pago + "." + decimal_pago);
-              let fecha_pago = format(parse(fecha, "YYYYMMDD"), 'YYYY-MM-DD HH:mm:ss');
-              let codigo_transaccion = parseInt(line.substr(68, 6));
+        if (line.substr(0, 2) === '06') {
+          console.log(line);
+          let _id = uuidv4();
+          let pago_id = parseInt(line.substr(2, 48));
+          let cadena_pago = line.substr(50, 14);
+          let entero_pago = cadena_pago.substr(0, 14 - 2);
+          let decimal_pago = cadena_pago.substr(14 - 2, 14);
+          let valor_pago = parseFloat(entero_pago + "." + decimal_pago);
+          let fecha_pago = format(parse(fecha, "YYYYMMDD"), 'YYYY-MM-DD HH:mm:ss');
+          let codigo_transaccion = parseInt(line.substr(68, 6));
 
-              pagos.push({
-                _id: _id,
-                pago_id: pago_id,
-                valor_pago: valor_pago,
-                fecha: fecha_pago,
-                codigo_transaccion: codigo_transaccion,
-                estado_pago_id: 1,
-                forma_pago_id: 99,
-                banco_recaudo_id: 1, //si los pagos llegan a otras cuentas se debe cambiar
-                tipo_registro: '0'
-
-              });
-            }
+          pagos.push({
+            _id: _id,
+            pago_id: pago_id,
+            valor_pago: valor_pago,
+            fecha: fecha_pago,
+            codigo_transaccion: codigo_transaccion,
+            estado_pago_id: 1,
+            forma_pago_id: 99,
+            banco_recaudo_id: 1, //si los pagos llegan a otras cuentas se debe cambiar
+            tipo_registro: '0'
 
           });
-
-          file2.on('close', ()=> resolve (pagos));
-
-        } catch (error) {
-          reject([]);
-          console.log(error);
         }
 
       });
+
+      file2.on('close', () => resolve(pagos));
+
+    } catch (error) {
+      reject([]);
+      console.log(error);
+    }
+
+  });
 }
