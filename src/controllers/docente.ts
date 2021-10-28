@@ -194,6 +194,7 @@ export const guardarSesionAsistencia = async (req: any, res: any) => {
         const data = {
             cod_colegio_asignatura_docente: body.cod_colegio_asignatura_docente,
             descripcion: body.descripcion,
+            titulo: body.titulo,
             persona_id: usuario.id,
             nro_horas: body.nro_horas,
             clasificacion: body.clasificacion,
@@ -208,7 +209,6 @@ export const guardarSesionAsistencia = async (req: any, res: any) => {
             error: false,
             message: "ejecucion correcta",
             data: estCargaDB,
-            usuario
         });
 
     } catch (error) {
