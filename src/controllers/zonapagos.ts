@@ -721,10 +721,10 @@ export const inicioPagosVarios = async (req: any, res: any) => {
     //actualizamos los datos en la DB
     let json_detalle: any = {
       "general": {
-        "fecha_limite_pago": fechaLimitepago,
+        "fecha_limite_pago": fechaLimitepago2,
         "fecha_actual": format(new Date(), 'DD-MM-YYYY hh:mm:ss A'),
-        "fecha_fin_ordinaria": fechaLimitepago,
-        "fecha_fin_extraordinaria": fechaLimitepago,
+        "fecha_fin_ordinaria": fechaLimitepago2,
+        "fecha_fin_extraordinaria": fechaLimitepago2,
         "des_pago": body.des_concepto
       },
       "info_cliente": info_cliente,
