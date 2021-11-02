@@ -736,7 +736,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
 
     };
 
-    let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], body.total, fechaLimitepago);
+    let [codigo1] = await generarCodigoBarrasText(resultSavePago[0], body.total, fechaLimitepago2);
     //acualizar codigo de barras en la base de datos y el json con la referencia
     let dataPagoUpdate = {
       'codigo_barras': codigo1,
