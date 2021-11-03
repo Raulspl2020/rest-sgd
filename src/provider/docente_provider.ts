@@ -207,6 +207,7 @@ export const listarSesionesByCarga = async (id_carga: number, docente_id : strin
         .where({
             'cod_colegio_asignatura_docente': id_carga,
             'persona_id': docente_id,
-        });
+        })
+        .orderBy('tec_syllabussesion.fecha', 'desc');;
 
 };
