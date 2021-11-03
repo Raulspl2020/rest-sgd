@@ -25,14 +25,24 @@ import Cargue from "../models/Mongo/Cargue";
 export const consultaFacturaService = async (req: any, res: any) => {
 
   let body = req.body;
-
-  //pendiente validar los pagos de metricula extraordinaria
+  let dt = new Date();
   let fechaActual = new Date();
-  fechaActual.setHours(0, 0, 0, 0);
-  let fechaActual2 = new Date();
-  fechaActual2.setMonth(fechaActual2.getMonth() + 12);
 
-  let fechaLimitePago: string = format(fechaActual2, "DD/MM/YYYY");
+  let month = dt.getMonth() + 1;
+  let year = dt.getFullYear();
+  let day = dt.getDay();
+
+  let daysInMonth = new Date(year, month, 0).getDate();
+  fechaActual.setDate(daysInMonth);
+  
+
+  //pendiente validar los pagos de matricula extraordinaria
+
+  // fechaActual.setHours(0, 0, 0, 0);
+  // let fechaActual2 = new Date();
+  // fechaActual2.setMonth(fechaActual2.getMonth() + 12);
+
+  let fechaLimitePago: string = format(fechaActual, "DD/MM/YYYY");
   let totalaPagar = 0;
 
 
