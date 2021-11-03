@@ -174,7 +174,7 @@ export const obtenerPeriodosDocente = async (ide_docente: string) => {
 //crea una nueva sesion de asistencia
 export const crearSesionAsistencia = async (dataInsert: any) => {
 
-    if(dataInsert.id_syllabussesion !=null){
+    if(dataInsert.id_syllabussesion ==null){
         let result = await conDB("tec_syllabussesion").insert(dataInsert);
         return result;
     }else{
