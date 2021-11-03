@@ -6,7 +6,8 @@ export const validaGuardarSesionAsistencia = (req: any, res: any, next: any) => 
     console.log(req.body);
     const validationRule = {
         cod_colegio_asignatura_docente : "required|numeric",
-        descripcion : "required|string",
+        descripcion : "string",
+        id_syllabussesion : 'present',
         titulo : "required|string",
         persona_id : "required|string",
         nro_horas : "required|numeric",

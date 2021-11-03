@@ -192,6 +192,7 @@ export const guardarSesionAsistencia = async (req: any, res: any) => {
     try {
 
         const data = {
+            id_syllabussesion: (body.id_syllabussesion==null || body.id_syllabussesion=='' ) ? null : body.id_syllabussesion,
             cod_colegio_asignatura_docente: body.cod_colegio_asignatura_docente,
             descripcion: body.descripcion,
             titulo: body.titulo,

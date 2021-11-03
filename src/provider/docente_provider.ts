@@ -173,8 +173,19 @@ export const obtenerPeriodosDocente = async (ide_docente: string) => {
 
 //crea una nueva sesion de asistencia
 export const crearSesionAsistencia = async (dataInsert: any) => {
-    let result = conDB("tec_syllabussesion").insert(dataInsert);
-    return result;
+
+    if(dataInsert.id_syllabussesion !=null){
+        let result = await conDB("tec_syllabussesion").insert(dataInsert);
+        return result;
+    }else{
+        return await conDB("tec_syllabussesion")
+        .where({
+            'id_syllabussesion': dataInsert.id_syllabussesion,
+        })
+        .update(dataInsert)
+    }
+
+
 };
 
 //elimina la sesion creada por el docente
