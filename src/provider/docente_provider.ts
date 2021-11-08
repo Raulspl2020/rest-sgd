@@ -1,3 +1,4 @@
+import { Asistencia } from "../interfaces/docente.interface";
 import { conDB } from "../config/database";
 //obtiene la carga academica de un docente
 export const getCargaAcademica = async (ide_docente: string, periodo: string) => {
@@ -209,5 +210,11 @@ export const listarSesionesByCarga = async (id_carga: number, docente_id : strin
             'persona_id': docente_id,
         })
         .orderBy('tec_syllabussesion.fecha', 'desc');;
+
+};
+//guarda un arreglo de asistencias 
+export const guardarAsistenciaByCarga = async (asistencias: Asistencia[]) => {
+
+    return await conDB("tec_sesionasistencia").insert(asistencias);;
 
 };

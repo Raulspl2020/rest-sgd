@@ -1,6 +1,7 @@
 import { format } from "date-format-parse";
+import { Asistencia } from "../interfaces/docente.interface";
 import { Usuario } from "../models/Usuario";
-import { crearSesionAsistencia, delSesionAsistencia, getCargaAcademica, getHorarioAsigantura, getHorarioSemana, listarSesionesByCarga, obtenerEstudaintesCarga, obtenerPeriodosDocente } from "../provider/docente_provider";
+import { crearSesionAsistencia, delSesionAsistencia, getCargaAcademica, getHorarioAsigantura, getHorarioSemana, guardarAsistenciaByCarga, listarSesionesByCarga, obtenerEstudaintesCarga, obtenerPeriodosDocente } from "../provider/docente_provider";
 
 //====================
 //   /docente/cargaacademica 
@@ -354,3 +355,37 @@ export const getPeriodosDocente = async (req: any, res: any) => {
 
 }
 
+
+
+//====================
+//  GET /docente/asistencia 
+//=====================
+
+//permite reistrar las faltas a cada estudiante perteneciente a una carga academica
+
+export const registroAsistencia = async (req: any, res: any) => {
+    const usuario: Usuario = req.usuario;
+    const asistencias: Asistencia[] = req.body;
+    try {
+
+        const respDB = await guardarAsistenciaByCarga(asistencias);
+        
+        res.status(200).json({
+            error: false,
+            message: "ejecucion correcta",
+            data: asistencias,
+            respDB
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Algo salio mal",
+            data: [],
+            error: true,
+            det_error: error,
+        });
+    }
+
+
+}
