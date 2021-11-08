@@ -1,7 +1,7 @@
 import { format } from "date-format-parse";
 import { Asistencia } from "../interfaces/docente.interface";
 import { Usuario } from "../models/Usuario";
-import { crearSesionAsistencia, delSesionAsistencia, getCargaAcademica, getHorarioAsigantura, getHorarioSemana, guardarAsistenciaByCarga, listarSesionesByCarga, obtenerEstudaintesCarga, obtenerPeriodosDocente } from "../provider/docente_provider";
+import { crearSesionAsistencia, delSesionAsistencia, getCargaAcademica, getHorarioAsigantura, getHorarioSemana, guardarAsistenciaByCarga, listarSesionesByCarga, obetnerFaltasBySesion, obtenerEstudaintesCarga, obtenerPeriodosDocente } from "../provider/docente_provider";
 
 //====================
 //   /docente/cargaacademica 
@@ -306,6 +306,56 @@ export const getEstudiantesCarga = async (req: any, res: any) => {
 
         for (let row of estCargaDB) {
             row.fecha_registro = format(row.fecha_registro, 'DD-MM-YYYY hh:mm:ss A');
+        }
+
+        res.status(200).json({
+            error: false,
+            message: "ejecucion correcta",
+            data: estCargaDB
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Algo salio mal",
+            error: true,
+            det_error: error,
+        });
+    }
+
+
+}
+
+
+
+
+export const getEstudiantesSesion = async (req: any, res: any) => {
+    const usuario: Usuario = req.usuario;
+    try {
+
+        let id_carga: number = parseInt(req.params.id_carga);
+        let id_sesion: number = parseInt(req.params.id_sesion);
+
+        let estCargaDB = await obtenerEstudaintesCarga(id_carga);
+        console.log(estCargaDB);
+        let asistenciaCargaDB = await obetnerFaltasBySesion(id_sesion);
+        console.log(asistenciaCargaDB);
+
+
+        for (let row of estCargaDB) {
+            row.fecha_registro = format(row.fecha_registro, 'DD-MM-YYYY hh:mm:ss A');
+            row.asistencia =  null;
+
+            for(const asistencia of asistenciaCargaDB){
+
+                if(row.ide_persona == asistencia.persona_id){
+                    console.log("Si coninciden");
+                    row.asistencia =  asistencia;
+                }
+
+            }
+
+
         }
 
         res.status(200).json({

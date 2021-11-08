@@ -214,7 +214,10 @@ export const listarSesionesByCarga = async (id_carga: number, docente_id : strin
 };
 //guarda un arreglo de asistencias 
 export const guardarAsistenciaByCarga = async (asistencias: Asistencia[]) => {
-
     return await conDB("tec_sesionasistencia").insert(asistencias);;
+};
 
+//obtiene las faltas registradas en una sesion
+export const obetnerFaltasBySesion = async (id_sesion:number) => {
+    return await conDB("tec_sesionasistencia").where({'id_syllabussesion': id_sesion});
 };
