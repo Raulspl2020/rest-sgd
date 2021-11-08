@@ -175,15 +175,15 @@ export const obtenerPeriodosDocente = async (ide_docente: string) => {
 //crea una nueva sesion de asistencia
 export const crearSesionAsistencia = async (dataInsert: any) => {
 
-    if(dataInsert.id_syllabussesion ==null){
+    if (dataInsert.id_syllabussesion == null) {
         let result = await conDB("tec_syllabussesion").insert(dataInsert);
         return result;
-    }else{
+    } else {
         return await conDB("tec_syllabussesion")
-        .where({
-            'id_syllabussesion': dataInsert.id_syllabussesion,
-        })
-        .update(dataInsert)
+            .where({
+                'id_syllabussesion': dataInsert.id_syllabussesion,
+            })
+            .update(dataInsert)
     }
 
 
@@ -202,7 +202,7 @@ export const delSesionAsistencia = async (dataInsert: any) => {
 };
 
 //obtine las sesiones creadas en una carga academica
-export const listarSesionesByCarga = async (id_carga: number, docente_id : string) => {
+export const listarSesionesByCarga = async (id_carga: number, docente_id: string) => {
 
     return await conDB("tec_syllabussesion")
         .where({
@@ -214,10 +214,50 @@ export const listarSesionesByCarga = async (id_carga: number, docente_id : strin
 };
 //guarda un arreglo de asistencias 
 export const guardarAsistenciaByCarga = async (asistencias: Asistencia[]) => {
-    return await conDB("tec_sesionasistencia").insert(asistencias);;
+
+    let insertar: Asistencia[] = [];
+    let actualizar: Asistencia[] = [];
+    const trx = await conDB.transaction();
+
+    try {
+
+        for (const dato of asistencias) {
+
+            if (dato.id_sesionasistencia == null) {
+                insertar.push(dato);
+            } else {
+                actualizar.push(dato);
+            }
+        }
+
+        for (let row of actualizar) {
+            await trx("tec_sesionasistencia")
+                .where("tec_sesionasistencia.id_sesionasistencia", row.id_sesionasistencia)
+                .update(row);
+        }
+        await conDB("tec_sesionasistencia").insert(insertar);
+        trx.commit();
+        return true;
+
+    } catch (error) {
+        console.log(error);
+        trx.rollback();
+        return false;
+    }
+
+
+
+
+
+
+
+
+
+
+
 };
 
 //obtiene las faltas registradas en una sesion
-export const obetnerFaltasBySesion = async (id_sesion:number) => {
-    return await conDB("tec_sesionasistencia").where({'id_syllabussesion': id_sesion});
+export const obetnerFaltasBySesion = async (id_sesion: number) => {
+    return await conDB("tec_sesionasistencia").where({ 'id_syllabussesion': id_sesion });
 };

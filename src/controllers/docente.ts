@@ -337,9 +337,7 @@ export const getEstudiantesSesion = async (req: any, res: any) => {
         let id_sesion: number = parseInt(req.params.id_sesion);
 
         let estCargaDB = await obtenerEstudaintesCarga(id_carga);
-        console.log(estCargaDB);
         let asistenciaCargaDB = await obetnerFaltasBySesion(id_sesion);
-        console.log(asistenciaCargaDB);
 
 
         for (let row of estCargaDB) {
@@ -349,7 +347,6 @@ export const getEstudiantesSesion = async (req: any, res: any) => {
             for(const asistencia of asistenciaCargaDB){
 
                 if(row.ide_persona == asistencia.persona_id){
-                    console.log("Si coninciden");
                     row.asistencia =  asistencia;
                 }
 
@@ -416,6 +413,7 @@ export const getPeriodosDocente = async (req: any, res: any) => {
 export const registroAsistencia = async (req: any, res: any) => {
     const usuario: Usuario = req.usuario;
     const asistencias: Asistencia[] = req.body;
+
     try {
 
         const respDB = await guardarAsistenciaByCarga(asistencias);
