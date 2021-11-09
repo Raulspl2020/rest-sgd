@@ -25,7 +25,7 @@ export const validaChangePassword = (req: any, res: any, next: any) => {
 
     const validationRule = {
         password_old: "required|string",
-        password_new: "required|string|digits_between:7,16"
+        password_new: "required|string"
     };
 
     let validation = new Validator(req.body, validationRule);
