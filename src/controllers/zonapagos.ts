@@ -672,7 +672,10 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       info_cliente.dir_persona = estudianteDb[0].dir_persona;
     }
 
-    resultPaquete[0].categoria_id = 0;
+    if(resultPaquete[0].categoria_id==null || resultPaquete[0].categoria_id==undefined){
+      resultPaquete[0].categoria_id = 0;
+    }
+    
 
 
     //GUARDAR EL PAGO EN LA DB
