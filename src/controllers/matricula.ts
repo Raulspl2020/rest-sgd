@@ -28,6 +28,7 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
 
     try {
         let result = await getInfoMatricula(id_matricula);
+        console.log(result);
 
         resultDB = result[0][0];
 

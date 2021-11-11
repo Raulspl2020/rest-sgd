@@ -184,6 +184,7 @@ export const generarCodigoBarrasText = async (referencia: string, valor: string,
   const convenio415: string = "0000000025854";
   let referencia8020: string = referencia.toString();
 
+
   let valor390n: string = valor.toString();
   let [dia, mes, año]: string = fecha.split('-');
 

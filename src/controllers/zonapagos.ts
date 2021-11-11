@@ -124,13 +124,23 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       throw new Error("No se encontró periodo y sede configurados");
     }
 
+    let dt = new Date();
+    let fechaNueva = new Date();
+  
+  
+    let month = dt.getMonth() + 1;
+    let year = dt.getFullYear();
+    let day = dt.getDay();
+    let daysInMonth = new Date(year, month, 0).getDate();
+    fechaNueva.setDate(daysInMonth);
+
     let infoPagoDB: any = {};
     infoPagoDB.general = {
       fecha_actual: fechaActualString,
-      fecha_fin_ordinaria: format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'),
-      fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY'),
-      fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY'),
-      fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
+      fecha_fin_ordinaria: format(periodoInfo.fec_fin_matordinaria ?? fechaNueva, 'DD-MM-YYYY'),
+      fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord ?? fechaNueva, 'DD-MM-YYYY'),
+      fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos ?? fechaNueva, 'DD-MM-YYYY'),
+      fecha_limite_pago: format(fecha_limite_pago ?? fechaNueva, 'DD-MM-YYYY'),
     };
     infoPagoDB.info_cliente = resultDB;
     let estudianteDb: any = await getInfoUsuario(matricula.ide_persona);
@@ -461,6 +471,8 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
 
   try {
     let resultMatricula = await consultarDatosInscripcion(id_matricula);
+    console.log("El resultado de la matricula es:");
+    console.log(resultMatricula);
     if (!resultMatricula) {
       throw new Error("no se ha podido consultar la informacion solicitada");
     }
@@ -1076,14 +1088,28 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
       throw new Error("No se encontró periodo y sede configurados");
     }
 
+
+
+    
+  let dt = new Date();
+  let fechaNueva = new Date();
+
+
+  let month = dt.getMonth() + 1;
+  let year = dt.getFullYear();
+  let day = dt.getDay();
+  let daysInMonth = new Date(year, month, 0).getDate();
+  fechaNueva.setDate(daysInMonth);
+
+
     let arrayDB: any = {};
 
     arrayDB.general = {
       fecha_actual: fechaActualString,
-      fecha_fin_ordinaria: format(periodoInfo.fec_fin_matordinaria, 'DD-MM-YYYY'),
-      fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord, 'DD-MM-YYYY'),
-      fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos, 'DD-MM-YYYY'),
-      fecha_limite_pago: format(fecha_limite_pago, 'DD-MM-YYYY'),
+      fecha_fin_ordinaria: format( periodoInfo.fec_fin_matordinaria ?? fechaNueva , 'DD-MM-YYYY'),
+      fecha_fin_extraordinaria: format(periodoInfo.fec_fin_matextraord ?? fechaNueva, 'DD-MM-YYYY'),
+      fecha_fin_ins_nuevos: format(periodoInfo.fec_fin_ins_nuevos ?? fechaNueva, 'DD-MM-YYYY'),
+      fecha_limite_pago: format(fecha_limite_pago ?? fechaNueva, 'DD-MM-YYYY'),
     };
     arrayDB.info_cliente = resultDB;
     let estudianteDb: any = await getInfoUsuario(resultDB.ide_persona);
