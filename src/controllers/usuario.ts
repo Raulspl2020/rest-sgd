@@ -130,6 +130,9 @@ export const getInfoBasicUser = async (req: any, res = response) => {
         nombre2?: string;
         fech_nac_persona?: string;
         fec_expedicion_doc?: string;
+        email_persona ? : string; 
+        email_institucion? : string;
+        cel_persona?: string;
     }
 
     try {
@@ -141,6 +144,8 @@ export const getInfoBasicUser = async (req: any, res = response) => {
 
             result[0].apellido2 = (result[0].apellido2 == null) ? "" : result[0].apellido2;
             result[0].nombre2 = result[0].nombre2 || "";
+            result[0].email_persona = result[0].email_persona.trim() ?? result[0].email_institucion.trim() ;
+            result[0].cel_persona = result[0].cel_persona.trim() ;
 
             res.status(200).json({
                 message: "Ejecución correcta",
@@ -197,6 +202,8 @@ export const getInfoBasicUsuario = async (req: any, res = response) => {
 
             result[0].apellido2 = (result[0].apellido2 == null) ? "" : result[0].apellido2;
             result[0].nombre2 = result[0].nombre2 || "";
+            result[0].email_persona = result[0].email_persona.trim() ?? result[0].email_institucion.trim() ;
+            result[0].cel_persona = result[0].cel_persona.trim() ;
 
             res.status(200).json({
                 message: "Ejecución correcta",
