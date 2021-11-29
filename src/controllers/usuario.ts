@@ -7,6 +7,7 @@ import { updateDatauserContact, updatePersonaCodeVerify } from '../provider/usua
 import { Usuario } from '../models/Usuario';
 import { validar } from '../provider/login_provider';
 import { updatePass } from '../provider/login_provider';
+import { extractColDocumentData } from '../helpers/global';
 //====================
 //   /usuario/auditoria 
 //=====================
@@ -130,8 +131,8 @@ export const getInfoBasicUser = async (req: any, res = response) => {
         nombre2?: string;
         fech_nac_persona?: string;
         fec_expedicion_doc?: string;
-        email_persona ? : string; 
-        email_institucion? : string;
+        email_persona?: string;
+        email_institucion?: string;
         cel_persona?: string;
     }
 
@@ -144,8 +145,8 @@ export const getInfoBasicUser = async (req: any, res = response) => {
 
             result[0].apellido2 = (result[0].apellido2 == null) ? "" : result[0].apellido2;
             result[0].nombre2 = result[0].nombre2 || "";
-            result[0].email_persona = result[0].email_persona.trim() ?? result[0].email_institucion.trim() ;
-            result[0].cel_persona = result[0].cel_persona.trim() ;
+            result[0].email_persona = result[0].email_persona.trim() ?? result[0].email_institucion.trim();
+            result[0].cel_persona = result[0].cel_persona.trim();
 
             res.status(200).json({
                 message: "Ejecución correcta",
@@ -176,7 +177,7 @@ export const getInfoBasicUser = async (req: any, res = response) => {
 //   /usuario/infobasica
 //=====================
 export const getInfoBasicUsuario = async (req: any, res = response) => {
-    let ideUsuario : string = req.params.ideUsuario;
+    let ideUsuario: string = req.params.ideUsuario;
     const usuario: Usuario = req.usuario;
 
     interface UserBasicInfo {
@@ -202,8 +203,8 @@ export const getInfoBasicUsuario = async (req: any, res = response) => {
 
             result[0].apellido2 = (result[0].apellido2 == null) ? "" : result[0].apellido2;
             result[0].nombre2 = result[0].nombre2 || "";
-            result[0].email_persona = result[0].email_persona.trim() ?? result[0].email_institucion.trim() ;
-            result[0].cel_persona = result[0].cel_persona.trim() ;
+            result[0].email_persona = result[0].email_persona.trim() ?? result[0].email_institucion.trim();
+            result[0].cel_persona = result[0].cel_persona.trim();
 
             res.status(200).json({
                 message: "Ejecución correcta",
@@ -447,5 +448,45 @@ export const verifyTokenMail = async (req: any, res = response) => {
         console.log(error);
         usuario.mensaje = "Servcio no disponible temporalmemte";
         res.render('estado_verificacion_email', usuario);
+    }
+}
+//====================
+//   /usuario/decodecedula 
+//=====================
+export const getDataCedula = async (req: any, res = response) => {
+
+    let body = req.body;
+
+    let cadena: string = body.cadenabase64;
+
+
+    if (cadena.length < 20) {
+
+        res.status(200).json({
+            message: "Lectura errada, intente nuevamente",
+            error: true,
+            data: {},
+        });
+
+    }
+
+
+    try {
+
+        let buff: Buffer = Buffer.from(cadena, 'base64');
+        const decodeCadena: string = buff.toString('ascii');
+
+        res.status(200).json({
+            message: "Decodificación correcta",
+            error: false,
+            data: extractColDocumentData(decodeCadena),
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Servicio no disponible temporalmente ",
+            error: true
+        });
     }
 }

@@ -1,3 +1,5 @@
+
+import moment from 'moment';
 const puppeteer = require("puppeteer");
 const { createCanvas, loadImage } = require("canvas");
 import QRCode from 'qrcode';
@@ -63,7 +65,7 @@ export const generarHTMLPDFNew = async (html: string) => {
         const pdf = await page.pdf({
             format: "Letter",
             width: '1920px',
-             height: '1080px',
+            height: '1080px',
             pageRanges: '1-1',
             printBackground: true,
         });
@@ -81,24 +83,77 @@ export const generarHTMLPDFNew = async (html: string) => {
 }
 
 
-export const createQR = async (dataForQRcode:string, center_image:string, width:number, cwidth:number)=> {
+export const createQR = async (dataForQRcode: string, center_image: string, width: number, cwidth: number) => {
     const canvas = createCanvas(width, width);
     QRCode.toCanvas(
-      canvas,
-      dataForQRcode,
-      {
-        errorCorrectionLevel: "M",
-        margin: 1,
-        color: {
-          dark: "#000000",
-          light: "#ffffff",
-        },
-      }
+        canvas,
+        dataForQRcode,
+        {
+            errorCorrectionLevel: "M",
+            margin: 1,
+            color: {
+                dark: "#000000",
+                light: "#ffffff",
+            },
+        }
     );
-  
+
     const ctx = canvas.getContext("2d");
     const img = await loadImage(center_image);
     const center = (width - cwidth) / 2;
     ctx.drawImage(img, center, center, cwidth, cwidth);
     return canvas.toDataURL("image/png");
-  }
+}
+
+export function capitalize(data:string){
+    return data.toUpperCase();
+}
+
+
+export function extractColDocumentData(data:string) {
+    console.log(data);
+
+    const dataArray = data.replace(/[^A-Za-z0-9+]+/g, ' ').split(' ');
+
+    let indexMod = 0;
+    let idNumber;
+    let lastName1;
+
+    // Is old document
+    if (/[A-Z]/g.test(dataArray[3])) {
+        indexMod = - 1;
+
+        const idString = dataArray[3].replace(/[A-Z]/g, '');
+        idNumber = idString.substring(10, idString.length);
+        lastName1 = capitalize(dataArray[3].replace(/[0-9]/g, ''));
+    } else {
+        idNumber = dataArray[4].replace(/[A-Z]/g, '');
+        lastName1 = capitalize(dataArray[4].replace(/[0-9]/g, ''));
+    }
+
+    const lastName2 = capitalize(dataArray[5 + indexMod].replace(/\W/g, ''));
+    const firstName1 = capitalize(dataArray[6 + indexMod].replace(/\W/g, ''));
+    let middleName;
+
+    if (!(/[0-9]/g.test(dataArray[7 + indexMod]))) {
+        middleName = capitalize(dataArray[7 + indexMod]);
+    }
+
+    const extraData = dataArray[middleName ? 8 + indexMod : 7 + indexMod];
+
+    const gender = extraData.includes('M') ? 'MASCULINO' : 'FEMENINO';
+    const birthDate = moment(extraData.substr(2, 10), 'YYYYMMDD');
+    const bloodType = extraData.substr(-2);
+
+    return {
+        idNumber,
+        lastName1,
+        lastName2,
+        firstName1,
+        middleName,
+        gender,
+        birthDate,
+        bloodType,
+        fullName: `${firstName1} ${middleName || ''} ${lastName1} ${lastName2 || ''}`,
+    };
+}

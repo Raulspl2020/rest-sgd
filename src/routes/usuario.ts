@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { verifiDataContacMid } from '../middlewares/validar-campos';
-import { changePassword, getAuditoriaUsuario,getInfoBasicUser,getInfoBasicUsuario,getInfoUser,getUserContacto, updateContactUser, updateInfoUser, verifyTokenMail } from '../controllers/usuario';
+import { changePassword, getAuditoriaUsuario,getDataCedula,getInfoBasicUser,getInfoBasicUsuario,getInfoUser,getUserContacto, updateContactUser, updateInfoUser, verifyTokenMail } from '../controllers/usuario';
 const router = Router();
 
 import { verificaToken } from '../middlewares/autenticacion';
@@ -19,6 +19,7 @@ router.post('/contacto', [verificaToken,validaupdateContactUser],updateContactUs
 
 router.post('/changepassword',[verificaToken, validaChangePassword], changePassword);
 router.get('/infobasica',[verificaToken], getInfoBasicUsuario);
+router.post('/decodecedula', getDataCedula);
 
 
 
