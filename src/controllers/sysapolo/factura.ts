@@ -8,6 +8,7 @@ import { getTipoDoc } from "../../provider/usuario_provider";
 import { FacturaDetalleSysApolo, FacturaSysApolo } from '../../interfaces/facturas.interface';
 import { f_strDigitoVerificacionNIT } from "../../helpers/sysApolo";
 import { guardarLogFacturaSys } from '../../provider/log_provider';
+import { complileTemplateReciboPago } from '../template';
 
 //====================
 //   /factura/listar
@@ -167,10 +168,11 @@ export const inicarPorceso = async (req: any, res: any) => {
 
     let result = await registroFacturaSysApolo(parseInt(referencia))
 
+
     res.json({
-      error: false,
+      error: !result[0],
       referencia,
-      result
+      message: result[1]
     });
 
   } catch (error) {
@@ -197,7 +199,7 @@ export const inicarPorcesoDel = async (req: any, res: any) => {
 
     let result = await eliminarFacturaSysApolo(parseInt(referencia))
 
-    res.json({
+    res.status(200).json({
       error: false,
       referencia,
       result
@@ -205,7 +207,7 @@ export const inicarPorcesoDel = async (req: any, res: any) => {
 
   } catch (error) {
     console.log(error);
-    res.json({
+    res.status(500).json({
       error: true,
       message: error.message,
     });
@@ -397,11 +399,11 @@ export const registroFacturaSysApolo = async (ref: number) => {
             fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
             data: JSON.stringify(DATA)
           });
+          return [resp, "Factura registrada exitosamente"];
         } else {
           //guardar log error
           throw new Error(error + " " + sql);
         }
-        return resp;
 
       }
 
@@ -423,7 +425,7 @@ export const registroFacturaSysApolo = async (ref: number) => {
       fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
       data: JSON.stringify(DATA)
     });
-    return false;
+    return [false, error.message];
   }
 
 

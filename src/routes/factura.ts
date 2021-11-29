@@ -4,10 +4,12 @@ import { getFacturasPagadas, registrarFacturasPagadaSys } from '../controllers/s
 import { getConceptos } from '../controllers/servicios';
 
 
+
 const router = Router();
 
 
 router.get('/obtenerconceptos',[], getConceptos);
+
 
 router.get('/listar',[verificaTokenDB("sysapolo.factura.listar")], getFacturasPagadas);
 

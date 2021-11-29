@@ -290,7 +290,7 @@ export const viewConsultaPago = async (req: any, res = response) => {
 
 
 //crea un recibo de pago en pdf y lo envia al correo
-export const complileTemplateReciboPago = async (id_factura: any) => {
+export const complileTemplateReciboPago = async (id_factura: any,prioridad:boolean = false) => {
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
 
@@ -305,7 +305,7 @@ export const complileTemplateReciboPago = async (id_factura: any) => {
 
 
         let factura = await getDataDetalleFacturaById(id_factura);
-        if (factura.email_send == '1') {
+        if (factura.email_send == '1' && prioridad==false) {
             throw new Error(`la factura ${factura.id} ya fue notificada`);
         }
         //creamos la data que lleva la plantilla, o contendio dinamico

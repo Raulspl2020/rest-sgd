@@ -19,6 +19,49 @@ import { subirArchivo } from "../helpers/subir-archivo";
 import { DetallePago } from "../interfaces/facturas.interface";
 import Cargue from "../models/Mongo/Cargue";
 
+
+
+//====================
+//   /transaccion/notificacionfactura
+//=====================
+export const notificarEmailFactura = async (req: any, res: any) => {
+
+  let body = req.body;
+  let referencia = req.params.referencia;
+
+
+  try {
+
+    let result: boolean = await complileTemplateReciboPago(referencia,true);
+
+    if (result) {
+      res.status(200).json({
+        error: !result,
+        referencia,
+        message: "Correo electrónico enviado exitosamente"
+      });
+    } else {
+
+      res.status(200).json({
+        error: !result,
+        referencia,
+        message: "No se ha podido enviar el correo"
+      });
+
+    }
+
+  } catch (error) {
+    console.log(error);
+    res.status(200).json({
+      error: true,
+      message: error.message,
+    });
+  }
+
+}
+
+
+
 //====================
 //   /transaccion/consultaFactura
 //=====================
