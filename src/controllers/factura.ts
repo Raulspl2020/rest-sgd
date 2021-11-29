@@ -1,5 +1,5 @@
 import { parse, format } from "date-format-parse";
-import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, existeDetPago, existeDetPagoWhere, insertPagoMR5, reversarPagoyDetalle } from "../provider/factura_provider";
+import { actualizarPagoyDetalle, consultaFacturaBanco, consultaFacturaCliente, consultaPagoFacturaCliente, consultarPagoFactura, eliminarFacturaRef, existeDetPago, existeDetPagoWhere, insertPagoMR5, reversarPagoyDetalle } from "../provider/factura_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { guardarLog } from "../provider/log_provider";
 import { getConfigPeriodo, getDescuento, getDescuentoFactura, getFactura, getPagoFactura, updateEstadoDescuentoFac } from "../provider/pago_provider";
@@ -59,6 +59,38 @@ export const notificarEmailFactura = async (req: any, res: any) => {
   }
 
 }
+
+
+//====================
+//   /transaccion/eliminarfactura
+//=====================
+export const eliminarFactura = async (req: any, res: any) => {
+
+  let body = req.body;
+  let referencia = req.params.referencia;
+
+
+  try {
+
+    let result:any = await eliminarFacturaRef(referencia);
+
+      res.status(200).json({
+        error: !result[0],
+        referencia,
+        message: result[1]
+      });
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: true,
+      message: error.message,
+    });
+  }
+
+}
+
 
 
 

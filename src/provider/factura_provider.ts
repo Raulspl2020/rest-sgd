@@ -246,7 +246,7 @@ export const getConceptosByConfigActive = async () => {
     .join("fin_config", "fin_paquete.config_id ", "=", "fin_config._id")
 
     .where({ 'fin_config.estado': '1' })
-    .whereNotIn('fin_paquete.codigo', [1, 2, 3,4])
+    .whereNotIn('fin_paquete.codigo', [1, 2, 3, 4])
     .groupBy('fin_detalle_paquete._id');
   return result;
 
@@ -254,12 +254,12 @@ export const getConceptosByConfigActive = async () => {
 
 
 //buscar pago
-export const existeDetPagoWhere = async (pago : DetallePago) : Promise<boolean> => {
+export const existeDetPagoWhere = async (pago: DetallePago): Promise<boolean> => {
 
   let result = await conDB
     .select()
     .from("fin_detalle_pago")
-    .where({ 'pago_id': pago.pago_id, 'estado_pago_id': 1, 'codigo_transaccion' : pago.codigo_transaccion, 'forma_pago_id': pago.forma_pago_id, 'valor_pago': pago.valor_pago})
+    .where({ 'pago_id': pago.pago_id, 'estado_pago_id': 1, 'codigo_transaccion': pago.codigo_transaccion, 'forma_pago_id': pago.forma_pago_id, 'valor_pago': pago.valor_pago })
     .whereRaw(' DATE(fecha)  =DATE(?)', [pago.fecha])
   if (result.length > 0) {
     return true;
@@ -269,29 +269,29 @@ export const existeDetPagoWhere = async (pago : DetallePago) : Promise<boolean> 
 }
 
 
-export const insertPagoMR5 = async (pagos: DetallePago[]):Promise<boolean> => {
+export const insertPagoMR5 = async (pagos: DetallePago[]): Promise<boolean> => {
   const trx = await conDB.transaction();
   let fechaUpdate = new Date();
 
   try {
 
-    const resultDB1 =  await trx("fin_detalle_pago").insert(pagos);
+    const resultDB1 = await trx("fin_detalle_pago").insert(pagos);
     let tPago: any = {
       estado_id: 1,
-      fecha_update: format( fechaUpdate,'YYYY-MM-DD HH:mm:ss'),
+      fecha_update: format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss'),
     };
 
-    for(const item of pagos){
-  
-    const resultDB2  =  await  trx("fin_pago")
-      .where("fin_pago._id", item.pago_id)
-      .update(tPago)
+    for (const item of pagos) {
+
+      const resultDB2 = await trx("fin_pago")
+        .where("fin_pago._id", item.pago_id)
+        .update(tPago)
     };
 
     trx.commit();
     return true;
-  
-    
+
+
   } catch (error) {
     console.log(error);
     trx.rollback();
@@ -299,3 +299,73 @@ export const insertPagoMR5 = async (pagos: DetallePago[]):Promise<boolean> => {
   }
 
 };
+
+
+//permite eliminar una factura con sus respectivos pagos si esta no tiene pagos pendientes o exitosos
+
+export const eliminarFacturaRef = async (referencia: number) => {
+  const trx = await conDB.transaction();
+
+  let eliminarFactura: boolean = true;
+
+  try {
+
+    let result: any = await trx
+      .select(
+        'fin_pago._id'
+        , 'fin_detalle_pago.valor_pago'
+        , 'fin_detalle_pago.total_pago'
+        , 'fin_pago.estudiante_id'
+        , 'fin_pago.categoria_pago_id'
+        , 'fin_pago.fecha'
+        , 'fin_detalle_pago.estado_pago_id'
+      )
+      .from("fin_pago")
+    
+      .leftJoin("fin_detalle_pago", "fin_detalle_pago.pago_id", "=", "fin_pago._id")
+      .where({ 'fin_pago._id': referencia })
+      .groupBy('fin_detalle_pago._id');
+
+    console.log(result);
+
+    if (result.length > 0) {
+      //procedemos a verificar
+
+      result.forEach((element: any) => {
+
+        if (element.estado_pago_id == 1 || element.estado_pago_id == 200 || element.estado_pago_id == 888 || element.estado_pago_id == 999 || element.estado_pago_id == 4001 || element.estado_pago_id == 2) {
+            eliminarFactura = false;
+        }
+
+        if( format(element.fecha, 'DD-MM-YYYY')== format(new Date(), 'DD-MM-YYYY')){
+          throw new Error("No se puede eliminar una factura con fecha de hoy");
+        }
+
+      });
+
+      if (eliminarFactura) {
+        //procedemos a eliminar
+        await trx("fin_pago")
+          .where({
+            '_id': referencia
+          })
+          .del();
+        trx.commit();
+        return [true, "Factura eliminada"];
+
+      } else {
+        throw new Error("No se puede eliminar la factura porque contiene pagos pendientes o aprobados");
+      }
+
+    } else {
+      console.log("No se encontro la factura " + referencia);
+      throw new Error("No se encontro la factura " + referencia);
+    }
+
+
+  } catch (error) {
+    trx.rollback();
+    return [false, error.message];
+  }
+
+}

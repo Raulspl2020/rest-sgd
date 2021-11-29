@@ -5,7 +5,7 @@ import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento } from 
 import { check } from 'express-validator';
 import { validarCampos, validatorCampos,validarIdPago,consultaFacturaMid,registrarPagoMid,reversarPagoMid,actualizarPago, pagoPersonalizadoMid, pagoVariosMid } from '../middlewares/validar-campos';
 import { existePagoDB, getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
-import {consultaEstadoFactura, consultaFacturaService, detalleFacturaByID, notificarEmailFactura, registrarPagoService, reversarPagoService, uploadMR5 } from '../controllers/factura';
+import {consultaEstadoFactura, consultaFacturaService, detalleFacturaByID, eliminarFactura, notificarEmailFactura, registrarPagoService, reversarPagoService, uploadMR5 } from '../controllers/factura';
 import { generarPagoCodigoBarras, generarPagoCodigoBarrasGeneral, inicioPagoGeneral, inicioPagoInscripcion, inicioPagoMatricula, inicioPagosVarios } from '../controllers/zonapagos';
 
 
@@ -67,6 +67,9 @@ router.post('/cargapagosMR5', uploadMR5);
 
 //envia un correo electronico con el recibo de pago de la factura
 router.get('/notificacionfactura/:referencia',[], notificarEmailFactura);
+
+//elimina una factura por id si esta no tiene pagos exitosos o pendientes
+router.delete('/eliminarfactura/:referencia',[], eliminarFactura);
 
 
 
