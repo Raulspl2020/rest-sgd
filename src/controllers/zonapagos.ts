@@ -235,8 +235,23 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
 
   let codigo_barras = req.params.codigo;
 
+
+  
+  let dt = new Date();
+  let fechaNueva = new Date();
+
+
+  let month = dt.getMonth() + 1;
+  let year = dt.getFullYear();
+  let day = dt.getDay();
+  let daysInMonth = new Date(year, month, 0).getDate();
+  fechaNueva.setDate(daysInMonth);
+
+
+
   let [convenio415, referencia8020] = await dividirCodigoBarrasText(codigo_barras);
   let id_pago = parseInt(referencia8020.substr(3))
+  console.log(id_pago);
   let data: any = await getPagoByID(id_pago);
 
   try {
@@ -249,17 +264,19 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
     let general = jsonDB.general;
 
     let resultConfig = await getConfigPeriodo();
-    console.log(resultConfig);
+
     let porcentaje_ex = resultConfig.porcentaje_ext;
     let new_detalle = await quitarAumentoDetalle(jsonDB.det_factura, 0);
     let new_total_ordinario = await calculaTotalaPagar(new_detalle);
     let new_det2 = await quitarAumentoDetalle(jsonDB.det_factura, porcentaje_ex);
     let new_total_extraordianrio = await calculaTotalaPagar(new_det2);
 
-    // es un pago en efectivo
+
+    let nueva_F = format(fechaNueva, 'DD-MM-YYYY');
+
     let [codigo1, svgText1] = await generarCodigoBarras(data._id, new_total_ordinario.toString(), general.fecha_fin_ordinaria);
     let [codigo2, svgText2] = await generarCodigoBarras(data._id, new_total_extraordianrio.toString(), general.fecha_fin_extraordinaria);
-    let [codigo3, svgText3] = await generarCodigoBarras(data._id, jsonDB.total_a_pagar_i.toString(), general.fecha_fin_ins_nuevos);
+    let [codigo3, svgText3] = await generarCodigoBarras(data._id, jsonDB.total_a_pagar_i.toString(), general.fecha_fin_ins_nuevos || nueva_F );
     let [codigo4, svgText4] = await generarCodigoBarras(data._id, jsonDB.total_a_pagar_i.toString(), general.fecha_limite_pago);
 
 
@@ -283,6 +300,7 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
       case 5:
         //paquete de inscripcion
         vista_pago = "pdf_pago_inscripcion";
+  
         break;
       case 1:
         vista_pago = "pdf_pago_matricula";

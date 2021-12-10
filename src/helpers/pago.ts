@@ -236,6 +236,9 @@ export const dividirCodigoBarrasText = async (cadena: string) => {
 
 export const generarCodigoBarras = async (referencia: string, valor: string, fecha: any) => {
   try {
+    // console.log("referencia",referencia);
+    // console.log("valor",valor);
+    // console.log("fecha",fecha);
     let [codigoBarras, text] = await generarCodigoBarrasText(referencia, valor, fecha);
     const xmlSerializer = new XMLSerializer();
     const document = new DOMImplementation().createDocument("http://www.w3.org/1999/xhtml", "html", null);
