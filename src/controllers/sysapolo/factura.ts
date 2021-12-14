@@ -266,12 +266,12 @@ export const registroFacturaSysApolo = async (ref: number) => {
           ide_tipo_identificacion: cod_doc,
           nom_ter: (`${cliente.ape1_persona} ${cliente.ape2_persona} ${cliente.nom1_persona} ${cliente.nom2_persona}`).trim().substring(0,60),
           pri_apellido: cliente.ape1_persona.substring(0,15),
-          seg_apellido: cliente.ape2_persona.substring(0,15),
+          seg_apellido: (cliente.ape2_persona==null) ? '' : cliente.ape2_persona.substring(0,15) || '',
           pri_nombre: cliente.nom1_persona.substring(0,15),
-          otr_nombre: cliente.nom2_persona.substring(0,15),
-          dir_ter: cliente.dir_persona.substring(0,100) || '',
-          tel_ter: cliente.cel_persona.substring(0,40) || '',
-          email: cliente.email_persona.substring(0,100) || '',
+          otr_nombre: (cliente.nom2_persona==null) ? '' : cliente.nom2_persona.substring(0,15) || '',
+          dir_ter: (cliente.dir_persona ==null)  ? '' :cliente.dir_persona.substring(0,100) || '',
+          tel_ter: (cliente.cel_persona ==null)  ? '' : cliente.cel_persona.substring(0,40) || '',
+          email: (cliente.email_persona ==null)  ? '' : cliente.email_persona.substring(0,100)  || '',
           ide_mun: cliente.cod_municipio || '86001',
           sex_tercero: cliente.ide_genero || ''
         }
@@ -281,6 +281,8 @@ export const registroFacturaSysApolo = async (ref: number) => {
       } else {
         //si no se encontro el cliente se debe crearlo
         console.log("se creará un nuevo tercero");
+
+        console.log(cliente);
 
         // esta funcion global genera un digito de verificacion segun DIAN para cada tercero
         const digitoVer = f_strDigitoVerificacionNIT(cliente.ide_persona);
@@ -294,15 +296,15 @@ export const registroFacturaSysApolo = async (ref: number) => {
           nom_ter: (`${cliente.ape1_persona} ${cliente.ape2_persona} ${cliente.nom1_persona} ${cliente.nom2_persona}`).trim().substring(0,60),
           rep_legal: '',
           pri_apellido: cliente.ape1_persona.substring(0,15),
-          seg_apellido: cliente.ape2_persona.substring(0,15),
+          seg_apellido: (cliente.ape2_persona==null) ? '' : cliente.ape2_persona.substring(0,15) || '',
           pri_nombre: cliente.nom1_persona.substring(0,15),
-          otr_nombre: cliente.nom2_persona.substring(0,15),
+          otr_nombre: (cliente.nom2_persona==null) ? '' : cliente.nom2_persona.substring(0,15) || '',
           cla_ter: "S",
 
 
-          dir_ter: cliente.dir_persona.substring(0,100) || '',
-          tel_ter: cliente.cel_persona.substring(0,40) || '',
-          email: cliente.email_persona.substring(0,100) || '',
+          dir_ter: (cliente.dir_persona ==null)  ? '' :cliente.dir_persona.substring(0,100) || '',
+          tel_ter: (cliente.cel_persona ==null)  ? '' : cliente.cel_persona.substring(0,40) || '',
+          email: (cliente.email_persona ==null)  ? '' : cliente.email_persona.substring(0,100)  || '',
 
 
           ide_mun: cliente.cod_municipio || '86001',
