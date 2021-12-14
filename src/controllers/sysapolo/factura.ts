@@ -176,6 +176,7 @@ export const inicarPorceso = async (req: any, res: any) => {
     });
 
   } catch (error) {
+    console.log("Error de algo");
     console.log(error);
     res.json({
       error: true,
@@ -312,7 +313,9 @@ export const registroFacturaSysApolo = async (ref: number) => {
           terceroSys.cod_ter = resultTercero;
         } else {
           //no se pudo crear el tercero en sysApolo
-          throw new Error(resultTercero);
+          //throw new Error(resultTercero);
+          console.log("La creacion del tercero da error");
+          throw new Error("Error al crear el tercero en sysApolo, intente mas tarde");
         }
 
       }
@@ -415,17 +418,16 @@ export const registroFacturaSysApolo = async (ref: number) => {
 
 
   } catch (error) {
-
     console.log(error);
     guardarLogFacturaSys({
       factura_id: ref,
       estado: 0,
       cliente_id: ID_CLIENTE,
-      mensaje: error.message,
+      mensaje: error.message || error.toString(),
       fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
       data: JSON.stringify(DATA)
     });
-    return [false, error.message];
+    return [false, error.message || "A ocurrido un error, intente mas tarde"];
   }
 
 

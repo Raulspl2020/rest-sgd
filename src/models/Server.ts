@@ -32,13 +32,18 @@ class Server {
     async cronJob() {
 
 
+        if (process.env.NODE_ENV === 'pro') {
 
-        cron.schedule('*/15 * * * *', () => {
-            // cron.schedule('* * * * *', () => {
-            verificaPagosPendientesOnline().then((result) => {
-                // console.log(result);
+
+
+            cron.schedule('*/15 * * * *', () => {
+                // cron.schedule('* * * * *', () => {
+                verificaPagosPendientesOnline().then((result) => {
+                    // console.log(result);
+                });
             });
-        });
+
+        }
 
         // cron.schedule('* * * * *', () => {
         //     //cron.schedule('*/60 * * * *', () => {

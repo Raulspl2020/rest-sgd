@@ -661,7 +661,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
     let resultPaquete = await getPaquete(body.id_paquete);
     console.log("paquete encontrado : ", body.id_paquete);
     console.log(resultPaquete);
-    let programa = await getProgramaByIdProPersona(body.id_programa_persona);
+    let programa = await getProgramaByIdProPersona(body.id_programa_persona.trim());
     let estudianteDb: any = await getInfoUsuario(body.id_persona);
 
     info_cliente = {
@@ -694,6 +694,10 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       info_cliente.nom_nivel_educativo = programa[0].nom_nivel_educativo;
       info_cliente.cod_nivel_edu = programa[0].cod_nivel_edu;
       info_cliente.cod_nivel_educativo = programa[0].cod_nivel_educativo;
+    }else{
+      console.log("NO SE ENCONTRÓ EL PROGRAMA");
+      console.log(programa);
+      throw new Error("No se ha podido consultar el programa academico, intente nuevamente");
     }
 
     if (estudianteDb.length > 0) {
