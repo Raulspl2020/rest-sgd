@@ -26,9 +26,7 @@ export const consultarTerceroByID = async (nro_identificacion: string) => {
 export const updateTerceroByID = async (nro_identificacion: string, tercero: ClienteSysApolo) => {
         const cnn = await conSysApolo();
         let pool = await cnn;
-        let result1 = await pool.request()
-                .input('id', sql.VarChar(50), nro_identificacion)
-                .query(`UPDATE TERCERO 
+        let sqlQuery : string = `UPDATE TERCERO 
                 SET 
                 ide_tipo_identificacion=${tercero.ide_tipo_identificacion},
                 nom_ter ='${tercero.nom_ter}',
@@ -40,7 +38,13 @@ export const updateTerceroByID = async (nro_identificacion: string, tercero: Cli
                 tel_ter='${tercero.tel_ter}', 
                 email='${tercero.email}', 
                 ide_mun='${tercero.ide_mun}' 
-                where num_identificacion = @id`);
+                where num_identificacion = @id`;
+                console.log(sqlQuery);
+        let result1 = await pool.request()
+                .input('id', sql.VarChar(50), nro_identificacion)
+                .query(sqlQuery);
+                console.log(sqlQuery);
+                console.log(result1);
         return result1;
 }
 
