@@ -6,8 +6,8 @@ const autenticacion_1 = require("../middlewares/autenticacion");
 //====================
 //   /inicio
 //=====================
-router.get('/inicio', autenticacion_1.verificaToken, (req, res) => {
+router.get('/', autenticacion_1.verificaToken, (req, res) => {
     res.json(req.usuario);
 });
-module.exports = router;
+exports.default = router;
 //# sourceMappingURL=inicio.js.map

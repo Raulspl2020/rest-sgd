@@ -38,7 +38,7 @@ exports.comprobarJWT = (token) => {
         return [true, data];
     }
     catch (error) {
-        return [false, null];
+        return [false, error];
     }
 };
 exports.decodingJWT = (token) => {

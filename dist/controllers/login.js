@@ -27,26 +27,38 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetPass = exports.saveNewPass = exports.correoRecuperacion = exports.renewToken = exports.auth = exports.googleView = exports.googleAuth = void 0;
+exports.resetPass = exports.saveNewPass = exports.correoRecuperacion = exports.renewToken = exports.renovarToken = exports.auth = exports.googleView = exports.googleAuth = void 0;
 const express_1 = require("express");
 const google_verify_token_1 = require("../helpers/google-verify-token");
 const loginProvider = __importStar(require("../provider/login_provider"));
-const usuario_provider_1 = require("../provider/usuario_provider");
 const mail_1 = require("../helpers/mail");
 const jwt_1 = require("../helpers/jwt");
+const login_provider_1 = require("../provider/login_provider");
+const Sesion_1 = __importDefault(require("../models/Mongo/Sesion"));
+const uuid_1 = require("uuid");
 //====================
 //   /login/googleauth 
 //=====================
 exports.googleAuth = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    let token = req.body.token;
+    let token = null;
+    if (!req.query.token) {
+        token = req.body.token;
+    }
+    else {
+        token = req.query.token;
+    }
     if (!token) {
         return res.json({
             error: true,
             message: "Token requerido",
         });
     }
-    const googleUser = yield google_verify_token_1.validarGoogleIdToken(token);
+    const googleUser = yield google_verify_token_1.validateGoogleIdToken(token);
+    console.log(googleUser);
     if (!googleUser) {
         return res.status(401).json({
             error: true,
@@ -58,13 +70,39 @@ exports.googleAuth = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         //const userDb = await login_model.getUser(googleUser.email);
         const userDb = yield loginProvider.getUserGoogle(googleUser.email);
         if (userDb[0].length > 0) {
+            const session_id = uuid_1.v4();
+            let scopes = [];
             let roles = userDb[0];
             let tipo_user = [];
             roles.forEach((element) => {
                 tipo_user.push(element['description']);
             });
-            let usuario = { id: roles[0].login, nombre: roles[0].name, picture: googleUser.picture, email: roles[0].email, active: roles[0].active, google: true, rol: tipo_user };
+            let scopesDD = yield login_provider_1.getServiceByRol(tipo_user);
+            scopesDD.forEach((element) => {
+                scopes.push(element['cod_service']);
+            });
+            let usuario = {
+                id: roles[0].login,
+                nombre: roles[0].name,
+                picture: googleUser.picture,
+                email: roles[0].email,
+                active: roles[0].active,
+                google: true,
+                rol: tipo_user,
+                sesion_id: session_id,
+                permisos: scopes
+            };
             let newJWT = yield jwt_1.generarJWT(usuario);
+            let { exp } = yield jwt_1.decodingJWT(newJWT);
+            const sesion = new Sesion_1.default({
+                token: newJWT,
+                user_id: usuario.id,
+                sesion_id: session_id,
+                fecha_creacion: new Date(),
+                fecha_caducidad: new Date(exp * 1000)
+            });
+            //no es necesario esperar que se guarde
+            sesion.save();
             res.json({
                 error: false,
                 usuario: usuario,
@@ -80,6 +118,7 @@ exports.googleAuth = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
     }
     catch (error) {
+        console.log(error);
         res.json({
             error: true,
             message: error.message,
@@ -102,12 +141,38 @@ exports.auth = (req, res = express_1.response) => __awaiter(void 0, void 0, void
         let tipo_user = [];
         console.log(row[0].length);
         if (row[0].length > 0) {
+            const session_id = uuid_1.v4();
+            let scopes = [];
             roles.forEach((element) => {
                 tipo_user.push(element['description']);
             });
-            let usuario = { id: roles[0].login, nombre: roles[0].name, email: roles[0].email, active: roles[0].active, google: false, rol: tipo_user };
+            let scopesDD = yield login_provider_1.getServiceByRol(tipo_user);
+            scopesDD.forEach((element) => {
+                scopes.push(element['cod_service']);
+            });
+            let usuario = {
+                id: roles[0].login,
+                nombre: roles[0].name,
+                email: roles[0].email,
+                active: roles[0].active,
+                google: false,
+                sesion_id: session_id,
+                rol: tipo_user,
+                permisos: scopes
+            };
             let saludo = "Bienvenido";
             let token = yield jwt_1.generarJWT(usuario);
+            //guardar token en DB
+            let { exp } = yield jwt_1.decodingJWT(token);
+            const sesion = new Sesion_1.default({
+                token: token,
+                user_id: usuario.id,
+                sesion_id: session_id,
+                fecha_creacion: new Date(),
+                fecha_caducidad: new Date(exp * 1000)
+            });
+            //no es necesario esperar que se guarde
+            sesion.save();
             data = {
                 usuario,
                 message: `${saludo} ${row[0][0].name}`,
@@ -132,6 +197,18 @@ exports.auth = (req, res = express_1.response) => __awaiter(void 0, void 0, void
         });
     }
 });
+//devuelve un nuevo token a partir de uno anterior 
+exports.renovarToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { usuario } = yield jwt_1.decodingJWT(token);
+        let refrehsToken = yield jwt_1.generarJWT(usuario);
+        return refrehsToken;
+    }
+    catch (error) {
+        console.log(error);
+        throw new Error(error);
+    }
+});
 //====================
 //   /login/renewtoken 
 //=====================
@@ -139,40 +216,71 @@ exports.renewToken = (req, res = express_1.response) => __awaiter(void 0, void 0
     let tokenOld = req.body.token;
     let data = {};
     try {
-        const dataToken = yield jwt_1.decodingJWT(tokenOld);
-        let refrehsToken = null;
-        let row = yield usuario_provider_1.getUserRol(dataToken.usuario.id);
-        let roles = row[0];
-        console.log(roles);
-        let tipo_user = [];
-        let codeStatus;
-        if (row[0].length > 0) {
-            roles.forEach((element) => {
-                tipo_user.push(element['description']);
-            });
-            let usuario = { id: roles[0].login, nombre: roles[0].name, email: roles[0].email, active: roles[0].active, google: false, rol: tipo_user };
-            refrehsToken = yield jwt_1.generarJWT(usuario);
-            codeStatus = 202;
-            data = {
-                error: false,
-                usuario,
-                refrehsToken
-            };
+        let refreshToken = null;
+        const { usuario, exp } = yield jwt_1.decodingJWT(tokenOld);
+        let [esValido, data] = jwt_1.comprobarJWT(tokenOld);
+        if (esValido) {
+            console.log("vamos a buscar el la DB");
+            let sesion = yield Sesion_1.default.findOne({ sesion_id: usuario.sesion_id, token: tokenOld });
+            console.log(sesion);
+            if (!sesion) {
+                return res.status(401).json({
+                    error: true,
+                    message: "Sesion expirada"
+                });
+            }
+            else {
+                //renovar token
+                refreshToken = yield jwt_1.generarJWT(usuario);
+                const { exp } = yield jwt_1.decodingJWT(refreshToken);
+                sesion.token = refreshToken;
+                sesion.fecha_caducidad = new Date(exp * 1000);
+                yield sesion.save();
+                return res.status(201).json({
+                    error: false,
+                    usuario,
+                    refreshToken
+                });
+            }
         }
         else {
-            data = {
-                message: "Usuario no encontrado",
-                error: true,
-            };
-            codeStatus = 401;
+            //renovar token solo si ya expiro
+            if (data.name === 'TokenExpiredError') {
+                console.log("el token expiro");
+                let sesion = yield Sesion_1.default.findOne({ token: tokenOld });
+                if (!sesion) {
+                    return res.status(401).json({
+                        error: true,
+                        message: "Sesion expirada"
+                    });
+                }
+                else {
+                    refreshToken = yield jwt_1.generarJWT(usuario);
+                    const { exp } = yield jwt_1.decodingJWT(refreshToken);
+                    sesion.token = refreshToken;
+                    sesion.fecha_caducidad = new Date(exp * 1000);
+                    yield sesion.save();
+                    return res.status(201).json({
+                        error: false,
+                        usuario,
+                        refreshToken
+                    });
+                }
+            }
+            else {
+                return res.status(401).json({
+                    error: true,
+                    data,
+                    message: "Token invalido, no se ha podido renovar el token"
+                });
+            }
         }
-        return res.status(codeStatus).json(data);
     }
-    catch (dataErr) {
+    catch (det_error) {
         return res.status(500).json({
             error: true,
             message: "No se ha podido renovar el token",
-            dataErr
+            det_error: det_error.message
         });
     }
     //  const usuario = await Usuario.findById(uid);
@@ -185,13 +293,7 @@ exports.correoRecuperacion = (req, res) => __awaiter(void 0, void 0, void 0, fun
     let user = {};
     console.log(body);
     try {
-        if (Object.entries(body).length > 2) {
-            user = body;
-        }
-        else {
-            user = yield loginProvider.getUser(body.login);
-            user = JSON.parse(JSON.stringify(user));
-        }
+        user = yield loginProvider.getUser(body.login);
         let tokenMail = yield jwt_1.generarJWT(user, "900000");
         console.log("listo para enviar: " + process.env.BASE_URL.toString());
         var baseurl = process.env.BASE_URL.toString() + "/login/viewresetpass/" + tokenMail;
@@ -239,6 +341,7 @@ exports.correoRecuperacion = (req, res) => __awaiter(void 0, void 0, void 0, fun
         }
     }
     catch (error) {
+        console.log(error);
         res.status(500).json({
             message: "Error al enviar el email",
             data: error,
@@ -262,7 +365,7 @@ exports.saveNewPass = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             });
         }
         console.log(dataToken);
-        let result = yield loginProvider.updatePass(dataToken.usuario, body.pass);
+        let result = yield loginProvider.updatePass(dataToken.usuario.login, body.pass);
         res.status(200).json({
             error: false,
             message: "Guardado exitosamente",

@@ -8,12 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validarGoogleIdToken = void 0;
+exports.validarGoogleIdToken = exports.validateGoogleIdToken = void 0;
 const google_auth_library_1 = require("google-auth-library");
+const node_fetch_1 = __importDefault(require("node-fetch"));
 const CLIENT_ID = process.env.GOOGLE_ID;
 const client = new google_auth_library_1.OAuth2Client(CLIENT_ID);
 const validarGoogleIdToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    //console.log(token);
     try {
         const ticket = yield client.verifyIdToken({
             idToken: token,
@@ -34,8 +39,29 @@ const validarGoogleIdToken = (token) => __awaiter(void 0, void 0, void 0, functi
         };
     }
     catch (error) {
+        console.log(error);
         return null;
     }
 });
 exports.validarGoogleIdToken = validarGoogleIdToken;
+exports.validateGoogleIdToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        let response = yield node_fetch_1.default(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
+        if (response.status == 200) {
+            let payload = yield response.json();
+            return {
+                name: payload["name"],
+                picture: payload["picture"],
+                email: payload["email"],
+            };
+        }
+        else {
+            return null;
+        }
+    }
+    catch (error) {
+        console.log(error);
+        return null;
+    }
+});
 //# sourceMappingURL=google-verify-token.js.map

@@ -20,6 +20,7 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const express_fileupload_1 = __importDefault(require("express-fileupload"));
 const path_1 = __importDefault(require("path"));
 const node_cron_1 = __importDefault(require("node-cron"));
+const database_1 = require("../config/database");
 class Server {
     constructor() {
         this.app = express_1.default();
@@ -32,16 +33,20 @@ class Server {
     }
     cronJob() {
         return __awaiter(this, void 0, void 0, function* () {
-            node_cron_1.default.schedule('*/15 * * * *', () => {
-                cron_job_1.verificaPagosPendientes().then((result) => {
-                    // console.log(result);
+            if (process.env.NODE_ENV === 'pro') {
+                node_cron_1.default.schedule('*/15 * * * *', () => {
+                    // cron.schedule('* * * * *', () => {
+                    cron_job_1.verificaPagosPendientesOnline().then((result) => {
+                        // console.log(result);
+                    });
                 });
-            });
-            node_cron_1.default.schedule('*/60 * * * *', () => {
-                cron_job_1.verificaPagosPendientesEfectivo().then((result) => {
-                    //console.log(result);
-                });
-            });
+            }
+            // cron.schedule('* * * * *', () => {
+            //     //cron.schedule('*/60 * * * *', () => {
+            //     verificaPagosPendientesEfectivo().then((result) => {
+            //         //console.log(result);
+            //     });
+            // });
         });
     }
     middlewares() {
@@ -52,12 +57,17 @@ class Server {
         //body-parser-json
         this.app.use(body_parser_1.default.json());
         //File-upploads
-        this.app.use(express_fileupload_1.default());
+        this.app.use(express_fileupload_1.default({
+            useTempFiles: true,
+            tempFileDir: '/tmp/',
+            createParentPath: true
+        }));
         //carpeta publica
         this.app.use('/api/static', express_1.default.static('public'));
     }
     dbConnection() {
         return __awaiter(this, void 0, void 0, function* () {
+            yield database_1.conMongo();
             // try {
             //     console.log('Connection has been established successfully.');
             // } catch (error) {
