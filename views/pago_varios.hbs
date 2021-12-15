@@ -183,7 +183,7 @@
                                     <div class="form-group">
                                         <label for="">Total a pagar:
                                             <span class="text-danger">*</span></label>
-                                        <input class="form-control bg-dark" type="text" :disabled="desactivarTotal"
+                                        <input class="form-control bg-dark" type="number" :disabled="desactivarTotal"
                                             placeholder="Escriba un valor numérico" v-model.number="total_a_pagar"
                                             multiple id="txtTotal" v-on:keyup="numeroALetras"
                                             style=" color: chartreuse;" />
