@@ -16,7 +16,9 @@ router.get('/DetalleFactura/:ref/:tipo', pdfFacturaView);
 router.get('/admindescuento', htmlAdminDescuentoView);
 router.get('/descargarplantilladesceunto', descargarPlantillaDesceunto);
 router.get('/DescargarReciboPago/:ref', pdfReciboPago);
+
 router.get('/PagoPersonalizado', pagosvariosView);
+
 router.get('/actualizarcontacto/:id_user', userUpdateContactView);
 
 //desarrollada solo para probar el guardado de datos en sysapolo, pendiente borrar

@@ -414,6 +414,7 @@ const quitarAumentoDetalle = async (detalle: any, newAumento: number) => {
 
 
 const inicarPagoZonaPagos = async (body: string) => {
+  console.log(body);
   //INICAMOS EL PAGO CON ZONAPAGOS
   let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
     method: "POST",
@@ -631,6 +632,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
 
 
 
+
   let dt = new Date();
 
 
@@ -652,7 +654,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
   let str_url = "";
   let info_cliente: any = {};
   const totalRequest: number =  body.total;
-
+  let cantidad =  parseInt(body.cantidad);
 
   try {
 
@@ -729,13 +731,15 @@ export const inicioPagosVarios = async (req: any, res: any) => {
 
     //crear un nuevo pago
     resultPaquete.forEach((concepto: any) => {
+      concepto.cantidad = cantidad;
       tDetallePago.push({
         pago_id: null, // si se envia el id se lo asigna
         concepto_id: concepto.concepto_id,
         descuento: concepto.descuento,
         aumento: concepto.aumento,
         valor_unidad: (concepto.concepto_id==0) ? parseInt(Math.round(body.total).toString()): concepto.valor_unidad,
-        cantidad: concepto.cantidad,
+        //cantidad: concepto.cantidad,
+        cantidad: cantidad,
       });
       if(concepto.concepto_id==0){
         concepto.valor_unidad= parseInt(Math.round(body.total).toString());

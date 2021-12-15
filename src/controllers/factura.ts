@@ -708,8 +708,11 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
 
         delete pago.json_response;
 
+        console.log("El pago es: ",pago);
 
-        let subtotal = (pago.valor_unidad - (pago.valor_unidad * pago.descuento) + (pago.valor_unidad * pago.aumento));
+        let subtotal1 = pago.valor_unidad  * pago.cantidad;
+        let subtotal = (subtotal1 - (subtotal1 * pago.descuento) + (subtotal1 * pago.aumento));
+        console.log(subtotal);
         total_a_pagar = total_a_pagar + subtotal;
         det_factura.push({
 

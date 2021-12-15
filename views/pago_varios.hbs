@@ -157,7 +157,7 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="">Cantidad: <span class="text-danger">*</span></label>
-                                        <input type="number" value="1" v-model="cantidad"
+                                        <input type="number" value="1" v-model="cantidad" :disabled="desactivarCantidad"
                                             class="form-control form-control-sm" min="1" max="10" placeholder="Cantidad"
                                             @change="calculaValor()">
                                     </div>
@@ -183,7 +183,7 @@
                                     <div class="form-group">
                                         <label for="">Total a pagar:
                                             <span class="text-danger">*</span></label>
-                                        <input class="form-control bg-dark" type="text"
+                                        <input class="form-control bg-dark" type="text" :disabled="desactivarTotal"
                                             placeholder="Escriba un valor numérico" v-model.number="total_a_pagar"
                                             multiple id="txtTotal" v-on:keyup="numeroALetras"
                                             style=" color: chartreuse;" />
@@ -268,6 +268,8 @@
                         txtApe2: ""
                     },
                     des_concepto: "",
+                    desactivarTotal : true,
+                    desactivarCantidad : false,
                     total_a_pagar: 0,
                     cantidad: 1,
                     conceptos: [],
@@ -392,7 +394,8 @@
                             "cel_persona": this.formpago.txtCelular,
                             "str_opcional2": this.numeroLetras,
                             "id_programa_persona": this.sel_programa,
-                            "id_paquete": this.sel_concepto
+                            "id_paquete": this.sel_concepto,
+                            "cantidad" : this.cantidad
 
                         };
 
@@ -454,6 +457,16 @@
                 onChange2(paquete_id, id_concepto, event) {
 
                     console.log("el paquete id es:", paquete_id, " y el valor");
+                    if(paquete_id=='0'){
+                        console.log("activando escritura");
+                        this.desactivarTotal = false;
+                        this.desactivarCantidad = true;
+                        this.cantidad = 1;
+                    }else{
+                        console.log("desactivando escritura");
+                        this.desactivarTotal = true;
+                        this.desactivarCantidad = false;
+                    }
                     console.log(event);
 
                     for (const rr of this.conceptos) {

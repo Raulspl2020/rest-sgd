@@ -228,6 +228,8 @@ export const pdfReciboPago = async (req: any, res = response) => {
 
         let factura = await getDataDetalleFacturaById(idFactura);
 
+        console.log(factura);
+
             //crear un nuevo pago
         if(factura.pagos.length>0){
             factura.pagos.forEach((item: any) => {
