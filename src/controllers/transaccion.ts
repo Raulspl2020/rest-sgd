@@ -189,11 +189,12 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       };
 
       let detPago: any = [];
+      //console.log(JSON.stringify(pagoDecoded));
       pagoDecoded.forEach((det: any) => {
 
         let fechaInsert: any = fechaUpdate;
 
-        if (det.dat_fecha == '') {
+        if (det.dat_fecha == '' || det.dat_fecha == undefined ) {
           fechaInsert = format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss');
         } else {
           fechaInsert = format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss');
@@ -205,20 +206,20 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         detPago.push({
           '_id': uuidv4(),
           'pago_id': id_pago,
-          'int_n_pago': (det.int_n_pago == '') ? null : det.int_n_pago,
-          'valor_pago': (det.dbl_valor_pagado == '') ? 0 : det.dbl_valor_pagado,
-          'total_pago': (det.dbl_total_pago == '') ? 0 : det.dbl_total_pago,
-          'valor_iva_pago': (det.dbl_valor_iva_pagado == '') ? 0 : det.dbl_valor_iva_pagado,
-          'estado_pago_id': (det.int_estado_pago == '') ? null : det.int_estado_pago,
-          'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago,
-          'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco,
-          'codigo_transaccion': (det.str_codigo_transacción == '') ? null : det.str_codigo_transacción,
-          'fecha': fechaInsert,
-          'ticketID': (det.str_ticketID == '') ? null : det.str_ticketID,
-          'numero_tarjeta': (det.int_numero_tarjeta == '') ? null : det.int_numero_tarjeta,
-          'franquicia': (det.str_franquicia == '') ? null : det.str_franquicia,
-          'cod_aprobacion': (det.int_cod_aprobacion == '') ? null : det.int_cod_aprobacion,
-          'num_recibido': (det.int_num_recibido == '') ? null : det.int_num_recibido
+          'int_n_pago': (det.int_n_pago == '') ? null : det.int_n_pago || null,
+          'valor_pago': (det.dbl_valor_pagado == '') ? 0 : det.dbl_valor_pagado || 0,
+          'total_pago': (det.dbl_total_pago == '') ? 0 : det.dbl_total_pago || 0,
+          'valor_iva_pago': (det.dbl_valor_iva_pagado == '') ? 0 : det.dbl_valor_iva_pagado || 0,
+          'estado_pago_id': (det.int_estado_pago == '') ? null : det.int_estado_pago || null,
+          'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago || null,
+          'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco || null,
+          'codigo_transaccion': (det.str_codigo_transacción == '') ? null : det.str_codigo_transacción || null,
+          'fecha': fechaInsert || null,
+          'ticketID': (det.str_ticketID == '') ? null : det.str_ticketID || null,
+          'numero_tarjeta': (det.int_numero_tarjeta == '') ? null : det.int_numero_tarjeta || null,
+          'franquicia': (det.str_franquicia == '') ? null : det.str_franquicia || null,
+          'cod_aprobacion': (det.int_cod_aprobacion == '') ? null : det.int_cod_aprobacion || null,
+          'num_recibido': (det.int_num_recibido == '') ? null : det.int_num_recibid0 || null
         });
 
       });
