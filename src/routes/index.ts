@@ -21,6 +21,7 @@ app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "Hola mundo",
     developer: "Duvan Rosero",
+    server : process.env.NAME_SERVER ||  "Sin configurar",
     error: false,
     env: process.env.NODE_ENV,
     base_url: process.env.BASE_URL,
