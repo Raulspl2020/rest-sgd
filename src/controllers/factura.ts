@@ -169,7 +169,7 @@ export const consultaFacturaService = async (req: any, res: any) => {
           }
 
         }
-
+        //si es un pago de inscripcion
         if (categoria_id == 5) {
           let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
 
