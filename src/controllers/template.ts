@@ -296,6 +296,10 @@ export const complileTemplateReciboPago = async (id_factura: any,prioridad:boole
     let data: any = {};
     data.BASE_URL = process.env.BASE_URL.toString();
 
+    if(process.env.NODE_ENV!='pro'){
+        return ;
+    }
+
     try {
         //leer el contenido del archivo para despues ser compilado
         const hbs = fs.readFileSync('./views/pdf_recibo_pago.hbs', 'utf8');
