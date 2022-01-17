@@ -158,6 +158,7 @@ export const consultaFacturaService = async (req: any, res: any) => {
           let resultDB = resultMatricula[0][0];
 
           let periodo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
+      
           let finOrdianria = new Date(periodo.fec_fin_matordinaria);
           let iniOrdianria = new Date(periodo.fec_ini_matordinaria);
 
@@ -177,6 +178,9 @@ export const consultaFacturaService = async (req: any, res: any) => {
           let resultDB = resultMatricula[0][0];
 
           let periodo = await getFechasPeriodo(resultDB.cod_colegio, resultDB.cod_periodo);
+          console.log(periodo);
+          console.log("ESTA: ",periodo.fec_fin_ins_nuevos);
+          
           let finInscripcion = new Date(periodo.fec_fin_ins_nuevos);
           fechaLimitePago = format(finInscripcion, "DD/MM/YYYY");
 

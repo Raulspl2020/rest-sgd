@@ -294,6 +294,7 @@ export const generarPagoCodigoBarras = async (req: any, res: any) => {
     general.BASE_URL = process.env.BASE_URL.toString();
 
 
+
     let vista_pago = "pdf_pago_general";
 
     switch (jsonDB.det_factura[0].categoria_id) {
