@@ -224,6 +224,109 @@ FROM
 };
 
 
+
+
+export const consultaFacturasPagadas = async (): Promise<any[]> => {
+  const fechaActual = new Date();
+  const anio =  fechaActual.getFullYear();
+
+  let sql = `SELECT
+  fin_pago._id AS id_factura,
+  fin_pago.fecha AS fecha_factura,
+  fin_pago.estudiante_id,
+  CONCAT_WS(' ',col_persona.ape1_persona,col_persona.ape2_persona,col_persona.nom1_persona,col_persona.nom2_persona) AS estudiante,
+  fin_pago.matricula_id,
+  fin_pago.email_send,
+  fin_pago.sysapolo_verify,
+
+  tablita.fecha_pago,
+  tablita.estado_pago,
+  tablita.estado_id,
+  ROUND(
+    SUM(
+      (
+        fin_detalle_factura.valor_unidad * fin_detalle_factura.cantidad
+      ) - (
+        (
+          fin_detalle_factura.valor_unidad * fin_detalle_factura.cantidad
+        ) * fin_detalle_factura.descuento
+      ) + (
+        (
+          fin_detalle_factura.valor_unidad * fin_detalle_factura.cantidad
+        ) * fin_detalle_factura.aumento
+      )
+    ),
+    2
+  ) AS total_a_pagar,
+  tablita.total_pagado
+FROM
+  fin_pago
+  INNER JOIN fin_detalle_factura
+
+    ON (
+      fin_pago._id = fin_detalle_factura.pago_id
+    )
+      INNER JOIN col_persona
+  ON (fin_pago.estudiante_id =  col_persona.ide_persona)
+  LEFT JOIN
+    (SELECT
+      fin_pago._id AS id_factura,
+      fin_categoria_pago.descripcion AS categoria,
+      fin_categoria_pago._id AS categoria_id,
+      fin_detalle_pago._id AS pago_id,
+      fin_detalle_pago.int_n_pago,
+      fin_detalle_pago.fecha AS fecha_pago,
+      fin_estado_pago._id AS estado_id,
+      fin_estado_pago.descripcion AS estado_pago,
+      fin_forma_pago._id AS forma_pago_id,
+      fin_forma_pago.descripcion AS forma_pago,
+      fin_pago.json_response AS detalle,
+      SUM(
+        IF(
+          fin_detalle_pago.estado_pago_id = 1,
+          fin_detalle_pago.valor_pago,
+          0
+        )
+      ) AS total_pagado
+    FROM
+      fin_pago
+      LEFT JOIN fin_detalle_pago
+        ON (
+          fin_detalle_pago.pago_id = fin_pago._id
+        )
+      INNER JOIN fin_estado_pago
+        ON (
+          fin_detalle_pago.estado_pago_id = fin_estado_pago._id
+        )
+      LEFT JOIN fin_forma_pago
+        ON (
+          fin_detalle_pago.forma_pago_id = fin_forma_pago._id
+        )
+      INNER JOIN fin_categoria_pago
+        ON (
+          fin_pago.categoria_pago_id = fin_categoria_pago._id
+        )
+    WHERE fin_detalle_pago.estado_pago_id = 1
+    GROUP BY fin_pago._id) AS tablita
+    ON (
+      fin_pago._id = tablita.id_factura
+    )
+    
+    WHERE tablita.estado_id = 1 AND fin_pago.sysapolo_verify='0' AND  YEAR(tablita.fecha_pago) = ${anio}
+
+GROUP BY fin_pago._id
+ORDER BY fin_pago.fecha ASC
+LIMIT 10`;
+
+  let result = await conDB.raw(sql);
+  if (result[0].length > 0) {
+    return result[0];
+  } else {
+    return [];
+  }
+};
+
+
 export const getConceptosByConfigActive = async () => {
   let result = await conDB
     .select(

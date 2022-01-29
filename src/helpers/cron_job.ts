@@ -3,6 +3,8 @@ import { ListResponsePago } from "../models/ResponsePago";
 import { actualizarPagoyDetalleVeri, consultaPagosSINNPAGO, getPagosOnlinePendientes, obtenerPagosPendientes } from "../provider/pago_provider";
 import { v4 as uuidv4 } from 'uuid';
 import { parse, format } from 'date-format-parse';
+import { consultaFacturasPagadas } from "../provider/factura_provider";
+import { registroFacturaSysApolo } from "../controllers/sysapolo/factura";
 
 // pendiente borrar los pagos que lleven mas de 7 dias iniciados y no tengan detalle_pago
 
@@ -96,7 +98,7 @@ export const verificaPagosNpago = async () => {
             let detPago: any = [];
             //si encuentra los pagos
             if (responseData.int_error == 0 && responseData.int_cantidad_pagos > 0) {
-                console.log("encontrado: "+row.pago_id);
+                console.log("encontrado: " + row.pago_id);
 
                 const resss = new ListResponsePago();
                 let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
@@ -134,7 +136,7 @@ export const verificaPagosNpago = async () => {
 
 
                 let resDb2 = await actualizarPagoyDetalleVeri(row.pago_id, detPago);
-                
+
                 console.log("Respuesta de BD");
                 console.log(resDb2);
 
@@ -150,4 +152,24 @@ export const verificaPagosNpago = async () => {
         console.log(error);
     }
 
+}
+
+
+
+//obtener pagos pendientes por registrar en sysApolo
+export const verificaPagosPendienteSysApolo = async () => {
+
+
+    const facturasPagadas = await consultaFacturasPagadas();
+
+    for (let factura of facturasPagadas) {
+        const [ok, message] = await registroFacturaSysApolo(parseInt(factura.id_factura));
+
+        if (ok) {
+            console.log("factura " + factura.id_factura + " ha sido registrada en sysApolo");
+        } else {
+            console.log(message);
+        }
+
+    }
 }

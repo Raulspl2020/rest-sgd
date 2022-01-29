@@ -1,7 +1,7 @@
 import express, { Application } from 'express';
 import Routes from '../routes';
 
-import { verificaPagosPendientes, verificaPagosPendientesOnline } from "../helpers/cron_job";
+import { verificaPagosPendientes, verificaPagosPendientesOnline, verificaPagosPendienteSysApolo } from "../helpers/cron_job";
 
 
 
@@ -43,14 +43,16 @@ class Server {
                 });
             });
 
+
+            cron.schedule('*/10 * * * *', () => {
+                // cron.schedule('* * * * *', () => {
+                    verificaPagosPendienteSysApolo().then((result) => {
+                    // console.log(result);
+                });
+            });
+
         }
 
-        // cron.schedule('* * * * *', () => {
-        //     //cron.schedule('*/60 * * * *', () => {
-        //     verificaPagosPendientesEfectivo().then((result) => {
-        //         //console.log(result);
-        //     });
-        // });
     }
 
     middlewares() {

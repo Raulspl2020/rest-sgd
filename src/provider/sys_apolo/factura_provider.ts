@@ -115,7 +115,7 @@ export const sysGetFacturaPagadaByID = async (id_factura: number) => {
         .join("fin_concepto", "fin_detalle_factura.concepto_id", "=", "fin_concepto._id")
         .join("fin_categoria_pago", "fin_pago.categoria_pago_id", "=", "fin_categoria_pago._id")
         .join("fin_banco_recaudo", "fin_banco_recaudo._id", "=", "fin_detalle_pago.banco_recaudo_id")
-        .where({ 'fin_detalle_pago.estado_pago_id': 1, 'fin_pago.sysapolo_verify': '0', 'fin_pago._id': id_factura })
+        .where({ 'fin_detalle_pago.estado_pago_id': 1, 'fin_pago._id': id_factura })
         .groupBy('fin_detalle_factura._id')
         .orderBy('fin_pago._id', 'ASC');
     return result;
