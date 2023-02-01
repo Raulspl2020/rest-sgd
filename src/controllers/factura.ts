@@ -145,7 +145,7 @@ export const consultaFacturaService = async (req: any, res: any) => {
     ) {
       let resultObjectDB: any = await consultaFacturaBanco(Referencia_pago);
 
-      await updateDataPagoWebService(body);
+      //await updateDataPagoWebService(body); 
 
       console.log(resultObjectDB);
 
