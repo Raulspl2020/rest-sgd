@@ -42,7 +42,7 @@ import readline from "readline";
 import { subirArchivo } from "../helpers/subir-archivo";
 import { DetallePago } from "../interfaces/facturas.interface";
 import Cargue from "../models/Mongo/Cargue";
-import { updateDataPagoWebService } from "src/helpers/updateDataPago";
+import { updateDataPagoWebService } from "../helpers/updateDataPago";
 
 //====================
 //   /transaccion/notificacionfactura

@@ -1,5 +1,5 @@
 import { conDB } from "../config/database";
-import { parse, format } from 'date-format-parse';
+import { parse, format } from "date-format-parse";
 
 export const getInfoPago = async (codigoPago: string) => {
   const sql = `SELECT
@@ -41,11 +41,11 @@ fin_pago
   let result = await conDB.raw(sql, [codigoPago]);
   if (result[0].length > 0) {
     return result[0];
-  } {
+  }
+  {
     return false;
   }
-}
-
+};
 
 export const getInfoFactura = async (codigoPago: string) => {
   let sql = `SELECT
@@ -72,11 +72,11 @@ INNER JOIN fin_detalle_factura
   let result = await conDB.raw(sql, [codigoPago]);
   if (result[0].length > 0) {
     return result[0];
-  } {
+  }
+  {
     return false;
   }
-}
-
+};
 
 export const guardarPago = async (params: any) => {
   let result = await conDB("fin_pago").insert(params);
@@ -97,39 +97,38 @@ export const obtenerPagosPendientes = async (
   let result = await conDB.raw(sql, [minutos, forma_pago_ids]);
   if (result[0].length > 0) {
     return result[0];
-  } {
+  }
+  {
     return false;
   }
-
-
 };
 
-
 export const getPagosOnlinePendientes = async (minutos: number) => {
-  const sql = `SELECT * FROM (SELECT  fin_pago._id AS id_factura,
-    fin_detalle_pago._id AS id_pago,
-    fin_pago.codigo,
-    fin_pago.is_online,
-    fin_detalle_pago.estado_pago_id
-    FROM fin_pago 
-    LEFT JOIN fin_detalle_pago
-    ON (fin_pago._id = fin_detalle_pago.pago_id)
-     WHERE  TIMESTAMPDIFF(MINUTE,fin_pago.fecha,NOW()) >= ?
-     AND ( fin_pago.is_online='1' OR fin_pago.is_online IS NULL )
-     ORDER BY fin_pago.fecha ASC) AS tabla
-     WHERE (tabla.estado_pago_id NOT IN (1,1000,1002,4000) OR tabla.estado_pago_id IS NULL)  LIMIT 10`;
+  const sql = `SELECT  
+  fin_pago._id AS id_factura,
+  fin_pago.codigo,
+  fin_pago.fecha,
+  fin_pago.is_online,
+  fin_pago.estado_id , 
+  fin_pago.valor
+  FROM fin_pago 
+
+  WHERE  TIMESTAMPDIFF(MINUTE,fin_pago.fecha,NOW()) >= ?
+   AND ( fin_pago.is_online='1' OR fin_pago.is_online IS NULL )
+and TIMESTAMPDIFF(MONTH ,fin_pago.fecha,NOW()) <=3
+  and fin_pago.estado_id <> 1      
+  ORDER BY fin_pago.fecha desc
+  limit 10
+     `;
 
   let result = await conDB.raw(sql, [minutos]);
   if (result[0].length > 0) {
     return result[0];
-  } {
+  }
+  {
     return false;
   }
-
 };
-
-
-
 
 export const detIdPagoByCodigo = async (codigo: any) => {
   let result = await conDB
@@ -144,10 +143,7 @@ export const detIdPagoByCodigo = async (codigo: any) => {
 };
 
 export const detIdPagoByID = async (id_pago: any) => {
-  let result = await conDB
-    .select("_id")
-    .from("fin_pago")
-    .where("_id", id_pago);
+  let result = await conDB.select("_id").from("fin_pago").where("_id", id_pago);
   if (result.length > 0) {
     return result[0]._id;
   } else {
@@ -155,9 +151,8 @@ export const detIdPagoByID = async (id_pago: any) => {
   }
 };
 
-
 export const actualizarEstadoPago = async (params: any, id_pago: string) => {
-  let result = await conDB("fin_pago").where({ '_id': id_pago }).update(params);
+  let result = await conDB("fin_pago").where({ _id: id_pago }).update(params);
   return result;
 };
 
@@ -201,7 +196,6 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
   return await trx("fin_pago")
     .insert(params)
     .then((ids: any) => {
-
       detalle.forEach((det: any) => (det.pago_id = ids[0]));
       id = ids;
 
@@ -213,19 +207,21 @@ export const guardarPagoyDetalle = async (params: any, tDetallePago: any) => {
       return id;
     })
     .catch((result: any) => {
-      console.log(result)
+      console.log(result);
       trx.rollback();
       return false;
     });
 };
 
-
-
 //actualiza los datos en fin_pago, borras los detalles de la factura y crea unos nuevos
-export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_id: any) => {
+export const actualizarPagoyDetalleNew = async (
+  pago: any,
+  det_pago: any,
+  pago_id: any
+) => {
   // delete pago["codigo"];
   // console.log(det_pago);
-  let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss');
+  let fechaActual = format(new Date(), "YYYY-MM-DD HH:mm:ss");
   pago.fecha_update = fechaActual;
   const trx = await conDB.transaction();
   return await trx("fin_detalle_factura")
@@ -237,7 +233,6 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
     })
 
     .then((result: any) => {
-
       console.log("se va a actualizar el pago");
       console.log(pago);
       return trx("fin_pago")
@@ -248,7 +243,7 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
           trx.commit();
           let idArreglo = [pago_id, 0];
           return idArreglo;
-        })
+        });
     })
     .catch((result: any) => {
       console.log(result);
@@ -257,8 +252,6 @@ export const actualizarPagoyDetalleNew = async (pago: any, det_pago: any, pago_i
     });
 };
 
-
-
 //si los pagos ya existen realiza un update, de lo contrario un INSERT
 export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
@@ -266,20 +259,19 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
   let comitar = true;
 
   for (const row of dataInsert) {
-
     let result = await conDB
       .select("_id")
       .from("fin_detalle_pago")
       .where({
-        'valor_pago': row.valor_pago,
-        'pago_id': row.pago_id,
+        valor_pago: row.valor_pago,
+        pago_id: row.pago_id,
         //'estado_pago_id': row.estado_pago_id,
-        'forma_pago_id': row.forma_pago_id,
-        'int_n_pago': row.int_n_pago
-      }).orderBy('estado_pago_id', 'asc');
+        forma_pago_id: row.forma_pago_id,
+        int_n_pago: row.int_n_pago,
+      })
+      .orderBy("estado_pago_id", "asc");
 
     try {
-
       if (result.length > 0) {
         let ids: string[] = [];
         for (const id of result) {
@@ -288,23 +280,20 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
 
         const id = result[0]._id;
         console.log("encontado");
-        delete row['_id'];
+        delete row["_id"];
         console.log(ids);
         await trx("fin_detalle_pago")
           // .where("fin_detalle_pago._id", id)
-          .whereIn('fin_detalle_pago._id', ids)
+          .whereIn("fin_detalle_pago._id", ids)
           .update(row);
-
       } else {
         console.log("No encontado");
         await trx("fin_detalle_pago").insert(row);
       }
-
     } catch (error) {
       comitar = false;
       console.log(error);
     }
-
   }
 
   if (comitar) {
@@ -316,10 +305,7 @@ export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
     console.log("vamos a desacer cambios");
     return false;
   }
-
 };
-
-
 
 //obtiene la configuracion del periodo
 //traer la configuracion mas reciente
@@ -328,7 +314,8 @@ export const getConfigPeriodo = async () => {
     .select()
     .from("fin_config")
     .where("estado", 1)
-    .limit(1).first();
+    .limit(1)
+    .first();
   return result;
 };
 
@@ -338,38 +325,56 @@ export const getCategoriaPorcentaje = async (id: any) => {
     .select()
     .from("fin_porcetaje_categoria")
     .where("_id", id)
-    .limit(1).first();
+    .limit(1)
+    .first();
   return result;
 };
 
 //obtiene una categoria de porcentaje
-export const getCategoriaPorcentajeByMatricula = async (cat_pago: any, estudiante_id: any, periodo_id: any) => {
+export const getCategoriaPorcentajeByMatricula = async (
+  cat_pago: any,
+  estudiante_id: any,
+  periodo_id: any
+) => {
   let result = await conDB
-    .select('fin_porcentaje_soporte.fecha', 'fin_porcentaje_soporte.porcentaje', 'fin_porcentaje_soporte.observacion', 'fin_porcetaje_categoria.descripcion', 'fin_porcentaje_estado.descripcion as estado')
+    .select(
+      "fin_porcentaje_soporte.fecha",
+      "fin_porcentaje_soporte.porcentaje",
+      "fin_porcentaje_soporte.observacion",
+      "fin_porcetaje_categoria.descripcion",
+      "fin_porcentaje_estado.descripcion as estado"
+    )
     .from("fin_porcentaje_soporte")
     .join(
-      "fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id",
+      "fin_porcetaje_categoria",
+      "fin_porcentaje_soporte.porcentaje_categoria_id",
       "=",
       "fin_porcetaje_categoria._id"
     )
     .join(
-      "fin_porcentaje_estado", "fin_porcentaje_estado._id",
+      "fin_porcentaje_estado",
+      "fin_porcentaje_estado._id",
       "=",
       "fin_porcentaje_soporte.porcentaje_estado_id"
     )
 
-
     // .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
-    .where({ 'fin_porcentaje_soporte.categoria_pago_id': cat_pago, 'fin_porcentaje_soporte.estudiante_id': estudiante_id, 'fin_porcentaje_soporte.periodo_id': periodo_id })
-    .orderBy([{ column: 'fin_porcentaje_soporte.accion' }, { column: 'fin_porcentaje_soporte.porcentaje_estado_id' }, { column: 'fin_porcentaje_soporte.porcentaje', order: 'asc' }]);
+    .where({
+      "fin_porcentaje_soporte.categoria_pago_id": cat_pago,
+      "fin_porcentaje_soporte.estudiante_id": estudiante_id,
+      "fin_porcentaje_soporte.periodo_id": periodo_id,
+    })
+    .orderBy([
+      { column: "fin_porcentaje_soporte.accion" },
+      { column: "fin_porcentaje_soporte.porcentaje_estado_id" },
+      { column: "fin_porcentaje_soporte.porcentaje", order: "asc" },
+    ]);
   return result;
 };
 
-
 //guarda una solicitud de descuento o aumento
 export const guardarProcentajeSoporte = async (data: any) => {
-  let result = await conDB
-    ('fin_porcentaje_soporte').insert(data);
+  let result = await conDB("fin_porcentaje_soporte").insert(data);
   return result;
 };
 
@@ -400,7 +405,6 @@ FROM
       GROUP BY fin_detalle_paquete._id
       `;
 
-
   let result = await conDB.raw(sql, [codigo]);
   if (result[0].length > 0) {
     return result[0];
@@ -409,50 +413,65 @@ FROM
   }
 };
 
-
 //consulta descuentos a un estudiante
-export const getDescuento = async (cat_pago: any, periodo_id: any, estudiante_id: any) => {
+export const getDescuento = async (
+  cat_pago: any,
+  periodo_id: any,
+  estudiante_id: any
+) => {
   let result = await conDB
-    .select('fin_porcentaje_soporte._id', 'fin_porcentaje_soporte.porcentaje', 'fin_porcentaje_soporte.accion', 'fin_porcentaje_soporte.observacion', 'fin_porcentaje_soporte.tipo', 'fin_porcentaje_soporte.json_file', 'fin_porcetaje_categoria.descripcion')
+    .select(
+      "fin_porcentaje_soporte._id",
+      "fin_porcentaje_soporte.porcentaje",
+      "fin_porcentaje_soporte.accion",
+      "fin_porcentaje_soporte.observacion",
+      "fin_porcentaje_soporte.tipo",
+      "fin_porcentaje_soporte.json_file",
+      "fin_porcetaje_categoria.descripcion"
+    )
     .from("fin_porcentaje_soporte")
     .join(
-      "fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id",
+      "fin_porcetaje_categoria",
+      "fin_porcentaje_soporte.porcentaje_categoria_id",
       "=",
       "fin_porcetaje_categoria._id"
     )
-    .where({ 'categoria_pago_id': cat_pago, estudiante_id: estudiante_id, 'periodo_id': periodo_id, 'porcentaje_estado_id': 2 })
-    .orderBy([{ column: 'fin_porcentaje_soporte.accion' }, { column: 'fin_porcentaje_soporte.porcentaje', order: 'asc' }]);
+    .where({
+      categoria_pago_id: cat_pago,
+      estudiante_id: estudiante_id,
+      periodo_id: periodo_id,
+      porcentaje_estado_id: 2,
+    })
+    .orderBy([
+      { column: "fin_porcentaje_soporte.accion" },
+      { column: "fin_porcentaje_soporte.porcentaje", order: "asc" },
+    ]);
   return result;
 };
 
 //cambia el estado del descuento a Facturado para que no se pueda volver a usar
 export const updateEstadoDescuentoFac = async (ids: any, pago_id: any) => {
-
   const trx = await conDB.transaction();
 
   let dataInsert: any = [];
   ids.forEach((row: any) => {
     let rowDB = {
-      'pago_id': pago_id,
-      'porcentaje_soporte_id': row
-    }
+      pago_id: pago_id,
+      porcentaje_soporte_id: row,
+    };
     dataInsert.push(rowDB);
   });
 
-
   return conDB("fin_porcentaje_soporte")
-    .whereIn('_id', ids)
+    .whereIn("_id", ids)
     .update({ porcentaje_estado_id: 4 })
 
     .then((ress: any) => {
-
-      return trx("fin_factura_descuento")
-        .insert(dataInsert)
-
+      return trx("fin_factura_descuento").insert(dataInsert);
     })
     .then((result: any) => {
       trx.commit();
-      console.log(result)
+      console.log(result);
       return true;
     })
     .catch((result: any) => {
@@ -460,20 +479,16 @@ export const updateEstadoDescuentoFac = async (ids: any, pago_id: any) => {
       trx.rollback();
       return false;
     });
-
 };
-
-
 
 //consulta las categorias de descuento disponibles
 export const getCategriaDescuento = async (accion: any) => {
   let result = await conDB
     .select()
     .from("fin_porcetaje_categoria")
-    .where({ 'accion': accion });
+    .where({ accion: accion });
   return result;
 };
-
 
 //añade el codigo de barras a un pago ya creado
 export const updateCodigoBarras = async (codigo: string, id: number) => {
@@ -484,19 +499,15 @@ export const updateCodigoBarras = async (codigo: string, id: number) => {
 
 //actualiza datos de un pago por id
 export const updateDataPago = async (data: any, id: number) => {
-  return await conDB("fin_pago")
-    .where("fin_pago._id", id)
-    .update(data);
+  return await conDB("fin_pago").where("fin_pago._id", id).update(data);
 };
-
-
 
 //consulta pago por codigo de barras
 export const getPagoByBarCOde = async (codigo: string) => {
   let result = await conDB
     .select()
     .from("fin_pago")
-    .where({ 'codigo_barras': codigo });
+    .where({ codigo_barras: codigo });
 
   if (result.length > 0) {
     return result[0];
@@ -507,10 +518,7 @@ export const getPagoByBarCOde = async (codigo: string) => {
 
 //consulta pago por codigo de barras
 export const getPagoByID = async (id: number) => {
-  let result = await conDB
-    .select()
-    .from("fin_pago")
-    .where({ '_id': id });
+  let result = await conDB.select().from("fin_pago").where({ _id: id });
 
   if (result.length > 0) {
     return result[0];
@@ -518,20 +526,24 @@ export const getPagoByID = async (id: number) => {
     return false;
   }
 };
-
-
 
 //verificar si ya se genero un pago antes y no esta pagado
 export const existePago = async (cod_paquete: string, matricula_id: string) => {
   let result = await conDB
-    .select('fin_pago._id', 'fin_pago.json_response', 'fin_pago.codigo', 'fin_pago.valor', 'fin_estado_pago.descripcion as estado', 'fin_estado_pago._id as estado_id')
-    .from("fin_pago")
-    .join(
-      "fin_estado_pago", "fin_pago.estado_id",
-      "=",
-      "fin_estado_pago._id"
+    .select(
+      "fin_pago._id",
+      "fin_pago.json_response",
+      "fin_pago.codigo",
+      "fin_pago.valor",
+      "fin_estado_pago.descripcion as estado",
+      "fin_estado_pago._id as estado_id"
     )
-    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id });
+    .from("fin_pago")
+    .join("fin_estado_pago", "fin_pago.estado_id", "=", "fin_estado_pago._id")
+    .where({
+      "fin_pago.cod_paquete": cod_paquete,
+      "fin_pago.matricula_id": matricula_id,
+    });
 
   if (result.length > 0) {
     return result[0];
@@ -541,16 +553,25 @@ export const existePago = async (cod_paquete: string, matricula_id: string) => {
 };
 
 //verificar si ya se genero un pago antes y no esta pagado
-export const existeFactura = async (cod_paquete: string, matricula_id: string) => {
+export const existeFactura = async (
+  cod_paquete: string,
+  matricula_id: string
+) => {
   let result = await conDB
-    .select('fin_pago._id', 'fin_pago.json_response', 'fin_pago.codigo', 'fin_pago.valor', 'fin_estado_pago.descripcion as estado', 'fin_estado_pago._id as estado_id')
-    .from("fin_pago")
-    .join(
-      "fin_estado_pago", "fin_pago.estado_id",
-      "=",
-      "fin_estado_pago._id"
+    .select(
+      "fin_pago._id",
+      "fin_pago.json_response",
+      "fin_pago.codigo",
+      "fin_pago.valor",
+      "fin_estado_pago.descripcion as estado",
+      "fin_estado_pago._id as estado_id"
     )
-    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id });
+    .from("fin_pago")
+    .join("fin_estado_pago", "fin_pago.estado_id", "=", "fin_estado_pago._id")
+    .where({
+      "fin_pago.cod_paquete": cod_paquete,
+      "fin_pago.matricula_id": matricula_id,
+    });
 
   if (result.length > 0) {
     return result[0];
@@ -559,34 +580,44 @@ export const existeFactura = async (cod_paquete: string, matricula_id: string) =
   }
 };
 
-
-
 //verifica la factura por id trae los conceptos y total a pagar
 export const getFactura = async (id_factura: any) => {
   let result = await conDB
-    .select('fin_pago._id',
-      'fin_pago.codigo', 'fin_pago.descripcion AS desc_factura',
-      'fin_categoria_pago.descripcion as categoria',
-      'fin_pago.fecha',
-      'fin_pago.estudiante_id',
-      'fin_pago.valor',
-      'fin_pago.sysapolo_verify',
-      'fin_pago.email_send',
-      'fin_pago.json_response',
-      'fin_detalle_factura.concepto_id',
-      'fin_concepto.codigo AS codigo_concepto',
-      'fin_concepto.cod_sysapolo',
-      'fin_concepto.descripcion AS concepto',
-      'fin_detalle_factura.descuento',
-      'fin_detalle_factura.aumento',
-      'fin_detalle_factura.valor_unidad',
-      'fin_detalle_factura.cantidad',
+    .select(
+      "fin_pago._id",
+      "fin_pago.codigo",
+      "fin_pago.descripcion AS desc_factura",
+      "fin_categoria_pago.descripcion as categoria",
+      "fin_pago.fecha",
+      "fin_pago.estudiante_id",
+      "fin_pago.valor",
+      "fin_pago.sysapolo_verify",
+      "fin_pago.email_send",
+      "fin_pago.json_response",
+      "fin_detalle_factura.concepto_id",
+      "fin_concepto.codigo AS codigo_concepto",
+      "fin_concepto.cod_sysapolo",
+      "fin_concepto.descripcion AS concepto",
+      "fin_detalle_factura.descuento",
+      "fin_detalle_factura.aumento",
+      "fin_detalle_factura.valor_unidad",
+      "fin_detalle_factura.cantidad"
     )
     .from("fin_detalle_factura")
     .join("fin_pago", "fin_detalle_factura.pago_id", "=", " fin_pago._id")
-    .join("fin_categoria_pago", "fin_pago.categoria_pago_id", "=", " fin_categoria_pago._id")
-    .join("fin_concepto", "fin_detalle_factura.concepto_id", "=", " fin_concepto._id")
-    .where({ 'fin_pago._id': id_factura });
+    .join(
+      "fin_categoria_pago",
+      "fin_pago.categoria_pago_id",
+      "=",
+      " fin_categoria_pago._id"
+    )
+    .join(
+      "fin_concepto",
+      "fin_detalle_factura.concepto_id",
+      "=",
+      " fin_concepto._id"
+    )
+    .where({ "fin_pago._id": id_factura });
 
   if (result.length > 0) {
     return result;
@@ -594,28 +625,40 @@ export const getFactura = async (id_factura: any) => {
     return [];
   }
 };
-
 
 //verifica la factura por id trae los conceptos y total a pagar
-export const getFacturaByMatricula = async (matricula_id: any, cod_paquete: any) => {
+export const getFacturaByMatricula = async (
+  matricula_id: any,
+  cod_paquete: any
+) => {
   let result = await conDB
-    .select('fin_pago._id',
-      'fin_pago.codigo', 'fin_pago.descripcion AS desc_factura',
-      'fin_pago.fecha',
-      'fin_pago.estudiante_id',
-      'fin_pago.valor',
-      'fin_detalle_factura.concepto_id',
-      'fin_concepto.codigo AS codigo_concepto',
-      'fin_concepto.descripcion AS concepto',
-      'fin_detalle_factura.descuento',
-      'fin_detalle_factura.aumento',
-      'fin_detalle_factura.valor_unidad',
-      'fin_detalle_factura.cantidad',
+    .select(
+      "fin_pago._id",
+      "fin_pago.codigo",
+      "fin_pago.descripcion AS desc_factura",
+      "fin_pago.fecha",
+      "fin_pago.estudiante_id",
+      "fin_pago.valor",
+      "fin_detalle_factura.concepto_id",
+      "fin_concepto.codigo AS codigo_concepto",
+      "fin_concepto.descripcion AS concepto",
+      "fin_detalle_factura.descuento",
+      "fin_detalle_factura.aumento",
+      "fin_detalle_factura.valor_unidad",
+      "fin_detalle_factura.cantidad"
     )
     .from("fin_detalle_factura")
     .join("fin_pago", "fin_detalle_factura.pago_id", "=", " fin_pago._id")
-    .join("fin_concepto", "fin_detalle_factura.concepto_id", "=", " fin_concepto._id")
-    .where({ 'fin_pago.cod_paquete': cod_paquete, 'fin_pago.matricula_id': matricula_id });
+    .join(
+      "fin_concepto",
+      "fin_detalle_factura.concepto_id",
+      "=",
+      " fin_concepto._id"
+    )
+    .where({
+      "fin_pago.cod_paquete": cod_paquete,
+      "fin_pago.matricula_id": matricula_id,
+    });
 
   if (result.length > 0) {
     return result;
@@ -623,83 +666,103 @@ export const getFacturaByMatricula = async (matricula_id: any, cod_paquete: any)
     return [];
   }
 };
-
-
-
 
 //obtiene los pagos relacionados con una factura con su respectivo estado
 export const getPagoFactura = async (id_factura: any) => {
-
   let result = await conDB
-    .select('fin_detalle_pago._id',
-      'fin_detalle_pago.pago_id',
-      'fin_detalle_pago.valor_pago',
-      'fin_detalle_pago.total_pago',
-      'fin_detalle_pago.estado_pago_id',
-      'fin_estado_pago.descripcion AS estado',
-      'fin_detalle_pago.forma_pago_id',
-      'fin_forma_pago.descripcion AS forma_pago',
+    .select(
+      "fin_detalle_pago._id",
+      "fin_detalle_pago.pago_id",
+      "fin_detalle_pago.valor_pago",
+      "fin_detalle_pago.total_pago",
+      "fin_detalle_pago.estado_pago_id",
+      "fin_estado_pago.descripcion AS estado",
+      "fin_detalle_pago.forma_pago_id",
+      "fin_forma_pago.descripcion AS forma_pago",
       `fin_detalle_pago.fecha`,
-      'fin_detalle_pago.nombre_banco',
-      'fin_detalle_pago.codigo_transaccion',
-      'fin_detalle_pago.ticketID',
-      'fin_detalle_pago.numero_tarjeta',
-      'fin_detalle_pago.franquicia',
-      'fin_detalle_pago.cod_aprobacion',
-      'fin_detalle_pago.num_recibido',
-      'fin_detalle_pago.int_n_pago'
+      "fin_detalle_pago.nombre_banco",
+      "fin_detalle_pago.codigo_transaccion",
+      "fin_detalle_pago.ticketID",
+      "fin_detalle_pago.numero_tarjeta",
+      "fin_detalle_pago.franquicia",
+      "fin_detalle_pago.cod_aprobacion",
+      "fin_detalle_pago.num_recibido",
+      "fin_detalle_pago.int_n_pago"
     )
     .from("fin_detalle_pago")
-    .join("fin_estado_pago", "fin_detalle_pago.estado_pago_id", "=", "fin_estado_pago._id")
-    .join("fin_forma_pago", "fin_detalle_pago.forma_pago_id", "=", "fin_forma_pago._id")
-    .where({ 'fin_detalle_pago.pago_id': id_factura, 'fin_detalle_pago.estado_pago_id': 1 });
+    .join(
+      "fin_estado_pago",
+      "fin_detalle_pago.estado_pago_id",
+      "=",
+      "fin_estado_pago._id"
+    )
+    .join(
+      "fin_forma_pago",
+      "fin_detalle_pago.forma_pago_id",
+      "=",
+      "fin_forma_pago._id"
+    )
+    .where({
+      "fin_detalle_pago.pago_id": id_factura,
+      "fin_detalle_pago.estado_pago_id": 1,
+    });
 
   if (result.length > 0) {
     return result;
   } else {
     return [];
   }
-
-}
+};
 
 //obtiene los descuentos aplicados a una factura  con su respectivo estado
 export const getDescuentoFactura = async (id_factura: any) => {
-
   let result = await conDB
-    .select('fin_factura_descuento._id',
-      'fin_factura_descuento.pago_id',
-      'fin_factura_descuento.porcentaje_soporte_id',
-      'fin_porcentaje_soporte.fecha',
-      'fin_porcentaje_soporte.porcentaje_estado_id',
-      'fin_porcentaje_estado.descripcion AS estado',
-      'fin_porcentaje_soporte.porcentaje_categoria_id',
-      'fin_porcetaje_categoria.descripcion AS categoria',
-      'fin_porcentaje_soporte.accion',
-      'fin_porcentaje_soporte.porcentaje'
+    .select(
+      "fin_factura_descuento._id",
+      "fin_factura_descuento.pago_id",
+      "fin_factura_descuento.porcentaje_soporte_id",
+      "fin_porcentaje_soporte.fecha",
+      "fin_porcentaje_soporte.porcentaje_estado_id",
+      "fin_porcentaje_estado.descripcion AS estado",
+      "fin_porcentaje_soporte.porcentaje_categoria_id",
+      "fin_porcetaje_categoria.descripcion AS categoria",
+      "fin_porcentaje_soporte.accion",
+      "fin_porcentaje_soporte.porcentaje"
     )
     .from("fin_factura_descuento")
-    .join("fin_porcentaje_soporte", "fin_factura_descuento.porcentaje_soporte_id", "=", "fin_porcentaje_soporte._id")
-    .join("fin_porcentaje_estado", "fin_porcentaje_soporte.porcentaje_estado_id", "=", "fin_porcentaje_estado._id")
-    .join("fin_porcetaje_categoria", "fin_porcentaje_soporte.porcentaje_categoria_id", "=", "fin_porcetaje_categoria._id")
-    .where({ 'fin_factura_descuento.pago_id': id_factura });
+    .join(
+      "fin_porcentaje_soporte",
+      "fin_factura_descuento.porcentaje_soporte_id",
+      "=",
+      "fin_porcentaje_soporte._id"
+    )
+    .join(
+      "fin_porcentaje_estado",
+      "fin_porcentaje_soporte.porcentaje_estado_id",
+      "=",
+      "fin_porcentaje_estado._id"
+    )
+    .join(
+      "fin_porcetaje_categoria",
+      "fin_porcentaje_soporte.porcentaje_categoria_id",
+      "=",
+      "fin_porcetaje_categoria._id"
+    )
+    .where({ "fin_factura_descuento.pago_id": id_factura });
 
   if (result.length > 0) {
     return result;
   } else {
     return [];
   }
-
-}
-
-
-
+};
 
 //VERIFICADORES
 //si los pagos ya existen realiza un update, de lo contrario un INSERT
 export const actualizarPagoyDetalleVeri = async (id: any, dataInsert: any) => {
   const trx = await conDB.transaction();
   return await trx("fin_detalle_pago")
-    .where({ "pago_id": id })
+    .where({ pago_id: id })
     .whereRaw("(forma_pago_id <> ? OR  forma_pago_id IS NULL)", [99])
     .del()
     .then((ids: any) => {
@@ -718,7 +781,6 @@ export const actualizarPagoyDetalleVeri = async (id: any, dataInsert: any) => {
     });
 };
 
-
 export const consultaPagosSINNPAGO = async () => {
   let sql = `select _id as pago_id FROM fin_pago      `;
 
@@ -728,19 +790,12 @@ export const consultaPagosSINNPAGO = async () => {
   } else {
     return [];
   }
-
 };
-
 
 //actualiza en pago con el email_send cuado se notifica al cliente
-export const updateEmailSend = async (id_pago:number) => {
-  let result = await conDB("fin_pago").where({ '_id': id_pago }).update({
-    'email_send' : '1'
+export const updateEmailSend = async (id_pago: number) => {
+  let result = await conDB("fin_pago").where({ _id: id_pago }).update({
+    email_send: "1",
   });
   return result;
-
 };
-
-
-
-
