@@ -432,7 +432,7 @@ const inicarPagoZonaPagos = async (body: string) => {
 };
 
 
-const generarCodigoFactura = async (cadena: string) => {
+export const generarCodigoFactura = async (cadena: string) => {
   let codigoFactura = "";
   cadena = limpiarCampos(cadena.replace(/\s+/g, ""));
   let validation;
