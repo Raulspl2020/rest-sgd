@@ -241,7 +241,7 @@ export const createReciboPago = async (encabezado: FacturaSysApolo, detalle: Fac
         let queryAux = "";
         for (const det of detalle) {
             queryAux = queryAux + `(
-            ${cod_det_factura + 1},
+            ${cod_det_factura=cod_det_factura + 1},
             ${det.ide_fact_concepto_enc},
             ${det.ide_concepto},
             ${det.cantidad},
