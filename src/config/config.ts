@@ -1,7 +1,7 @@
 //=========================
 //   ENTORNO
 //=========================
-process.env.NODE_ENV = process.env.NODE_ENV || 'local';
+process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
 
 //=========================
 //   PUERTO SERVER
