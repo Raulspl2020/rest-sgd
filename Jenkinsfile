@@ -20,7 +20,7 @@ pipeline {
         stage("Deploy") {
             steps {
                 echo "Deploying.... desplegando"
-                sh "docker-compose down"
+                sh "docker-compose down --remove-orphans"
                 sh "docker-compose up -d --build"
             }
         }
