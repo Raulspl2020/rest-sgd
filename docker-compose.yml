@@ -12,14 +12,16 @@ services:
     volumes:
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - monguito:/data/db
-  db-mysql:
+  server-mysql:
     image: mysql:5.7
     platform: linux/amd64
     container_name: mysql-db
     command: mysqld --sql_mode=""
     environment:
-      MYSQL_ROOT_PASSWORD: "root"
-      MYSQL_DATABASE: "db"
+      MYSQL_ROOT_PASSWORD: ${SECRET_KEY}
+      MYSQL_DATABASE: ${MYSQL_SGD_DATABASE}
+      MYSQL_USER: ${MYSQL_SGD_USER}
+      MYSQL_PASSWORD: ${MYSQL_SGD_PASS}
     ports:
       - 3306:3306
     volumes:
@@ -29,7 +31,7 @@ services:
     image: sigedin/rest
     container_name: rest-sgd
     restart: unless-stopped
-    links:
+    links:    
       - server-mongo:db-mongo
     ports: 
       - ${PORT}:${PORT}
