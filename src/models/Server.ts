@@ -57,7 +57,7 @@ class Server {
   }
 
   async dbConnection() {
-    await conMongo();
+    // await conMongo();
     // try {
     //     console.log('Connection has been established successfully.');
     // } catch (error) {
