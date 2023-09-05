@@ -30,9 +30,9 @@ class Server {
 
   async cronJob() {
     if (process.env.NODE_ENV === "pro") {
-      cron.schedule("*/15 * * * *", () => verificaPagosPendientesOnline);
+      cron.schedule("*/15 * * * *", () => verificaPagosPendientesOnline());
 
-      cron.schedule("*/10 * * * *", () => verificaPagosPendienteSysApolo);
+      cron.schedule("*/10 * * * *", () => verificaPagosPendienteSysApolo());
     }
   }
 
