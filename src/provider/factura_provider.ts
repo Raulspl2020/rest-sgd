@@ -1,10 +1,10 @@
-import { DetallePago } from "../interfaces/facturas.interface";
+import { DetallePago, IDetalleFactura } from "../interfaces/facturas.interface";
 import { conDB } from "../config/database";
 import format from "date-format-parse/lib/format";
+import { calcularSubTotal } from "../helpers/factura.util";
 
 //consulta la factura si esta disponible
 export const consultaFacturaBanco = async (id: any) => {
-
   let sql = `SELECT
     fin_pago._id
     , fin_pago.codigo
@@ -33,12 +33,12 @@ FROM
     let resultArray = [];
     let data = result[0];
     let totalFinal = 0;
-    data.forEach((element: any) => {
-      let total = element.valor_unidad * element.cantidad;
-      let descuento = total * element.descuento;
-      let aumento = total * element.aumento;
-      let subtotal = (total + aumento) - descuento;
-      totalFinal = totalFinal + subtotal;
+    data.forEach((element: IDetalleFactura) => {
+      // let total = element.valor_unidad * element.cantidad;
+      // let descuento = total * element.descuento;
+      // let aumento = total * element.aumento;
+      // let subtotal = (total + aumento) - descuento;
+      totalFinal = totalFinal + calcularSubTotal(element);
     });
 
     return {
@@ -50,32 +50,32 @@ FROM
   }
 };
 
-
 //compueba si existe un detalle de pago exitoso por el mismo valor de a factura
 export const existeDetPago = async (pago_id: any, valor: number) => {
-
   let result = await conDB
     .select()
     .from("fin_detalle_pago")
-    .where({ 'pago_id': pago_id, 'estado_pago_id': 1 })
-    .whereRaw('valor_pago >=?', [valor])
+    .where({ pago_id: pago_id, estado_pago_id: 1 })
+    .whereRaw("valor_pago >=?", [valor]);
   if (result.length > 0) {
     return result[0];
   } else {
     return false;
   }
+};
 
-
-}
-
-
-export const actualizarPagoyDetalle = async (id: any, pago: any, dataInsert: any) => {
+export const actualizarPagoyDetalle = async (
+  id: any,
+  pago: any,
+  dataInsert: any
+) => {
   const trx = await conDB.transaction();
   return await trx("fin_pago")
     .where("fin_pago._id", id)
     .update(pago)
     .then((ids: any) => {
       let detalle: any = dataInsert;
+      //TODO: acualizar si existe
       return trx("fin_detalle_pago").insert(detalle);
     })
     .then((result: any) => {
@@ -89,17 +89,11 @@ export const actualizarPagoyDetalle = async (id: any, pago: any, dataInsert: any
     });
 };
 
-
-
 export const consultarPagoFactura = async (where: any) => {
   let result = await conDB
     .select()
     .from("fin_pago")
-    .join(
-      "fin_detalle_pago", "fin_pago._id",
-      "=",
-      "fin_detalle_pago.pago_id"
-    )
+    .join("fin_detalle_pago", "fin_pago._id", "=", "fin_detalle_pago.pago_id")
     .where(where);
 
   if (result.length > 0) {
@@ -107,28 +101,27 @@ export const consultarPagoFactura = async (where: any) => {
   } else {
     return false;
   }
-}
-
+};
 
 //permite corregir los pagos relizados, eliminando los pagos de una factura y creando unos nuevos
-export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) => {
-
-
+export const reversarPagoyDetalle = async (
+  id: any,
+  pago: any,
+  dataInsert: any
+) => {
   const trx = await conDB.transaction();
   return await trx("fin_pago")
     .where("fin_pago._id", id)
     .update(pago)
     .then((ids: any) => {
-
       //eliminar todos los pagos de la factua
       return conDB("fin_detalle_pago")
         .where({
-          'codigo_transaccion': dataInsert.codigo_transaccion,
-          'pago_id': dataInsert.pago_id,
-          'valor_pago': dataInsert.valor_pago
+          codigo_transaccion: dataInsert.codigo_transaccion,
+          pago_id: dataInsert.pago_id,
+          valor_pago: dataInsert.valor_pago,
         })
         .del();
-
     })
     .then((result: any) => {
       trx.commit();
@@ -142,13 +135,14 @@ export const reversarPagoyDetalle = async (id: any, pago: any, dataInsert: any) 
     });
 };
 
-
 //metodos para consultar estados de facturas y pagos
 
-export const consultaFacturaCliente = async (id_cliente: any, tipo: string = 'id_cliente') => {
-
+export const consultaFacturaCliente = async (
+  id_cliente: any,
+  tipo: string = "id_cliente"
+) => {
   let auxSql = "";
-  if (tipo == 'id_cliente') {
+  if (tipo == "id_cliente") {
     auxSql = " WHERE fin_pago.estudiante_id = ?";
   } else {
     auxSql = " WHERE fin_pago._id = ?";
@@ -188,7 +182,6 @@ FROM
   }
 };
 export const consultaPagoFacturaCliente = async (id_factura: any) => {
-
   let sql = `SELECT
   fin_detalle_pago._id as id
   , fin_detalle_pago.pago_id
@@ -223,12 +216,9 @@ FROM
   }
 };
 
-
-
-
 export const consultaFacturasPagadas = async (): Promise<any[]> => {
   const fechaActual = new Date();
-  const anio =  fechaActual.getFullYear();
+  const anio = fechaActual.getFullYear();
 
   let sql = `SELECT
   fin_pago._id AS id_factura,
@@ -326,83 +316,90 @@ LIMIT 10`;
   }
 };
 
-
 export const getConceptosByConfigActive = async () => {
   let result = await conDB
     .select(
-      'fin_paquete._id AS paquete_id'
-      , 'fin_paquete.descripcion AS paquete'
-      , 'fin_detalle_paquete._id'
-      , 'fin_concepto.codigo'
-      , 'fin_concepto.cod_sysapolo'
-      , 'fin_concepto.descripcion AS concepto'
-      , 'fin_detalle_paquete.concepto_id'
-      , 'fin_detalle_paquete.descuento'
-      , 'fin_detalle_paquete.aumento'
-      , 'fin_detalle_paquete.cantidad'
-      , 'fin_detalle_paquete.valor_unidad'
-      , 'fin_detalle_paquete.descuento_ext'
+      "fin_paquete._id AS paquete_id",
+      "fin_paquete.descripcion AS paquete",
+      "fin_detalle_paquete._id",
+      "fin_concepto.codigo",
+      "fin_concepto.cod_sysapolo",
+      "fin_concepto.descripcion AS concepto",
+      "fin_detalle_paquete.concepto_id",
+      "fin_detalle_paquete.descuento",
+      "fin_detalle_paquete.aumento",
+      "fin_detalle_paquete.cantidad",
+      "fin_detalle_paquete.valor_unidad",
+      "fin_detalle_paquete.descuento_ext"
     )
     .from("fin_detalle_paquete")
-    .join("fin_paquete", "fin_detalle_paquete.paquete_id", "=", "fin_paquete._id")
-    .join("fin_concepto", "fin_detalle_paquete.concepto_id ", "=", "fin_concepto._id")
+    .join(
+      "fin_paquete",
+      "fin_detalle_paquete.paquete_id",
+      "=",
+      "fin_paquete._id"
+    )
+    .join(
+      "fin_concepto",
+      "fin_detalle_paquete.concepto_id ",
+      "=",
+      "fin_concepto._id"
+    )
     .join("fin_config", "fin_paquete.config_id ", "=", "fin_config._id")
 
-    .where({ 'fin_config.estado': '1' })
-    .whereNotIn('fin_paquete.codigo', [1, 2, 3, 4,6])
-    .groupBy('fin_detalle_paquete._id');
+    .where({ "fin_config.estado": "1" })
+    .whereNotIn("fin_paquete.codigo", [1, 2, 3, 4, 6])
+    .groupBy("fin_detalle_paquete._id");
   return result;
-
-}
-
+};
 
 //buscar pago
-export const existeDetPagoWhere = async (pago: DetallePago): Promise<boolean> => {
-
+export const existeDetPagoWhere = async (
+  pago: DetallePago
+): Promise<boolean> => {
   let result = await conDB
     .select()
     .from("fin_detalle_pago")
-    .where({ 'pago_id': pago.pago_id, 'estado_pago_id': 1, 'codigo_transaccion': pago.codigo_transaccion, 'forma_pago_id': pago.forma_pago_id, 'valor_pago': pago.valor_pago })
-    .whereRaw(' DATE(fecha)  =DATE(?)', [pago.fecha])
+    .where({
+      pago_id: pago.pago_id,
+      estado_pago_id: 1,
+      codigo_transaccion: pago.codigo_transaccion,
+      forma_pago_id: pago.forma_pago_id,
+      valor_pago: pago.valor_pago,
+    })
+    .whereRaw(" DATE(fecha)  =DATE(?)", [pago.fecha]);
   if (result.length > 0) {
     return true;
   } else {
     return false;
   }
-}
-
+};
 
 export const insertPagoMR5 = async (pagos: DetallePago[]): Promise<boolean> => {
   const trx = await conDB.transaction();
   let fechaUpdate = new Date();
 
   try {
-
     const resultDB1 = await trx("fin_detalle_pago").insert(pagos);
     let tPago: any = {
       estado_id: 1,
-      fecha_update: format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss'),
+      fecha_update: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
     };
 
     for (const item of pagos) {
-
       const resultDB2 = await trx("fin_pago")
         .where("fin_pago._id", item.pago_id)
-        .update(tPago)
-    };
+        .update(tPago);
+    }
 
     trx.commit();
     return true;
-
-
   } catch (error) {
     console.log(error);
     trx.rollback();
     return false;
   }
-
 };
-
 
 //permite eliminar una factura con sus respectivos pagos si esta no tiene pagos pendientes o exitosos
 
@@ -412,22 +409,26 @@ export const eliminarFacturaRef = async (referencia: number) => {
   let eliminarFactura: boolean = true;
 
   try {
-
     let result: any = await trx
       .select(
-        'fin_pago._id'
-        , 'fin_detalle_pago.valor_pago'
-        , 'fin_detalle_pago.total_pago'
-        , 'fin_pago.estudiante_id'
-        , 'fin_pago.categoria_pago_id'
-        , 'fin_pago.fecha'
-        , 'fin_detalle_pago.estado_pago_id'
+        "fin_pago._id",
+        "fin_detalle_pago.valor_pago",
+        "fin_detalle_pago.total_pago",
+        "fin_pago.estudiante_id",
+        "fin_pago.categoria_pago_id",
+        "fin_pago.fecha",
+        "fin_detalle_pago.estado_pago_id"
       )
       .from("fin_pago")
-    
-      .leftJoin("fin_detalle_pago", "fin_detalle_pago.pago_id", "=", "fin_pago._id")
-      .where({ 'fin_pago._id': referencia })
-      .groupBy('fin_detalle_pago._id');
+
+      .leftJoin(
+        "fin_detalle_pago",
+        "fin_detalle_pago.pago_id",
+        "=",
+        "fin_pago._id"
+      )
+      .where({ "fin_pago._id": referencia })
+      .groupBy("fin_detalle_pago._id");
 
     console.log(result);
 
@@ -435,40 +436,45 @@ export const eliminarFacturaRef = async (referencia: number) => {
       //procedemos a verificar
 
       result.forEach((element: any) => {
-
-        if (element.estado_pago_id == 1 || element.estado_pago_id == 200 || element.estado_pago_id == 888 || element.estado_pago_id == 999 || element.estado_pago_id == 4001 || element.estado_pago_id == 2) {
-            eliminarFactura = false;
+        if (
+          element.estado_pago_id == 1 ||
+          element.estado_pago_id == 200 ||
+          element.estado_pago_id == 888 ||
+          element.estado_pago_id == 999 ||
+          element.estado_pago_id == 4001 ||
+          element.estado_pago_id == 2
+        ) {
+          eliminarFactura = false;
         }
 
-        if( format(element.fecha, 'DD-MM-YYYY')== format(new Date(), 'DD-MM-YYYY')){
+        if (
+          format(element.fecha, "DD-MM-YYYY") ==
+          format(new Date(), "DD-MM-YYYY")
+        ) {
           throw new Error("No se puede eliminar una factura con fecha de hoy");
         }
-
       });
 
       if (eliminarFactura) {
         //procedemos a eliminar
         await trx("fin_pago")
           .where({
-            '_id': referencia
+            _id: referencia,
           })
           .del();
         trx.commit();
         return [true, "Factura eliminada"];
-
       } else {
-        throw new Error("No se puede eliminar la factura porque contiene pagos pendientes o aprobados");
+        throw new Error(
+          "No se puede eliminar la factura porque contiene pagos pendientes o aprobados"
+        );
       }
-
     } else {
       console.log("No se encontro la factura " + referencia);
       throw new Error("No se encontro la factura " + referencia);
     }
-
-
   } catch (error) {
     trx.rollback();
     return [false, error.message];
   }
-
-}
+};

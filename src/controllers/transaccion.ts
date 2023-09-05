@@ -130,7 +130,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
   let fechaUpdate = new Date();
 
   try {
-    let id_pago = await detIdPagoByID(codigo_pago);
+
     let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
       method: "POST",
       body: JSON.stringify(data),
@@ -150,6 +150,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
 
     if (responseData.int_error == 0) {
+      let id_pago = await detIdPagoByID(codigo_pago);
       const resss = new ListResponsePago();
       let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
       let dataBody: any = pagoDecoded[0];

@@ -7,6 +7,8 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import stream from 'stream';
+import { IDetalleFactura } from "../interfaces/facturas.interface";
+import { calcularSubTotal } from "../helpers/factura.util";
 
 //====================
 //   /matricula/generarpagoinscripcion 
@@ -698,10 +700,9 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
 
                     //volvemos a recorrer para calcular totales
                     total_a_pagar = 0;
-                    precios.forEach((element: any, index: number) => {
-                        let subtotal = (element.valor_unidad * element.cantidad);
-                        precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
-                        total_a_pagar = element.subtotal + total_a_pagar;
+                    precios.forEach((element: IDetalleFactura, index: number) => {
+                        const subtotal = calcularSubTotal(element);
+                        total_a_pagar =  total_a_pagar+ subtotal;
                     });
 
 
@@ -771,10 +772,9 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
 
                     //volvemos a recorrer para calcular totales
                     total_a_pagar = 0;
-                    precios.forEach((element: any, index: number) => {
-                        let subtotal = (element.valor_unidad * element.cantidad);
-                        precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
-                        total_a_pagar = element.subtotal + total_a_pagar;
+                    precios.forEach((element: IDetalleFactura, index: number) => {
+                        const subtotal =calcularSubTotal(element);
+                        total_a_pagar = subtotal + total_a_pagar;
                     });
 
 

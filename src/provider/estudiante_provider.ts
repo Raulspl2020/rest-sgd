@@ -282,6 +282,7 @@ export const getProgramasEstudiante = async (estudiante_id:string) => {
             , 'tec_estadoinscripcion.nom_estadoinscripcion AS estado'
         )
         .from("tec_programa_persona")
+        .join("col_colegio_periodo", "tec_programa_persona.cod_colegio_periodo", "=", "col_colegio_periodo.cod_colegio_periodo")
         .join("tec_institucion_programa", "tec_programa_persona.cod_colegio_programa ", "=", "tec_institucion_programa.cod_colegio_programa")
         .join("col_nivel_educacion", "tec_institucion_programa.cod_nivel_educativo", "=", "col_nivel_educacion.cod_nivel_educativo")
         .join("col_colegio", "tec_institucion_programa.cod_colegio", "=", "col_colegio.cod_colegio")
