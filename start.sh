@@ -2,12 +2,12 @@
 echo "obteniendo cambios..."
 #git pull
 echo "Deteniendo contenedores..."
-docker stop rest-sgd
+docker stop rest-sgd-stable
 echo "eliminando contenedores..."
-docker rm rest-sgd
+docker rm rest-sgd-stable
 echo "eliminando imagenes..."
-docker rmi rest-sgd
-docker build -t rest-sgd .
+docker rmi rest-sgd-stable
+docker build -t rest-sgd-stable .
 echo "Creando nuevo contenedor..."
-docker run --name rest-sgd --restart=always -d -p 3000:3000 rest-sgd
+docker run --name rest-sgd-stable --restart=always -d -p 3000:3000 rest-sgd-stable
 
