@@ -1,5 +1,8 @@
 #FROM sigedin/base
-FROM node:14.17
+FROM node:14-slim
+
+RUN apt-get update && apt-get install -y bzip2
+
 RUN  apt-get update \
     && apt-get install -y wget gnupg ca-certificates procps libxss1 \
     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
@@ -14,7 +17,9 @@ RUN  apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && wget --quiet https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -O /usr/sbin/wait-for-it.sh \
     && chmod +x /usr/sbin/wait-for-it.sh
-    
+
+
+
 ENV TZ=America/Bogota
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 WORKDIR /app
@@ -22,3 +27,4 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 CMD ["npm","start"]
+
