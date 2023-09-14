@@ -931,7 +931,7 @@ const leerLienas = async (
             codigo_transaccion: codigo_transaccion,
             estado_pago_id: 1,
             forma_pago_id: 99,
-            banco_recaudo_id: 1, //si los pagos llegan a otras cuentas se debe cambiar
+            banco_recaudo_id: 13, //si los pagos llegan a otras cuentas se debe cambiar
             tipo_registro: "0",
           });
         }
