@@ -5,7 +5,7 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY package.json tsconfig.json /app/
 RUN apt-get update && apt-get install -y bzip2 
-RUN npm -g install phantomjs-prebuilt
+RUN npm -g install phantomjs-prebuilt --unsafe-perm
 RUN npm install
 
 
