@@ -1,6 +1,6 @@
 import { DetallePago, IDetalleFactura } from "../interfaces/facturas.interface";
 import { conDB } from "../config/database";
-import format from "date-format-parse/lib/format";
+import {format} from "date-format-parse";
 import { calcularSubTotal } from "../helpers/factura.util";
 
 //consulta la factura si esta disponible

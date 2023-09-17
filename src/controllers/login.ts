@@ -7,7 +7,6 @@ import path from "path";
 import { generarJWT, comprobarJWT, decodingJWT } from "../helpers/jwt";
 import { Usuario } from "../models/Usuario";
 import { getServiceByRol, guardarTokenUsuario } from "../provider/login_provider";
-import format from "date-format-parse/lib/format";
 import Sesion from "../models/Mongo/Sesion";
 import { v4 as uuidv4 } from 'uuid';
 
