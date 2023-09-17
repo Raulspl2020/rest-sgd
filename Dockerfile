@@ -1,7 +1,23 @@
 #FROM sigedin/base
-FROM node:14-slim
+FROM node:14-slim AS deps
 
-RUN apt-get update && apt-get install -y bzip2
+RUN mkdir -p /app
+WORKDIR /app
+COPY package.json tsconfig.json /app/
+RUN apt-get update && apt-get install -y bzip2 
+RUN npm -g install phantomjs-prebuilt
+RUN npm install
+
+
+FROM node:14-slim AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+FROM node:14-slim AS runner
+
+WORKDIR /usr/src/app
 
 RUN  apt-get update \
     && apt-get install -y wget gnupg ca-certificates procps libxss1 \
@@ -17,14 +33,15 @@ RUN  apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && wget --quiet https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -O /usr/sbin/wait-for-it.sh \
     && chmod +x /usr/sbin/wait-for-it.sh
-
-
-
+ENV PATH /usr/app/node_modules/.bin:$PATH
 ENV TZ=America/Bogota
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-CMD ["npm","start"]
 
+
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev
+COPY --from=builder /app/dist ./dist
+COPY . .
+COPY .env .env
+
+CMD ["node","dist/app"]
