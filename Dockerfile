@@ -40,6 +40,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 COPY package.json package-lock.json ./
 RUN npm install --omit=dev
+COPY . .
 COPY --from=builder /app/dist ./dist
 COPY .env .env
 
