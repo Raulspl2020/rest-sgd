@@ -266,9 +266,10 @@
                                                 <div class="fw-bold">$ {[row.valor_pago]} - {[row.estado]}</div>
                                                 {[row.forma_pago ]} - {[row.fecha ]}
                                             </div>
-                                            <a :href="'{{BASE_URL}}/page/DescargarReciboPago/'+row.pago_id" target="_blank">
+                                            <a :href="'{{BASE_URL}}/page/DescargarReciboPago/'+row.pago_id"
+                                                target="_blank">
                                                 <span class="badge bg-success rounded-pill">
-                                                  <i class="fa fa-file-pdf-o"></i>  Descargar recibo
+                                                    <i class="fa fa-file-pdf-o"></i> Descargar recibo
                                                 </span>
                                             </a>
                                         </li>
@@ -464,7 +465,8 @@
                         cel_persona: "",
                         txtDescripcionFactura: "",
                         colorTextoAlert: "text-success",
-                        cod_periodo: ''
+                        cod_periodo: '',
+                        programaPersonaId: 0
                     },
                     pago: {
                         id: '',
@@ -551,16 +553,25 @@
                         "isPagoOnline": false,
                     }
 
+                    const dataCaja = {
+                        "isPagoOnline": false,
+                        "codPaquete": this.factura.cod_paquete,
+                        "programaPersonaId": this.matricula.programaPersonaId,
+                        "total": this.factura.txtTotalPagarInt,
+                        "personaId": this.matricula.txtId,
+                        "matriculaId": '{{ ID_MATRICULA }}',
+                    };
+
 
                     this.activarBotonEf = false;
                     this.txtBotonEf = "Procesando...";
                     fetch(
-                        `{{BASE_URL}}/transaccion/InicioPagoMatricula`, {
+                        `{{URL_INVOICE}}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(dataCaja)
                     })
                         .then((response) => response.json())
                         .then((data) => {
@@ -569,7 +580,7 @@
                             } else {
                                 this.activarBotonEf = false;
                                 this.txtBotonEf = "Redireccionando...";
-                                window.location = data.data.str_url;
+                                window.location =  data.redirectPayment;
 
                             }
 
@@ -610,6 +621,7 @@
                                 this.matricula.txtSede = matricula.siglas_colegio;
                                 this.matricula.txtPeriodo = matricula.nom_periodo;
                                 this.matricula.cod_periodo = matricula.cod_periodo;
+                                this.matricula.programaPersonaId = matricula.id_programa_persona;
                                 this.factura.txtDescFactura = detalle_factura[0].paquete;
                                 this.factura.txtTotalPagarInt = data.total_a_pagar_int;
                                 this.numeroLetras = numeroALetras(data.total_a_pagar_int, {
@@ -632,26 +644,40 @@
                             }
                         });
                 },
-                continuarPago() {
+                continuarPago(isPagoOnline = true) {
                     // this.formpago.activarBoton = false;
                     //  this.formpago.txtBoton = "Procesando...";
 
 
-                    let data = {
+                    const dataOnline = {
                         "cod_matricula": '{{ ID_MATRICULA }}',
                         "isPagoOnline": true,
                     }
+
+                    const dataCaja = {
+                        "isPagoOnline": false,
+                        "codPaquete": this.factura.cod_paquete,
+                        "programaPersonaId": this.matricula.programaPersonaId,
+                        "total": this.factura.txtTotalPagarInt,
+                        "personaId": this.matricula.txtId,
+                        "matriculaId": '{{ ID_MATRICULA }}',
+                    };
+
+                    const finalData = isPagoOnline ? dataOnline : dataCaja;
+                    const finalURL = isPagoOnline ? `{{BASE_URL}}/transaccion/InicioPagoMatricula` : "{{URL_INVOICE}}";
+
+
 
 
                     this.activarBoton = false;
                     this.txtBoton = "Procesando...";
                     fetch(
-                        `{{BASE_URL}}/transaccion/InicioPagoMatricula`, {
+                        finalURL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(finalData)
                     })
                         .then((response) => response.json())
                         .then((data) => {
@@ -663,7 +689,7 @@
                             } else {
                                 this.activarBoton = false;
                                 this.txtBoton = "Redireccionando...";
-                                window.location = data.data.str_url;
+                                window.location = isPagoOnline ? data.data.str_url : data.redirectPayment;
 
                             }
 

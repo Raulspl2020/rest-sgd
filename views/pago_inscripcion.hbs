@@ -128,7 +128,9 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label for="">Estado:</label>
-                                            <div type="text" class="form-control bg-light text-primary"> <strong>{[pago.id]} - {[pago.estado]}</strong> </div>
+                                            <div type="text" class="form-control bg-light text-primary">
+                                                <strong>{[pago.id]} - {[pago.estado]}</strong>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -201,7 +203,7 @@
                                     </div>
                                 </div>
 
-                                <div class="row"  v-if="!factura.pagado">
+                                <div class="row" v-if="!factura.pagado">
                                     <div class="col-6">
                                         {{!-- <div><strong>Esado transaccion: </strong> PENDIENTE</div> --}}
                                         <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong> </h4>
@@ -224,8 +226,8 @@
                                             {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
                                             </h4> --}}
                                             <button class="btn btn-outline-success" data-bs-toggle="tooltip"
-                                                @click="continuarPago(true)" data-bs-placement="top" :disabled="!activarBoton"
-                                                title="Confirma el pago procede al cobro">
+                                                @click="continuarPago(true)" data-bs-placement="top"
+                                                :disabled="!activarBoton" title="Confirma el pago procede al cobro">
                                                 <i class="fa fa-credit-card"></i> {[txtBoton]}
                                             </button>
                                         </div>
@@ -244,9 +246,10 @@
                                                 <div class="fw-bold">$ {[row.valor_pago]} - {[row.estado]}</div>
                                                 {[row.forma_pago ]} - {[row.fecha ]}
                                             </div>
-                                            <a :href="'{{BASE_URL}}/page/DescargarReciboPago/'+row.pago_id" target="_blank">
+                                            <a :href="'{{BASE_URL}}/page/DescargarReciboPago/'+row.pago_id"
+                                                target="_blank">
                                                 <span class="badge bg-success rounded-pill">
-                                                  <i class="fa fa-file-pdf-o"></i>  Descargar recibo
+                                                    <i class="fa fa-file-pdf-o"></i> Descargar recibo
                                                 </span>
                                             </a>
                                         </li>
@@ -306,10 +309,11 @@
                         cel_persona: "",
                         txtDescripcionFactura: "",
                         colorTextoAlert: "text-success",
-                        cod_periodo: ''
+                        cod_periodo: '',
+                        programaPersonaId: 0
                     },
-                    pago : {
-                        id : '',
+                    pago: {
+                        id: '',
                         codigo: '',
                         estado: 'SIN PAGO'
                     },
@@ -352,7 +356,7 @@
                         .then((data) => {
                             if (!data.error) {
 
-                               if (data.estadopago.length > 0) {
+                                if (data.estadopago.length > 0) {
                                     this.factura.pagado = true;
                                     this.factura.pagos = data.estadopago;
                                     this.pago.id = data.estadopago[0].pago_id;
@@ -373,6 +377,7 @@
                                 this.matricula.txtNombre = matricula.nom1_persona + " " + matricula.nom2_persona;
                                 this.matricula.txtApellido = matricula.ape1_persona + " " + matricula.ape2_persona;
                                 this.matricula.txtPrograma = matricula.nom_nivel_educativo;
+                                this.matricula.programaPersonaId = matricula.id_programa_persona;
                                 this.matricula.txtSede = matricula.siglas_colegio;
                                 this.matricula.txtPeriodo = matricula.nom_periodo;
                                 this.matricula.cod_periodo = matricula.cod_periodo;
@@ -398,7 +403,7 @@
                             }
                         });
                 },
-                continuarPago(isPagoOnline=true) {
+                continuarPago(isPagoOnline = true) {
                     // this.formpago.activarBoton = false;
                     //  this.formpago.txtBoton = "Procesando...";
 
@@ -421,12 +426,27 @@
                     } */
 
 
-                     let data = {
+                    const dataOnline = {
                         "isPagoOnline": isPagoOnline,
                         "cod_matricula": '{{ ID_MATRICULA }}',
                     }
 
-                     if(this.pago.id != ''){
+                    const dataCaja = {
+                        "isPagoOnline": false,
+                        "codPaquete": this.factura.cod_paquete,
+                        "programaPersonaId": this.matricula.programaPersonaId,
+                        "total": this.factura.txtTotalPagarInt,
+                        "personaId": this.matricula.txtId,
+                        "matriculaId": '{{ ID_MATRICULA }}',
+                    };
+
+                    const finalData = isPagoOnline ? dataOnline : dataCaja;
+                    const finalURL = isPagoOnline ? `{{BASE_URL}}/transaccion/InicioPagoInscripcion` : "{{URL_INVOICE}}";
+
+
+
+
+                    if (this.pago.id != '') {
                         data.id_pago = this.pago.id;
                     }
 
@@ -434,12 +454,12 @@
                     this.activarBoton = false;
                     this.txtBoton = "Procesando...";
                     fetch(
-                        `{{BASE_URL}}/transaccion/InicioPagoInscripcion`, {
+                        finalURL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(finalData)
                     })
                         .then((response) => response.json())
                         .then((data) => {
@@ -451,8 +471,7 @@
                             } else {
                                 this.activarBoton = false;
                                 this.txtBoton = "Redireccionando...";
-                                window.location = data.data.str_url;
-
+                                window.location = isPagoOnline ? data.data.str_url : data.redirectPayment;
                             }
 
                         }).catch((err) => {
@@ -472,7 +491,7 @@
                         "id_paquete": 6,
                     }
 
-                    if(this.pago.id != ''){
+                    if (this.pago.id != '') {
                         data.id_pago = this.pago.id;
                     }
 
