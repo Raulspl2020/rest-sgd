@@ -42,6 +42,6 @@ COPY package.json package-lock.json ./
 RUN npm install --omit=dev
 COPY . .
 COPY --from=builder /app/dist ./dist
-COPY .env .env
+COPY *.env .
 
 CMD ["node","dist/app"]
