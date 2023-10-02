@@ -7,21 +7,22 @@ pipeline {
     }
 
     stages {
-        stage("Build") {
-            steps {
-                echo "Building.. Construyendo"
-            }
-        }
         stage("Test") {
             steps {
                 echo "Testing.. Testeando"
             }
         }
+        stage("Build") {
+            steps {
+                echo "Building.. Construyendo"
+                sh "docker-compose build"
+            }
+        }
         stage("Deploy") {
             steps {
                 echo "Deploying.... desplegando"
-                sh "docker-compose down --remove-orphans"
-                sh "docker-compose up -d --build"
+                sh "docker-compose down"
+                sh "docker-compose up -d"
             }
         }
     }
