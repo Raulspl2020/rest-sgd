@@ -12,6 +12,7 @@ import routerTemplate from "../routes/template";
 import routerMatricula from "../routes/matricula";
 import routerFactura from "../routes/factura";
 import routerInicio from "../routes/inicio";
+import { v4 as uuidv4, v4 } from "uuid";
 
 //====================
 //   ROUTES: /api
@@ -21,7 +22,7 @@ app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "Hola mundo",
     developer: "Duvan Rosero",
-    server : process.env.NAME_SERVER ||  "Sin configurar",
+    version: v4(),
     error: false,
     env: process.env.NODE_ENV,
     base_url: process.env.BASE_URL,
