@@ -1,14 +1,14 @@
 import { response } from "express";
 import cryptoRandomString from "crypto-random-string";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
 import { dataConfigPago, limpiarCampos } from "../helpers/pago";
 import { ListResponsePago } from "../models/ResponsePago";
-import { parse, format } from 'date-format-parse';
+import { parse, format } from "date-format-parse";
 import { consultarpagoMatricula } from "../controllers/matricula";
-import { subirArchivo } from '../helpers/subir-archivo';
+import { subirArchivo } from "../helpers/subir-archivo";
 import { guardarLog } from "../provider/log_provider";
 import {
   guardarPago,
@@ -22,14 +22,14 @@ import {
   guardarProcentajeSoporte,
   detIdPagoByID,
   getDescuento,
-  updateEstadoDescuentoFac
+  updateEstadoDescuentoFac,
 } from "../provider/pago_provider";
 import { consultaFacturaBanco } from "../provider/factura_provider";
 import { getInfoMatricula } from "../provider/matricula_provider";
 import { complileTemplateReciboPago } from "./template";
 import { registroFacturaSysApolo } from "./sysapolo/factura";
+import { EDataInsertPago } from "../interfaces/facturas.interface";
 let Validator = require("validatorjs");
-
 
 //====================
 //   /transaccion/soporteDescuento
@@ -38,7 +38,6 @@ export const soporteDescuento = async (req: any, res = response) => {
   let metadatos: any = null;
   let id_config: any = null;
   try {
-
     let body = req.body;
 
     //subir el archivo si existe
@@ -48,73 +47,65 @@ export const soporteDescuento = async (req: any, res = response) => {
       console.log(dataFile);
 
       metadatos = {
-        'url': '',
-        'extencion': dataFile[1],
-        'nombre': dataFile[0],
-        'size': dataFile[2],
-        'basepath': dataFile[3],
-
+        url: "",
+        extencion: dataFile[1],
+        nombre: dataFile[0],
+        size: dataFile[2],
+        basepath: dataFile[3],
       };
-
     }
 
-
     let resultConfig = await getConfigPeriodo();
-    let resultCategoria = await getCategoriaPorcentaje(body.porcentaje_categoria_id);
+    let resultCategoria = await getCategoriaPorcentaje(
+      body.porcentaje_categoria_id
+    );
     console.log(resultCategoria);
     console.log(resultConfig);
     if (resultConfig) {
-      id_config = resultConfig._id
+      id_config = resultConfig._id;
     } else {
       throw new Error("No se encontró configuracion activa");
     }
 
-
     const dataPorcentaje: any = {
       estudiante_id: body.estudiante_id,
-      porcentaje: (resultCategoria.valor) ? resultCategoria.valor : 0,
+      porcentaje: resultCategoria.valor ? resultCategoria.valor : 0,
       config_id: id_config,
       porcentaje_categoria_id: body.porcentaje_categoria_id,
       matricula_id: body.matricula_id,
       nom_periodo: body.nom_periodo,
       periodo_id: body.periodo_id,
       observacion: body.observacion,
-      accion: (body.accion) ? body.accion : 1,
-      tipo: (body.accion) ? body.tipo : 0,
+      accion: body.accion ? body.accion : 1,
+      tipo: body.accion ? body.tipo : 0,
       json_file: JSON.stringify(metadatos),
-      porcentaje_estado_id: (body.porcentaje_estado_id) ? body.porcentaje_estado_id : 1
+      porcentaje_estado_id: body.porcentaje_estado_id
+        ? body.porcentaje_estado_id
+        : 1,
     };
 
     let resultInsert = await guardarProcentajeSoporte(dataPorcentaje);
 
-
-
-
-
-
     res.status(200).json({
       message: "Enviado exitosamente",
       error: false,
-      dataPorcentaje
+      dataPorcentaje,
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({
       message: "Servicio no disponible temporalmente",
       error: true,
-      det_error: error.message
+      det_error: error.message,
     });
   }
-
-}
+};
 
 //====================
 //   /transaccion/estado
 //=====================
 //este servicio es consumido con ZONA pagos para la notificacion de un pago
 export const actualizarTransaccion = async (req: any, res = response) => {
-
   let codigo_pago = req.query.id_pago;
 
   const data = {
@@ -122,7 +113,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
     str_usr_comercio: process.env.ZONAPAGOS_USER,
     str_pwd_comercio: process.env.ZONAPAGOS_PASS,
     int_no_pago: -1,
-    str_id_pago: codigo_pago
+    str_id_pago: codigo_pago,
   };
 
   let estado_pago = 0;
@@ -130,30 +121,34 @@ export const actualizarTransaccion = async (req: any, res = response) => {
   let fechaUpdate = new Date();
 
   try {
-
-    let response = await fetch(process.env.ZONAPAGOS_URL + "/VerificacionPago", {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" },
-    });
+    let response = await fetch(
+      process.env.ZONAPAGOS_URL + "/VerificacionPago",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+      }
+    );
     let responseData = await response.json();
 
     //no se encontraron pago online
     if (responseData.int_estado == 1 && responseData.int_cantidad_pagos == 0) {
       console.log("No se encontro el pago online");
-      let data: any = {
-        'is_online': '0'
-      };
-      let resultDB = await actualizarEstadoPago(data, codigo_pago);
+
+      let resultDB = await actualizarEstadoPago(
+        {
+          is_online: "0",
+        },
+        codigo_pago
+      );
       console.log(resultDB);
     }
-
 
     if (responseData.int_error == 0) {
       let id_pago = await detIdPagoByID(codigo_pago);
       const resss = new ListResponsePago();
-      let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
-      let dataBody: any = pagoDecoded[0];
+      const pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
+      let dataBody: any = pagoDecoded.length > 0 ? pagoDecoded[0] : {};
       if (id_pago == false) {
         //insertar el pago en la DB
 
@@ -178,68 +173,83 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         let resSavePago = await savePago(infoPago, null, null);
 
         id_pago = resSavePago.pago_id;
-
       }
 
-
       let data: any = {
-        'json_detalle': responseData.str_res_pago,
-        'estado_id': pagoDecoded[0].int_pago_terminado,
-        'is_online': '1',
-        'fecha_update': format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss')
+        json_detalle: responseData.str_res_pago,
+        estado_id: pagoDecoded[0].int_pago_terminado,
+        is_online: "1",
+        fecha_update: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
       };
 
-      let detPago: any = [];
+      const detPago: EDataInsertPago[] = [];
       //console.log(JSON.stringify(pagoDecoded));
       pagoDecoded.forEach((det: any) => {
-
         let fechaInsert: any = fechaUpdate;
 
-        if (det.dat_fecha == '' || det.dat_fecha == undefined ) {
-          fechaInsert = format(fechaUpdate, 'YYYY-MM-DD HH:mm:ss');
+        if (det.dat_fecha == "" || det.dat_fecha == undefined) {
+          fechaInsert = format(fechaUpdate, "YYYY-MM-DD HH:mm:ss");
         } else {
-          fechaInsert = format(parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"), 'YYYY-MM-DD HH:mm:ss');
+          fechaInsert = format(
+            parse(det.dat_fecha, "DD/MM/YYYY h:mm:ss A"),
+            "YYYY-MM-DD HH:mm:ss"
+          );
         }
 
-        estado_pago = (det.int_estado_pago == 1) ? det.int_estado_pago : 0;
-
+        estado_pago = det.int_estado_pago == 1 ? det.int_estado_pago : 0;
 
         detPago.push({
-          '_id': uuidv4(),
-          'pago_id': id_pago,
-          'int_n_pago': (det.int_n_pago == '') ? null : det.int_n_pago || null,
-          'valor_pago': (det.dbl_valor_pagado == '') ? 0 : det.dbl_valor_pagado || 0,
-          'total_pago': (det.dbl_total_pago == '') ? 0 : det.dbl_total_pago || 0,
-          'valor_iva_pago': (det.dbl_valor_iva_pagado == '') ? 0 : det.dbl_valor_iva_pagado || 0,
-          'estado_pago_id': (det.int_estado_pago == '') ? null : det.int_estado_pago || null,
-          'forma_pago_id': (det.int_id_forma_pago == '') ? null : det.int_id_forma_pago || null,
-          'nombre_banco': (det.str_nombre_banco == '') ? null : det.str_nombre_banco || null,
-          'codigo_transaccion': (det.str_codigo_transacción == '') ? null : det.str_codigo_transacción || null,
-          'fecha': fechaInsert || null,
-          'ticketID': (det.str_ticketID == '') ? null : det.str_ticketID || null,
-          'numero_tarjeta': (det.int_numero_tarjeta == '') ? null : det.int_numero_tarjeta || null,
-          'franquicia': (det.str_franquicia == '') ? null : det.str_franquicia || null,
-          'cod_aprobacion': (det.int_cod_aprobacion == '') ? null : det.int_cod_aprobacion || null,
-          'num_recibido': (det.int_num_recibido == '') ? null : det.int_num_recibid0 || null
+          _id: uuidv4(),
+          pago_id: id_pago,
+          int_n_pago: det.int_n_pago == "" ? null : det.int_n_pago || null,
+          valor_pago:
+            det.dbl_valor_pagado == "" ? 0 : det.dbl_valor_pagado || 0,
+          total_pago: det.dbl_total_pago == "" ? 0 : det.dbl_total_pago || 0,
+          valor_iva_pago:
+            det.dbl_valor_iva_pagado == "" ? 0 : det.dbl_valor_iva_pagado || 0,
+          estado_pago_id:
+            det.int_estado_pago == "" ? null : det.int_estado_pago || null,
+          forma_pago_id:
+            det.int_id_forma_pago == "" ? null : det.int_id_forma_pago || null,
+          nombre_banco:
+            det.str_nombre_banco == "" ? null : det.str_nombre_banco || null,
+          codigo_transaccion:
+            det.str_codigo_transacción == ""
+              ? null
+              : det.str_codigo_transacción || null,
+          fecha: fechaInsert || null,
+          ticketID: det.str_ticketID == "" ? null : det.str_ticketID || null,
+          numero_tarjeta:
+            det.int_numero_tarjeta == ""
+              ? null
+              : det.int_numero_tarjeta || null,
+          franquicia:
+            det.str_franquicia == "" ? null : det.str_franquicia || null,
+          cod_aprobacion:
+            det.int_cod_aprobacion == ""
+              ? null
+              : det.int_cod_aprobacion || null,
+          num_recibido:
+            det.int_num_recibido == "" ? null : det.int_num_recibid0 || null,
         });
-
       });
-
 
       //ACTUALIZAMOS EL ESTADO DE CADA DESCUENTO
       if (estado_pago == 1) {
-
         let resultObjectDB: any = await consultaFacturaBanco(id_pago);
         let categoria_id = resultObjectDB.data[0].categoria_pago_id;
         if (resultObjectDB != false) {
-
           if (categoria_id == 1) {
-            let matricula_id = (resultObjectDB.data[0].matricula_id).toString();
+            let matricula_id = resultObjectDB.data[0].matricula_id.toString();
 
             let resultMatricula = await getInfoMatricula(matricula_id);
             let resultDB = resultMatricula[0][0];
             //consular los descuentos y multas que un estudiante tiene asignados
-            let resultDto = await getDescuento(categoria_id, resultDB.cod_periodo, resultDB.ide_persona);
+            let resultDto = await getDescuento(
+              categoria_id,
+              resultDB.cod_periodo,
+              resultDB.ide_persona
+            );
 
             if (resultDto.length > 0) {
               let idsDescuento: any = [];
@@ -248,7 +258,10 @@ export const actualizarTransaccion = async (req: any, res = response) => {
               });
 
               console.log("Se encontraron descuentos");
-              let resultUpdateDB = await updateEstadoDescuentoFac(idsDescuento, id_pago);
+              let resultUpdateDB = await updateEstadoDescuentoFac(
+                idsDescuento,
+                id_pago
+              );
               console.log(resultUpdateDB);
             } else {
               console.log("NO Se encontraron descuentos");
@@ -257,12 +270,11 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         }
       }
 
-
       //actualiza la fecha y el estado de un pago en la DB
       let resDB = await actualizarEstadoPago(data, codigo_pago);
 
       //borra y crea los detalles pago: true-false
-      let resDb2 = await actualizarPagoyDetalle(id_pago, detPago);
+      let resDb2 = await actualizarPagoyDetalle(Number(id_pago), detPago);
 
       if (resDb2) {
         let response = {
@@ -277,16 +289,15 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           registroFacturaSysApolo(codigo_pago);
 
           setTimeout(() => complileTemplateReciboPago(codigo_pago), 60000);
-
         }
 
         guardarLog({
-          'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
-          'json_body': JSON.stringify(req.query),
+          url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
+          json_body: JSON.stringify(req.query),
           //'json_response': JSON.stringify(response),
-          'estado': 1,
-          'message': "OK",
-          'host': req.headers['x-forwarded-for'] || req.connection.remoteAddress
+          estado: 1,
+          message: "OK",
+          host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
         });
 
         res.status(200).json(response);
@@ -294,34 +305,30 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         throw new Error("No se ha podido insertar los detalle de pago");
       }
     } else {
-
-      throw new Error("Error de comunicacion con zonapagos o código no encontrado");
+      throw new Error(
+        "Error de comunicacion con zonapagos o código no encontrado"
+      );
     }
-
-
   } catch (error) {
-
     console.log(error);
 
     let response = {
       message: "Servicio no disponible temporalmente",
       error: true,
-      det_error: error.message
+      det_error: error.message,
     };
 
     guardarLog({
-      'url_service': req.protocol + '://' + req.get('host') + req.originalUrl,
-      'json_body': JSON.stringify(req.query),
-      'json_response': JSON.stringify(response),
-      'estado': 0,
-      'message': error.message,
-      'host': req.headers['x-forwarded-for'] || req.connection.remoteAddress
+      url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
+      json_body: JSON.stringify(req.query),
+      json_response: JSON.stringify(response),
+      estado: 0,
+      message: error.message,
+      host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
     });
 
     res.status(500).json(response);
   }
-
-
 };
 
 //====================
@@ -345,7 +352,6 @@ export const verificaPago = async (req: any, res = response) => {
     .then((res) => res.json())
     .then((response) => {
       if (response.int_error == 0) {
-
         const resss = new ListResponsePago();
         let pagoDecoded = resss.decodePagoToList(response.str_res_pago);
         res.status(200).json({
@@ -378,7 +384,6 @@ export const inicioPago = async (req: any, res = response) => {
   let dataBody: any = req.body;
 
   try {
-
     let infoPago = new Pago({
       flt_total_con_iva: dataBody.flt_total_con_iva,
       flt_valor_iva: dataBody.flt_valor_iva,
@@ -411,18 +416,17 @@ export const inicioPago = async (req: any, res = response) => {
       let pagoMat: any = null;
       //si el codigo no es afanumerico se genera otro
       do {
-
         let codigo = await cryptoRandomString({
           length: 10,
           characters: cadena,
         });
 
         let regla = {
-          'cadena': 'present|alpha_num'
+          cadena: "present|alpha_num",
         };
 
         let campos = {
-          'cadena': codigo
+          cadena: codigo,
         };
         validation = new Validator(campos, regla);
         infoPago.str_id_pago = codigo;
@@ -430,50 +434,55 @@ export const inicioPago = async (req: any, res = response) => {
 
         if (contador > 1000) {
           throw new Error("No se ha podido generar el codigo");
-
         }
       } while (validation.fails());
 
       //verificar si es un pago de matricula, si lo es consultar el valor a pagar
       let conceptos = await getConceptosPaquete(infoPago.str_opcional1);
 
-      if (conceptos.length > 0 && conceptos[0].categoria_id == 1 && infoPago.str_opcional3 != "") {
+      if (
+        conceptos.length > 0 &&
+        conceptos[0].categoria_id == 1 &&
+        infoPago.str_opcional3 != ""
+      ) {
         pagoMat = await consultarpagoMatricula(infoPago.str_opcional3);
-        infoPago.flt_total_con_iva = pagoMat.total_a_pagar_int
+        infoPago.flt_total_con_iva = pagoMat.total_a_pagar_int;
         infoPago.str_opcional3 = pagoMat.matricula.cod_matricula;
         infoPago.str_opcional4 = pagoMat.matricula.cod_periodo;
       }
 
-
       //recortamos el tamaño de la descripcion
       let finpago2: Pago = new Pago(infoPago);
-      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(0, -(finpago2.str_descripcion_pago.length - 70));
+      finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(
+        0,
+        -(finpago2.str_descripcion_pago.length - 70)
+      );
 
-
-      let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
-        method: "POST",
-        body: JSON.stringify(dataConfigPago(finpago2)),
-        headers: { "Content-Type": "application/json" },
-      });
+      let responseZona = await fetch(
+        process.env.ZONAPAGOS_URL + "/InicioPago",
+        {
+          method: "POST",
+          body: JSON.stringify(dataConfigPago(finpago2)),
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       let responseData = await responseZona.json();
 
-
       if (responseData.int_codigo == 1) {
-
-        let response = await savePago(infoPago, JSON.stringify(responseData), pagoMat);
+        let response = await savePago(
+          infoPago,
+          JSON.stringify(responseData),
+          pagoMat
+        );
         res.status(response.statusCode).json(response);
-
       } else {
         throw new Error("Parámetros enviados de forma incorrecta");
       }
-
     } else {
       let response = await updatePago(infoPago);
       res.status(response.statusCode).json(response);
     }
-
-
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -486,28 +495,29 @@ export const inicioPago = async (req: any, res = response) => {
 //====================
 //   guardarEL pago generado
 //=====================
-const savePago = async (infoPago: any, responseData: any, dataMatricula: any) => {
+const savePago = async (
+  infoPago: any,
+  responseData: any,
+  dataMatricula: any
+) => {
   console.log("ejecutamos la fucnion de save");
 
   //pendiente validar precios: si son diferentes mostrar alerta
 
   let ret: any = {};
 
-  let paquete_id = infoPago.str_opcional1;
-  let tDetallePago: any = [];
+  const paquete_id = infoPago.str_opcional1;
+  const id_pago = infoPago.str_id_pago;
+  const tDetallePago: any = [];
 
   try {
-
     //buscamos un paquete por codigo
     let conceptos = await getConceptosPaquete(paquete_id);
 
     if (conceptos.length > 0) {
-
       //si es un pago de matricula
       if (dataMatricula !== null) {
-
         dataMatricula.detalle_factura.forEach((concepto: any) => {
-
           tDetallePago.push({
             pago_id: null,
             concepto_id: concepto.concepto_id,
@@ -517,9 +527,7 @@ const savePago = async (infoPago: any, responseData: any, dataMatricula: any) =>
             cantidad: concepto.cantidad,
           });
         });
-
       } else {
-
         conceptos.forEach((concepto: any) => {
           tDetallePago.push({
             pago_id: null,
@@ -533,23 +541,23 @@ const savePago = async (infoPago: any, responseData: any, dataMatricula: any) =>
             cantidad: concepto.cantidad,
           });
         });
-
       }
     } else {
       throw new Error("No se encontro el paquete...");
     }
 
-
     let tPago: any = {
+      _id: id_pago,
       codigo: infoPago.str_id_pago,
       descripcion: infoPago.str_descripcion_pago,
       // json_response: responseData,
       estado_id: 200,
       estudiante_id: infoPago.str_id_cliente,
-      matricula_id: (infoPago.str_opcional3 == "") ? null : infoPago.str_opcional3,
+      matricula_id:
+        infoPago.str_opcional3 == "" ? null : infoPago.str_opcional3,
       valor: infoPago.flt_total_con_iva,
       valor_letras: infoPago.str_opcional2,
-      periodo_id: (infoPago.str_opcional4 == "") ? null : infoPago.str_opcional4,
+      periodo_id: infoPago.str_opcional4 == "" ? null : infoPago.str_opcional4,
       //  archivo_id: null,
       cod_paquete: conceptos[0].codigo,
       categoria_pago_id: conceptos[0].categoria_id,
@@ -571,7 +579,6 @@ const savePago = async (infoPago: any, responseData: any, dataMatricula: any) =>
     } else {
       throw new Error("No se ha podido guardar el pago");
     }
-
   } catch (error) {
     ret = {
       statusCode: 500,

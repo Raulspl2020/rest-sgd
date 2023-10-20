@@ -62,3 +62,24 @@ export interface ITotales {
   totalExtraordinario: number;
   totalOrdinario: number;
 }
+
+export interface EDataInsertPago {
+  _id: string;
+  cod_aprobacion: string | null;
+  codigo_transaccion: string | null;
+  estado_pago_id: string | null;
+  fecha: string;
+  forma_pago_id: string;
+  franquicia: null | string;
+  int_n_pago: string | null;
+  nombre_banco: string | null;
+  num_recibido: null;
+  numero_tarjeta: null;
+  pago_id: number;
+  ticketID: string | null;
+  total_pago: string | null;
+  valor_iva_pago: string | null;
+  valor_pago: string | null;
+
+  
+}

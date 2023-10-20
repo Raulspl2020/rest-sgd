@@ -334,7 +334,7 @@ export class ListResponsePago  {
 
 
 
-    decodePagoToList = (cadena: string) => {
+    decodePagoToList = (cadena: string):any[] => {
 
         let datos = cadena.split("|");
         let row: any = [];

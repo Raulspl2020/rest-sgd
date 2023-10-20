@@ -1,5 +1,7 @@
 import { conDB } from "../config/database";
 import { parse, format } from "date-format-parse";
+import { EDataInsertPago } from "../interfaces/facturas.interface";
+import { guardarLog } from "./log_provider";
 
 export const getInfoPago = async (codigoPago: string) => {
   const sql = `SELECT
@@ -253,47 +255,42 @@ export const actualizarPagoyDetalleNew = async (
 };
 
 //si los pagos ya existen realiza un update, de lo contrario un INSERT
-export const actualizarPagoyDetalle = async (id: any, dataInsert: any) => {
-  const trx = await conDB.transaction();
-
+export const actualizarPagoyDetalle = async (
+  id: number,
+  dataInsert: EDataInsertPago[]
+) => {
   let comitar = true;
+  const trx = await conDB.transaction();
+  const result: any[] = await conDB
+    .select("_id")
+    .from("fin_detalle_pago")
+    .where({
+      pago_id: id,
+    })
+    .orderBy("estado_pago_id", "asc");
 
-  for (const row of dataInsert) {
-    let result = await conDB
-      .select("_id")
-      .from("fin_detalle_pago")
-      .where({
-        valor_pago: row.valor_pago,
-        pago_id: row.pago_id,
-        //'estado_pago_id': row.estado_pago_id,
-        forma_pago_id: row.forma_pago_id,
-        int_n_pago: row.int_n_pago,
-      })
-      .orderBy("estado_pago_id", "asc");
-
-    try {
-      if (result.length > 0) {
-        let ids: string[] = [];
-        for (const id of result) {
-          ids.push(id._id);
-        }
-
-        const id = result[0]._id;
-        console.log("encontado");
-        delete row["_id"];
-        console.log(ids);
-        await trx("fin_detalle_pago")
-          // .where("fin_detalle_pago._id", id)
-          .whereIn("fin_detalle_pago._id", ids)
-          .update(row);
-      } else {
-        console.log("No encontado");
-        await trx("fin_detalle_pago").insert(row);
-      }
-    } catch (error) {
-      comitar = false;
-      console.log(error);
+  try {
+    if (result.length > 0 && dataInsert.length > 0) {
+      await trx("fin_detalle_pago")
+        .where({ pago_id: id })
+        .whereRaw("(forma_pago_id <> ? OR  forma_pago_id IS NULL)", [99])
+        .del();
     }
+
+    for (const row of dataInsert) {
+      await trx("fin_detalle_pago").insert(row);
+    }
+  } catch (error) {
+    comitar = false;
+    guardarLog({
+      url_service: null,
+      json_body: JSON.stringify({"id_pago":id}),
+      //'json_response': JSON.stringify(response),
+      estado: 0,
+      message: error?.message,
+      host: null,
+    });
+    console.log(error);
   }
 
   if (comitar) {
