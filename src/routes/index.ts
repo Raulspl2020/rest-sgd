@@ -18,11 +18,13 @@ import { v4 as uuidv4, v4 } from "uuid";
 //   ROUTES: /api
 //=====================
 
+const version: number = new Date().getTime();
+
 app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "Hola mundo",
     developer: "Duvan Rosero",
-    version: v4(),
+    version,
     error: false,
     env: process.env.NODE_ENV,
     base_url: process.env.BASE_URL,

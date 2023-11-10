@@ -655,7 +655,10 @@ export const getFacturaByMatricula = async (
     .where({
       "fin_pago.cod_paquete": cod_paquete,
       "fin_pago.matricula_id": matricula_id,
-    });
+    })
+    .orderBy([
+      { column: "fin_pago.fecha", order: "desc" },
+    ]);
 
   if (result.length > 0) {
     return result;
@@ -665,7 +668,7 @@ export const getFacturaByMatricula = async (
 };
 
 //obtiene los pagos relacionados con una factura con su respectivo estado
-export const getPagoFactura = async (id_factura: any) => {
+export const getPagoFactura = async (id_factura: any): Promise<[]> => {
   let result = await conDB
     .select(
       "fin_detalle_pago._id",
