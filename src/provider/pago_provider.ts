@@ -668,7 +668,7 @@ export const getFacturaByMatricula = async (
 };
 
 //obtiene los pagos relacionados con una factura con su respectivo estado
-export const getPagoFactura = async (id_factura: any): Promise<[]> => {
+export const getPagoFactura = async (id_factura: any): Promise<any[]> => {
   let result = await conDB
     .select(
       "fin_detalle_pago._id",
