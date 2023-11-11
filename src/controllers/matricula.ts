@@ -494,14 +494,14 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
             //verifica si ya existe una factura creada con esa matricula y con ese paquete
             // let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
-            let pagoFactura: any[] = [];
+            const pagoFactura: any[] = [];
             const resFactura: any[] = await getFacturaByMatricula(id_matricula, resultPaquete[0].codigo);
 
 
         const facturaPagada = await resFactura.find( async (factura) => {
               const  pago = await getPagoFactura(factura._id);
-              if(pagoFactura.length > 0){
-                pagoFactura = [...pago];
+              if(pago.length > 0){
+                pagoFactura.push(...pago);
               }
                 return pago.length > 0;
             } );
