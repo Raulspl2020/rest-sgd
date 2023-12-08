@@ -181,7 +181,8 @@ export const ejecutarZonaPagos = async (body: any, path: string) => {
 
 
 export const generarCodigoBarrasText = async (referencia: string, valor: string, fecha: any) => {
-  const convenio415: string = "0000000025854";
+ // const convenio415: string = "0000000025854";
+  const convenio415: string = "7709998885721";
   let referencia8020: string = referencia.toString();
 
 
