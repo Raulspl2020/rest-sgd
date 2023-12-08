@@ -731,8 +731,8 @@ export const getDataDetalleFacturaById = async (idFactura: any) => {
           descripcion: pago.desc_factura,
           categoria: pago.categoria,
           fecha: pago.fecha,
-          verify: pago.sysapolo_verify,
-          email_send: pago.email_send,
+          verify: pago.sysapolo_verify ?? '0',
+          email_send: pago.email_send ?? '0',
         };
         let json_response = JSON.parse(pago.json_response);
         cliente = json_response.info_cliente;

@@ -38,7 +38,7 @@ export const verificaPagosPendientes = async () => {
 }
 export const verificaPagosPendientesOnline = async () => {
 
-    let minutos = (process.env.TIEMPO_VERIFICACION_MIN == undefined) ? 7 : parseInt(process.env.TIEMPO_VERIFICACION_MIN.toString());
+    let minutos = (!process.env.TIEMPO_VERIFICACION_MIN) ? 7 : parseInt(process.env.TIEMPO_VERIFICACION_MIN.toString());
     try {
         let result = await getPagosOnlinePendientes(minutos);
         if (result != false) {

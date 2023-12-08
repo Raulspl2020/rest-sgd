@@ -286,9 +286,9 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
         if (estado_pago == 1) {
           //enviar recibo de pago al correo electronico
+          complileTemplateReciboPago(codigo_pago);
           registroFacturaSysApolo(codigo_pago);
 
-          setTimeout(() => complileTemplateReciboPago(codigo_pago), 60000);
         }
 
         guardarLog({

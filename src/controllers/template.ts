@@ -295,21 +295,24 @@ export const complileTemplateReciboPago = async (
   let data: any = {};
   data.BASE_URL = process.env.BASE_URL.toString();
 
-  if (process.env.NODE_ENV != "pro") {
-    return;
-  }
+
 
   try {
     //leer el contenido del archivo para despues ser compilado
     const hbs = fs.readFileSync("./views/pdf_recibo_pago.hbs", "utf8");
     let template = exphbs.handlebars.compile(hbs);
 
-    let factura = await getDataDetalleFacturaById(id_factura);
+    const factura = await getDataDetalleFacturaById(id_factura);
+    if(!factura) throw new Error(`No se encontró la factura ${id_factura}`);
     if (factura.email_send == "1" && prioridad == false) {
       throw new Error(`la factura ${factura.id} ya fue notificada`);
     }
     //creamos la data que lleva la plantilla, o contendio dinamico
     data.factura = factura;
+    if (process.env.NODE_ENV != "pro") {
+      data.factura.cliente.email_persona = process.env.EMAIL ?? '';
+    }
+
     data.fecha_actual = format(new Date(), "DD-MM-YYYY hh:mm:ss A");
     data.urlService = `${process.env.BASE_URL.toString()}/page/DescargarReciboPago/${
       factura.id
@@ -343,7 +346,7 @@ export const complileTemplateReciboPago = async (
 
     //si el correo se envia correctamente, actualizamos en base de datos
     if (resMail) {
-      updateEmailSend(parseInt(id_factura));
+     await updateEmailSend(parseInt(id_factura));
     }
 
     return resMail;
