@@ -286,9 +286,11 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
         if (estado_pago == 1) {
           //enviar recibo de pago al correo electronico
-          complileTemplateReciboPago(codigo_pago);
+          const ip =
+            req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+          console.log(ip);
+          if (`${ip}` == "200.41.6.47") complileTemplateReciboPago(codigo_pago);
           registroFacturaSysApolo(codigo_pago);
-
         }
 
         guardarLog({
