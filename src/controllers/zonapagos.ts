@@ -17,6 +17,7 @@ import {
   actualizarPagoyDetalleNew,
   detIdPagoByCodigo,
   detIdPagoByID,
+  existeFactura,
   existePago,
   getConfigPeriodo,
   getDescuento,
@@ -84,6 +85,8 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       codigo: codigoFactura,
       descripcion: detalle_factura[0].paquete,
       json_response: null,
+      is_online: isPagoOnline,
+      fecha_update: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
       estado_id: 200,
       estudiante_id: matricula.ide_persona,
       matricula_id: matricula.cod_matricula,
@@ -594,6 +597,8 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
       descripcion: conceptos[0].paquete,
       json_response: JSON.stringify(resultMatricula),
       estado_id: 200,
+      is_online: isPagoOnline,
+      fecha_update: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
       estudiante_id: matricula.ide_persona,
       matricula_id: matricula.cod_matricula,
       valor: resultMatricula.total_a_pagar_i,
@@ -752,6 +757,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       nom_nivel_educativo: null,
       cod_nivel_edu: null,
       cod_nivel_educativo: null,
+      id_programa_persona: Number(body.id_programa_persona.trim()) ?? null,
       nro_creditos: null,
     };
 
@@ -784,13 +790,21 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       resultPaquete[0].categoria_id = 0;
     }
 
+    // verificar si ya existe una factura sin pagar
+    const resultExistePago = await existeFactura(
+      body.id_persona,
+      resultPaquete[0].categoria_id
+    );
+
     //GUARDAR EL PAGO EN LA DB
-    let tPago: any = {
+    const tPago: any = {
       codigo: codigoFactura,
       descripcion: body.des_concepto,
       json_response: null,
       estado_id: 200,
       estudiante_id: body.id_persona,
+      is_online: isPagoOnline,
+      fecha_update: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
       // matricula_id: matricula.cod_matricula,
       valor: body.total,
       // periodo_id: matricula.cod_periodo,
@@ -802,7 +816,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
     resultPaquete.forEach((concepto: any) => {
       concepto.cantidad = cantidad;
       tDetallePago.push({
-        pago_id: null, // si se envia el id se lo asigna
+        pago_id: !resultExistePago?._id ? null : resultExistePago._id, // si se envia el id se lo asigna
         concepto_id: concepto.concepto_id,
         descuento: concepto.descuento,
         aumento: concepto.aumento,
@@ -818,14 +832,29 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       }
     });
 
-    //preparamos la data para guardar
-    resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
-    console.log(resultSavePago);
-    //   no se guardó exitosamente
-    if (resultSavePago == false) {
-      throw new Error("No se ha podido guardar el pago");
+    if (!resultExistePago) {
+      //preparamos la data para guardar
+      resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+      console.log(resultSavePago);
+      //   no se guardó exitosamente
+      if (resultSavePago == false) {
+        throw new Error("No se ha podido guardar el pago");
+      }
+      id_pago = resultSavePago[0];
+    } else {
+      id_pago = resultExistePago._id;
+      resultSavePago = await actualizarPagoyDetalleNew(
+        tPago,
+        tDetallePago,
+        id_pago
+      );
+
+      if (resultSavePago != false) {
+        id_pago = resultSavePago[0];
+      } else {
+        throw new Error("No se ha podido guardar el pago");
+      }
     }
-    id_pago = resultSavePago[0];
 
     //actualizamos los datos en la DB
     let json_detalle: any = {

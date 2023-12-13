@@ -284,7 +284,7 @@ export const actualizarPagoyDetalle = async (
     comitar = false;
     guardarLog({
       url_service: null,
-      json_body: JSON.stringify({"id_pago":id}),
+      json_body: JSON.stringify({ id_pago: id }),
       //'json_response': JSON.stringify(response),
       estado: 0,
       message: error?.message,
@@ -551,30 +551,44 @@ export const existePago = async (cod_paquete: string, matricula_id: string) => {
 
 //verificar si ya se genero un pago antes y no esta pagado
 export const existeFactura = async (
-  cod_paquete: string,
-  matricula_id: string
+  estudianteId: string,
+  categoriaPagoId: number
 ) => {
-  let result = await conDB
+  // return
+
+  const result: any[] = await conDB
     .select(
       "fin_pago._id",
       "fin_pago.json_response",
       "fin_pago.codigo",
       "fin_pago.valor",
-      "fin_estado_pago.descripcion as estado",
-      "fin_estado_pago._id as estado_id"
+      "fin_detalle_pago._id as id_pago",
+      "fin_detalle_pago.estado_pago_id"
     )
     .from("fin_pago")
-    .join("fin_estado_pago", "fin_pago.estado_id", "=", "fin_estado_pago._id")
+    .leftJoin(
+      "fin_detalle_pago",
+      "fin_pago._id",
+      "=",
+      "fin_detalle_pago.pago_id"
+    )
     .where({
-      "fin_pago.cod_paquete": cod_paquete,
-      "fin_pago.matricula_id": matricula_id,
-    });
+      "fin_pago.estudiante_id": estudianteId,
+      "fin_pago.categoria_pago_id": categoriaPagoId,
+    })
+    .andWhere(conDB.raw("DATEDIFF(NOW(),fin_pago.fecha) <=?", [30]))
+    .whereRaw("DATEDIFF(NOW(),fin_pago.fecha) <= :ndias", {
+      ndias: 100,
+    })
+    .orderBy("fin_pago.fecha", "DESC");
 
-  if (result.length > 0) {
-    return result[0];
-  } else {
-    return false;
+  for (const invoice of result) {
+    const paid = result.some(
+      (payment) => payment.estado_pago_id == 1 && payment._id == invoice._id
+    );
+    if (!paid) return invoice;
   }
+  return undefined;
 };
 
 //verifica la factura por id trae los conceptos y total a pagar
@@ -656,9 +670,7 @@ export const getFacturaByMatricula = async (
       "fin_pago.cod_paquete": cod_paquete,
       "fin_pago.matricula_id": matricula_id,
     })
-    .orderBy([
-      { column: "fin_pago.fecha", order: "desc" },
-    ]);
+    .orderBy([{ column: "fin_pago.fecha", order: "desc" }]);
 
   if (result.length > 0) {
     return result;
