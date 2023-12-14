@@ -110,7 +110,7 @@ export const consultaCorreo = async (req: any, res = response) => {
 
 
 // envia correo con recibo de pago adjunto:
-export const sendReciboPagoByID = async (cliente:any,filePDF:any, descripcion:string, id_fac:any) => {
+export const sendReciboPagoByID = async (cliente:any,filePDF:any, descripcion:string, id_fac:any): Promise<boolean> => {
 
   let body: any = {};
 
@@ -158,14 +158,13 @@ En el archivo adjunto encontrará los detalles de: ${descripcion}. Para abrir el
     console.log("imprimendo respuesta");
     console.log(response);
     if (!response) {
-      return false;
       console.log("No se ha podido enviar el correo");
+      return false;
     } else {
       console.log("E-mail enviado exitosamente");
       return true;
     }
   } catch (error) {
-    console.log(error);
     return false;
   }
 

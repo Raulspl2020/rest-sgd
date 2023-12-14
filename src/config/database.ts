@@ -16,7 +16,7 @@ const db = {
     host: process.env.MYSQL_SGD_HOST,
     user: process.env.MYSQL_SGD_USER,
     password: process.env.MYSQL_SGD_PASS,
-    database: process.env.MYSQL_SGD_DATABASE,
+    database: process.env.MYSQL_AUTH_DATABASE,
     port: 3306,
   },
 };
