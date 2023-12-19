@@ -80,6 +80,18 @@ export interface EDataInsertPago {
   total_pago: string | null;
   valor_iva_pago: string | null;
   valor_pago: string | null;
+}
 
-  
+export enum ECategoryInvoice {
+  OTROS = 0,
+  MATRICULA = 1,
+  HABILITACIONES_SUPLETORIOS = 4,
+  INSCRIPCION = 5,
+  REINGRESO = 6,
+  CREDITO_ADICIONAL = 7,
+  GRADO = 8,
+  CERTIFICADOS_CONSTANCIAS = 9,
+  HOMOLOGACIONES = 10,
+  CARNET_INSTITUCIONAL = 11,
+  ESPECIALIZACIONES = 12,
 }

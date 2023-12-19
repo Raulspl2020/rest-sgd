@@ -1,6 +1,6 @@
 import { conDB } from "../config/database";
 import { parse, format } from "date-format-parse";
-import { EDataInsertPago } from "../interfaces/facturas.interface";
+import { ECategoryInvoice, EDataInsertPago } from "../interfaces/facturas.interface";
 import { guardarLog } from "./log_provider";
 
 export const getInfoPago = async (codigoPago: string) => {
@@ -554,7 +554,12 @@ export const existeFactura = async (
   estudianteId: string,
   categoriaPagoId: number
 ) => {
-  // return
+  if (
+    categoriaPagoId != ECategoryInvoice.MATRICULA &&
+    categoriaPagoId != ECategoryInvoice.INSCRIPCION
+  ) {
+    return undefined;
+  }
 
   const result: any[] = await conDB
     .select(
