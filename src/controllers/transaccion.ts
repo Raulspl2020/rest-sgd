@@ -295,12 +295,16 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
         guardarLog({
           url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-          json_body: JSON.stringify(req.query),
-          //'json_response': JSON.stringify(response),
-          estado: 1,
+          body_request: JSON.stringify(req.query),
+          // body_response: JSON.stringify(response),
+          header_request: JSON.stringify(req.header),
+          status_code: 200,
           message: "OK",
-          host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+          client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+          invoice_id: codigo_pago,
+          createdAt: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
         });
+
 
         res.status(200).json(response);
       } else {
@@ -322,11 +326,14 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
     guardarLog({
       url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-      json_body: JSON.stringify(req.query),
-      json_response: JSON.stringify(response),
-      estado: 0,
+      body_request: JSON.stringify(req.query),
+      body_response: JSON.stringify(response),
+      header_request: JSON.stringify(req.header),
+      status_code: 500,
       message: error.message,
-      host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      invoice_id: codigo_pago,
+      createdAt: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
     });
 
     res.status(500).json(response);
