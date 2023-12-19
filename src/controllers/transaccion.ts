@@ -302,7 +302,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           message: "OK",
           client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
           invoice_id: codigo_pago,
-          createdAt: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
+          created_at: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
         });
 
 
@@ -333,7 +333,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
       message: error.message,
       client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
       invoice_id: codigo_pago,
-      createdAt: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
+      created_at: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
     });
 
     res.status(500).json(response);
