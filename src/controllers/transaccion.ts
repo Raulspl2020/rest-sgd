@@ -240,7 +240,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
         let categoria_id = resultObjectDB.data[0].categoria_pago_id;
         if (resultObjectDB != false) {
           if (categoria_id == 1) {
-            let matricula_id = resultObjectDB.data[0].matricula_id.toString();
+            let matricula_id = resultObjectDB.data[0].matricula_id?.toString();
 
             let resultMatricula = await getInfoMatricula(matricula_id);
             let resultDB = resultMatricula[0][0];

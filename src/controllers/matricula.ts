@@ -9,6 +9,8 @@ import { v4 as uuidv4 } from 'uuid';
 import stream from 'stream';
 import { IDetalleFactura } from "../interfaces/facturas.interface";
 import { calcularSubTotal } from "../helpers/factura.util";
+import { IStudentType } from "../interfaces/clientes.interface";
+import fetch from "node-fetch";
 
 //====================
 //   /matricula/generarpagoinscripcion 
@@ -171,8 +173,25 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
         if (result[0].length > 0) {
             resultDB = result[0][0];
             let resultConfig = await getConfigPeriodo();
-            //para consultar las fechas de matriculas 
-            periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
+
+            // TODO: para consultar las fechas de matriculas 
+            // periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
+
+           const response = await fetch(`${process.env.URL_GET_DATE}?matriculaId=${id_matricula}`);
+           const studentType: IStudentType =  await response.json();
+           const currenDate =  new Date();
+
+           if (
+            currenDate.getTime() > new Date(studentType.fechaFinMatricula).getTime() && studentType.fechaFinMatricula !=null
+          ) {
+            periodo = false;
+          }else{
+            periodo =  studentType;
+          }
+
+
+          
+
 
 
             //consular los descuentos y multas que un estudiante tiene asignados
