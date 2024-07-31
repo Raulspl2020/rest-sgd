@@ -11,6 +11,7 @@ import { IDetalleFactura } from "../interfaces/facturas.interface";
 import { calcularSubTotal } from "../helpers/factura.util";
 import { IStudentType } from "../interfaces/clientes.interface";
 import fetch from "node-fetch";
+import moment from 'moment';
 
 //====================
 //   /matricula/generarpagoinscripcion 
@@ -181,8 +182,14 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
            const studentType: IStudentType =  await response.json();
            const currenDate =  new Date();
 
+           const momentCurrent = moment().utcOffset(0);
+
+           const momentDb = moment(studentType.fechaFinMatricula)
+             .utcOffset(0)
+             .set({ hour: 23, minute: 59, second: 59 });
+
            if (
-            currenDate.getTime() > new Date(studentType.fechaFinMatricula).getTime() && studentType.fechaFinMatricula !=null
+            momentCurrent > momentDb && studentType.fechaFinMatricula !=null
           ) {
             periodo = false;
           }else{
