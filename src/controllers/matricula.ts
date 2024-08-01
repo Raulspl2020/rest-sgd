@@ -182,10 +182,10 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
            const studentType: IStudentType =  await response.json();
            const currenDate =  new Date();
 
-           const momentCurrent = moment().utcOffset(0);
+           const momentCurrent = moment().utcOffset(-5);
 
            const momentDb = moment(studentType.fechaFinMatricula)
-             .utcOffset(0)
+             .utcOffset(-5)
              .set({ hour: 23, minute: 59, second: 59 });
 
            if (
