@@ -26,8 +26,6 @@ import {
   getFechasPeriodo,
   getInfoMatricula,
 } from "../provider/matricula_provider";
-import { ejecutarZonaPagos } from "../helpers/pago";
-import { ListResponsePago } from "../models/ResponsePago";
 import { Verificadorpago } from "./zonapagos";
 import * as moneda from "currency-formatter";
 import { complileTemplateReciboPago } from "./template";

@@ -5,18 +5,15 @@ import { v4 as uuidv4 } from "uuid";
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
 import { dataConfigPago, limpiarCampos } from "../helpers/pago";
-import { ListResponsePago } from "../models/ResponsePago";
 import { parse, format } from "date-format-parse";
 import { consultarpagoMatricula } from "../controllers/matricula";
 import { subirArchivo } from "../helpers/subir-archivo";
 import { guardarLog } from "../provider/log_provider";
 import {
-  guardarPago,
   guardarPagoyDetalle,
   getConceptosPaquete,
   actualizarEstadoPago,
   actualizarPagoyDetalle,
-  detIdPagoByCodigo,
   getConfigPeriodo,
   getCategoriaPorcentaje,
   guardarProcentajeSoporte,
@@ -29,6 +26,7 @@ import { getInfoMatricula } from "../provider/matricula_provider";
 import { complileTemplateReciboPago } from "./template";
 import { registroFacturaSysApolo } from "./sysapolo/factura";
 import { EDataInsertPago } from "../interfaces/facturas.interface";
+import { decodePagoToList } from "../helpers/decodePagoToList";
 let Validator = require("validatorjs");
 
 //====================
@@ -146,8 +144,8 @@ export const actualizarTransaccion = async (req: any, res = response) => {
 
     if (responseData.int_error == 0) {
       let id_pago = await detIdPagoByID(codigo_pago);
-      const resss = new ListResponsePago();
-      const pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
+
+      const pagoDecoded = decodePagoToList(responseData.str_res_pago);
       let dataBody: any = pagoDecoded.length > 0 ? pagoDecoded[0] : {};
       if (id_pago == false) {
         //insertar el pago en la DB
@@ -300,11 +298,11 @@ export const actualizarTransaccion = async (req: any, res = response) => {
           header_request: JSON.stringify(req.headers),
           status_code: 200,
           message: "OK",
-          client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+          client_ip:
+            req.headers["x-forwarded-for"] || req.connection.remoteAddress,
           invoice_id: codigo_pago,
           created_at: format(fechaUpdate, "YYYY-MM-DD HH:mm:ss"),
         });
-
 
         res.status(200).json(response);
       } else {
@@ -361,8 +359,7 @@ export const verificaPago = async (req: any, res = response) => {
     .then((res) => res.json())
     .then((response) => {
       if (response.int_error == 0) {
-        const resss = new ListResponsePago();
-        let pagoDecoded = resss.decodePagoToList(response.str_res_pago);
+        let pagoDecoded = decodePagoToList(response.str_res_pago);
         res.status(200).json({
           message: response.str_detalle,
           error: false,

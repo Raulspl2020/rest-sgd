@@ -172,7 +172,8 @@ FROM
       ON (fin_detalle_factura.concepto_id = fin_concepto._id)
               ${auxSql}
       GROUP BY fin_detalle_factura._id
-      ORDER BY fin_pago._id DESC`;
+      ORDER BY fin_pago._id DESC
+      LIMIT 100`;
 
   let result = await conDB.raw(sql, [id_cliente]);
   if (result[0].length > 0) {

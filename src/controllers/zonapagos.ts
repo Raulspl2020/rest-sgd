@@ -26,7 +26,6 @@ import {
   guardarPagoyDetalle,
   updateDataPago,
 } from "../provider/pago_provider";
-import { getInfoEstudiante } from "./pago";
 import * as moneda from "currency-formatter";
 import { generarHTMLPDF } from "../helpers/global";
 import {
@@ -34,12 +33,12 @@ import {
   getInfoMatricula,
   getProgramaByIdProPersona,
 } from "../provider/matricula_provider";
-import { ListResponsePago } from "../models/ResponsePago";
 import { v4 as uuidv4 } from "uuid";
 import { parse, format } from "date-format-parse";
 import { getInfoUsuario } from "../provider/usuario_provider";
 import { calcularTotales } from "../helpers/factura.util";
 import { IParamsOnline } from "../interfaces/zonapagos.interface";
+import { decodePagoToList } from "../helpers/decodePagoToList";
 
 //=================================
 //   /transaccion/InicioPagoMatricula
@@ -1294,8 +1293,7 @@ export const Verificadorpago = async (pago_id: any) => {
     let responseData = await ejecutarZonaPagos(data, "VerificacionPago");
 
     if (responseData.int_error == 0) {
-      const resss = new ListResponsePago();
-      let pagoDecoded = resss.decodePagoToList(responseData.str_res_pago);
+      let pagoDecoded = decodePagoToList(responseData.str_res_pago);
       let dataBody: any = pagoDecoded[0];
 
       let data: any = {
