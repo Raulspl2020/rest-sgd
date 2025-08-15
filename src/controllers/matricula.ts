@@ -250,6 +250,8 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     resultPaquete = await getPaquete(4);
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await getPaquete(5);
+                }else if(resultDB.cod_nivel_edu == 11){
+                    resultPaquete = await getPaquete(33);
                 }
 
 
@@ -388,7 +390,10 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     resultPaquete = await getPaquete(3);
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await getPaquete(5);
+                }else if(resultDB.cod_nivel_edu == 11){
+                    resultPaquete = await getPaquete(33);
                 }
+                
 
                 console.log("se obtuvo el paquete");
                 console.log(resultPaquete);
@@ -681,6 +686,8 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
                     resultPaquete = await getPaquete(4);
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await getPaquete(5);
+                }else if(resultDB.cod_nivel_edu == 11){
+                    resultPaquete = await getPaquete(33);
                 }
 
 
@@ -767,6 +774,8 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
                     resultPaquete = await getPaquete(3);
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await getPaquete(5);
+                }else if(resultDB.cod_nivel_edu == 11){
+                    resultPaquete = await getPaquete(33);
                 }
 
                 if (resultPaquete != false) {
