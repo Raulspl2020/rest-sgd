@@ -38,7 +38,10 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
         resultDB = result[0][0];
 
         if (result[0].length > 0) {
-            resultPaquete = await getPaquete(6);
+
+            const codPaqueteParam = req.query.package;
+            
+            resultPaquete = await getPaquete(codPaqueteParam || 6);
             if (resultPaquete.length < 1) {
                 throw new Error("No se encontraron precios configurados");
             }
