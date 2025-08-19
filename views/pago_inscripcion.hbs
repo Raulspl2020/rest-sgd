@@ -348,10 +348,12 @@
 
                 consultarPersona() {
 
+                    const packageCode = '{{PACKAGE_CODE}}';
 
                     console.log("El evento onchange se ejecuta");
+                    const url = `{{BASE_URL}}/matricula/generarpagoinscripcion/{{ID_MATRICULA}}` + (packageCode ? `?package=${packageCode}` : '');
 
-                    fetch(`{{BASE_URL}}/matricula/generarpagoinscripcion/{{ID_MATRICULA}}`)
+                    fetch(url)
                         .then((response) => response.json())
                         .then((data) => {
                             if (!data.error) {
