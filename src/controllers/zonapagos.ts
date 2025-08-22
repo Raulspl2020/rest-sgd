@@ -243,10 +243,9 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       });
 
       //recortamos el tamaño de la descripcion
-      let finpago2: Pago = new Pago(infoPago);
+      let finpago2: Pago = structuredClone(infoPago);
       finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(
-        0,
-        -(finpago2.str_descripcion_pago.length - 70)
+        0, 70
       );
 
       let bodyZonapagos = dataConfigPago(finpago2);
@@ -654,10 +653,9 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
       });
 
       //recortamos el tamaño de la descripcion
-      let finpago2: Pago = new Pago(infoPago);
+      let finpago2: Pago = structuredClone(infoPago);
       finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(
-        0,
-        -(finpago2.str_descripcion_pago.length - 70)
+        0, 70
       );
 
       let bodyZonapagos = dataConfigPago(finpago2);
@@ -909,11 +907,10 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       };
 
       //recortamos el tamaño de la descripcion
-      const finpago2: IParamsOnline = { ...infoPago };
+      const finpago2: IParamsOnline = structuredClone(infoPago);
 
       finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(
-        0,
-        -(finpago2.str_descripcion_pago.length - 70)
+        0, 70
       );
 
       let bodyZonapagos = dataConfigPago(finpago2);
@@ -1096,10 +1093,9 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
       });
 
       //recortamos el tamaño de la descripcion
-      let finpago2: Pago = new Pago(infoPago);
+      let finpago2: Pago = structuredClone(infoPago);
       finpago2.str_descripcion_pago = finpago2.str_descripcion_pago.slice(
-        0,
-        -(finpago2.str_descripcion_pago.length - 70)
+        0, 70
       );
 
       let bodyZonapagos = dataConfigPago(finpago2);
