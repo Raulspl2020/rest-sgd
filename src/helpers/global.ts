@@ -19,6 +19,8 @@ export const convertTo24Hour = (time: string) => {
 export const generarHTMLPDF = async (html: string) => {
     try {
         const browser = await puppeteer.launch({
+            executablePath: process.env.CHROME_BIN || '/usr/bin/google-chrome',
+            headless: false,
             args: [
                 "--no-sandbox",
                 "--headless",
@@ -49,6 +51,8 @@ export const generarHTMLPDF = async (html: string) => {
 export const generarHTMLPDFNew = async (html: string) => {
     try {
         const browser = await puppeteer.launch({
+            executablePath: process.env.CHROME_BIN || '/usr/bin/google-chrome',
+            headless: false,
             args: [
                 "--no-sandbox",
                 "--headless",
@@ -105,12 +109,12 @@ export const createQR = async (dataForQRcode: string, center_image: string, widt
     return canvas.toDataURL("image/png");
 }
 
-export function capitalize(data:string){
+export function capitalize(data: string) {
     return data.toUpperCase();
 }
 
 
-export function extractColDocumentData(data:string) {
+export function extractColDocumentData(data: string) {
     console.log(data);
 
     const dataArray = data.replace(/[^A-Za-z0-9+]+/g, ' ').split(' ');
