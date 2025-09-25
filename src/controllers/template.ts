@@ -140,11 +140,13 @@ export const pagoMatricula = async (req: any, res = response) => {
 //=====================
 export const pagoInscripcion = async (req: any, res = response) => {
   let id_matricula = req.params.id_matricula;
+  let packageCode = req.query.package;
   console.log(id_matricula);
   let data: any = {};
   data.BASE_URL = process.env.BASE_URL.toString();
   data.ID_MATRICULA = id_matricula;
   data.URL_INVOICE = process.env.URL_INVOICE.toString();
+  data.PACKAGE_CODE = packageCode;
   res.render("pago_inscripcion", data);
 };
 

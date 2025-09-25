@@ -287,9 +287,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                     if (row.tipo == 1) {
                                         precios[index].descuento = precios[index].descuento + row.porcentaje;
                                     } else {
-                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id == 1 || precios[index].concepto_id == 2) {
-                                            precios[index].descuento = precios[index].descuento + row.porcentaje;
-                                        }
+
+                                        if( [ 5,6,7,1,2,52 ].includes(precios[index].concepto_id) ){   
+                                              precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                         }
+                                 
                                     }
 
                                     //si es un aumento
@@ -298,9 +300,12 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                     if (row.tipo == 1) {
                                         precios[index].aumento = precios[index].aumento + row.porcentaje;
                                     } else {
-                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7) {
-                                            precios[index].aumento = precios[index].aumento + row.porcentaje;
-                                        }
+
+                                     
+                                        if( [ 5,6,7,52 ].includes(precios[index].concepto_id) ){   
+                                              precios[index].aumento = precios[index].aumento + row.porcentaje;
+                                         }
+
                                     }
                                 }
 
@@ -316,7 +321,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                 precios[index].aumento = precios[index].aumento = resultConfig.porcentaje_ext;
 
                                 if (resultConfig.porcentaje_ext != 0 && index == 0) {
-                                    descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
+                                    descripcionFactura = descripcionFactura + "+ AUMENTO 20% MATRICULA EXTRAORDINARIA";
                                 }
 
                             }
@@ -425,9 +430,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                     if (row.tipo == 1) {
                                         precios[index].descuento = precios[index].descuento + row.porcentaje;
                                     } else {
-                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7) {
+
+                                        if( [ 5,6,7,52 ].includes(precios[index].concepto_id) ){
                                             precios[index].descuento = precios[index].descuento + row.porcentaje;
-                                        }
+                                        } 
+
                                     }
 
                                     //si es un aumento
@@ -436,9 +443,12 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                     if (row.tipo == 1) {
                                         precios[index].aumento = precios[index].aumento + row.porcentaje;
                                     } else {
-                                        if (precios[index].concepto_id == 5 || precios[index].concepto_id == 6 || precios[index].concepto_id == 7 || precios[index].concepto_id == 1 || precios[index].concepto_id == 2) {
+
+                                        //si es un aumento y el concepto es de matricula    
+                                        if( [ 5,6,7,1,2,52 ].includes(precios[index].concepto_id) ){   
                                             precios[index].descuento = precios[index].descuento + row.porcentaje;
-                                        }
+                                         }
+
                                     }
                                 }
 
@@ -452,7 +462,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                 let auxDes = descripcionFactura;
                                 precios[index].aumento = precios[index].aumento + resultConfig.porcentaje_ext;
                                 if (resultConfig.porcentaje_ext != 0 && index == 0) {
-                                    descripcionFactura = descripcionFactura + "+ AUMENTO 10% MATRICULA EXTRAORDINARIA";
+                                    descripcionFactura = descripcionFactura + "+ AUMENTO 20% MATRICULA EXTRAORDINARIA";
                                 }
 
 

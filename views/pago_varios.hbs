@@ -156,10 +156,15 @@
 
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="">Cantidad: <span class="text-danger">*</span></label>
+                                        <label for="">Cantidad concepto: <span class="text-danger">*</span></label>
+
                                         <input type="number" value="1" v-model="cantidad" :disabled="desactivarCantidad"
-                                            class="form-control form-control-sm" min="1" max="10" placeholder="Cantidad"
-                                            @change="calculaValor()">
+                                            class="form-control form-control-sm" min="1" max="99" maxlength="2"
+                                            placeholder="Cantidad"
+                                            oninput="if(this.value.length > 2) this.value = this.value.slice(0,2)"
+                                            @change="calculaValor()" />
+
+
                                     </div>
                                 </div>
 
@@ -348,6 +353,8 @@
                         });
                 },
 
+
+
                 calculaValor() {
                     if (this.cantidad < 1) {
                         this.cantidad = 1;
@@ -443,7 +450,7 @@
                                         this.activarBotonEf = false;
                                         this.txtBotonEf = "Redireccionando...";
                                     }
-                                    window.location = isPagoOnline? data.data.str_url : data.redirectPayment;
+                                    window.location = isPagoOnline ? data.data.str_url : data.redirectPayment;
 
                                 }
 
