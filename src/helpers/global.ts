@@ -59,13 +59,16 @@ export const generarHTMLPDFNew = async (html: string) => {
                 "--disable-gpu",
                 '--start-maximized',
                 "--disable-setuid-sandbox",
+                '--disable-dev-shm-usage',
             ]
         });
         const page = await browser.newPage();
 
 
 
-        await page.setContent(html);
+        await page.setContent(html,{
+            waitUntil: 'domcontentloaded'
+          });
         const pdf = await page.pdf({
             format: "Letter",
             width: '1920px',
