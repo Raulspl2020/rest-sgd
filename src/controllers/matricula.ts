@@ -890,7 +890,9 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
         if (req.files && req.files.archivo) {
             const { archivo } = req.files;
             //  const uploadPath = path.join(__dirname, '../../public/format/plantilla-descuentos.xlsx');
-            const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(archivo.tempFilePath));
+            
+            const fileBuffer = fs.readFileSync(archivo.tempFilePath);
+            const workSheetsFromBuffer = xlsx.parse(fileBuffer.buffer as ArrayBuffer)
             //  console.log(fs.readFileSync(uploadPath));
             console.log(archivo.data.length);
 
