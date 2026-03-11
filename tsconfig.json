@@ -2,13 +2,16 @@
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,
-    "target": "es6",
+    "target": "ES2022",           // 1. Actualizado de es6 a ES2022 para soporte moderno
+    "lib": ["ESNext"],            // 2. Necesario para Symbol.asyncDispose y asyncIterator
+    "skipLibCheck": true,         // 3. ¡VITAL! Ignora errores de tipos dentro de node_modules
     "noImplicitAny": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "dist",
-    "experimentalDecorators" : true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true, // Recomendado si usas decoradores
     "baseUrl": ".",
     "paths": {
       "*": ["node_modules/*"]

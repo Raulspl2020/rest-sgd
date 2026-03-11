@@ -44,7 +44,7 @@
     "mariadb": "^2.5.3",
     "md5": "^2.2.1",
     "moment": "^2.29.1",
-    "mongoose": "^6.0.5",
+    "mongoose": "^7.8.8",
     "mssql": "^9.1.1",
     "mysql": "^2.18.1",
     "node-cron": "^3.0.0",
@@ -68,7 +68,7 @@
     "@types/express-fileupload": "^1.1.6",
     "@types/express-serve-static-core": "^4.17.30",
     "@types/jsonwebtoken": "^8.5.0",
-    "@types/node": "^20.4.0",
+    "@types/node": "^25.0.10",
     "@types/node-cron": "^2.0.3",
     "@types/node-fetch": "^2.5.8",
     "@types/nodemailer": "^6.4.0",
@@ -77,6 +77,6 @@
     "@types/validatorjs": "^3.15.0",
     "@types/xmldom": "^0.1.30",
     "ts-node": "^10.9.1",
-    "typescript": "^4.1.6"
+    "typescript": "^5.9.3"
   }
 }
