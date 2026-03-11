@@ -15,6 +15,7 @@ import moment from 'moment';
 
 const INSCRIPTION_PACKAGE_TECHNOLOGY = 6;
 const INSCRIPTION_PACKAGE_SPECIALIZATION = 34;
+const SPECIALIZATION_LEVEL_CODES = new Set([11, 16]);
 
 const normalizeLevelName = (value: any): string => {
     return String(value || "")
@@ -38,7 +39,7 @@ export const resolverCodigoPaqueteInscripcion = (matricula: any, packageParam?: 
         return INSCRIPTION_PACKAGE_TECHNOLOGY;
     }
 
-    if (Number(matricula?.cod_nivel_edu) === 11) {
+    if (SPECIALIZATION_LEVEL_CODES.has(Number(matricula?.cod_nivel_edu))) {
         return INSCRIPTION_PACKAGE_SPECIALIZATION;
     }
 
