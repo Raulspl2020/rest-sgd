@@ -288,7 +288,6 @@ export const actualizarPagoyDetalle = async (
       //'json_response': JSON.stringify(response),
       estado: 0,
       message: error?.message,
-      host: null,
     });
     console.log(error);
   }

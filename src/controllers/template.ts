@@ -175,9 +175,25 @@ export const pdfFacturaView = async (req: any, res = response) => {
   data.BASE_URL = process.env.BASE_URL.toString();
 
   res.render("pdf_factura", data, async (err: any, html: any) => {
-    let pdf = await generarHTMLPDFNew(html);
-    res.contentType("application/pdf");
-    res.send(pdf);
+    if (err) {
+      console.log(err);
+      return res.status(500).json({
+        message: "Servicio no disponible temporalmente",
+        error: true,
+      });
+    }
+
+    try {
+      let pdf = await generarHTMLPDFNew(html);
+      res.contentType("application/pdf");
+      return res.send(pdf);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        message: "Servicio no disponible temporalmente",
+        error: true,
+      });
+    }
   });
 };
 
@@ -252,14 +268,35 @@ export const pdfReciboPago = async (req: any, res = response) => {
       data.urlService,
       { errorCorrectionLevel: "L" },
       (err: any, src: any) => {
-        if (err) res.send("Error occured");
+        if (err) {
+          return res.status(500).json({
+            message: "Servicio no disponible temporalmente",
+            error: true,
+          });
+        }
 
         data.scrQR = src;
 
         res.render("pdf_recibo_pago", data, async (err: any, html: any) => {
-          let pdf = await generarHTMLPDFNew(html);
-          res.contentType("application/pdf");
-          res.send(pdf);
+          if (err) {
+            console.log(err);
+            return res.status(500).json({
+              message: "Servicio no disponible temporalmente",
+              error: true,
+            });
+          }
+
+          try {
+            let pdf = await generarHTMLPDFNew(html);
+            res.contentType("application/pdf");
+            return res.send(pdf);
+          } catch (error) {
+            console.log(error);
+            return res.status(500).json({
+              message: "Servicio no disponible temporalmente",
+              error: true,
+            });
+          }
         });
       }
     );

@@ -9,7 +9,10 @@ import {
   limpiarCampos,
 } from "../helpers/pago";
 import { Pago } from "../models/Pago";
-import { consultarpagoMatricula } from "./matricula";
+import {
+  consultarpagoMatricula,
+  resolverCodigoPaqueteInscripcion,
+} from "./matricula";
 import fetch from "node-fetch";
 import {
   actualizarEstadoPago,
@@ -550,7 +553,10 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
   fecha_limite_pago.setMonth(fecha_limite_pago.getMonth() + 12);
 
   try {
-    let resultMatricula = await consultarDatosInscripcion(id_matricula);
+    let resultMatricula = await consultarDatosInscripcion(
+      id_matricula,
+      body.codPaquete
+    );
     console.log("El resultado de la matricula es:");
     console.log(resultMatricula);
     if (!resultMatricula) {
@@ -1135,7 +1141,10 @@ export const inicioPagoGeneral = async (req: any, res: any) => {
 };
 
 //consulta datos para pago inscripcion
-export const consultarDatosInscripcion = async (id_matricula: any) => {
+export const consultarDatosInscripcion = async (
+  id_matricula: any,
+  packageParam?: any
+) => {
   let resultDB: any;
   let resultPaquete: any;
   let total = 0;
@@ -1155,8 +1164,12 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
     resultDB = result[0][0];
 
     if (result[0].length > 0) {
-      resultPaquete = await getPaquete(6);
-      if (resultPaquete.length < 1) {
+      const packageCode = resolverCodigoPaqueteInscripcion(
+        resultDB,
+        packageParam
+      );
+      resultPaquete = await getPaquete(packageCode);
+      if (!resultPaquete || resultPaquete.length < 1) {
         throw new Error("No se encontraron precios configurados");
       }
       //consular los descuentos y multas que un estudiante tiene asignados
@@ -1212,7 +1225,8 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
       throw new Error("No se encontró la inscripción");
     }
 
-    let estadoPago = await existePago("6", id_matricula);
+    const packageCode = resolverCodigoPaqueteInscripcion(resultDB, packageParam);
+    let estadoPago = await existePago(packageCode.toString(), id_matricula);
 
     let periodoInfo = await getFechasPeriodo(
       resultDB.cod_colegio,
@@ -1259,11 +1273,12 @@ export const consultarDatosInscripcion = async (id_matricula: any) => {
     }
     arrayDB.det_factura = resultPaquete;
     arrayDB.descuentos = descuentos;
-    (arrayDB.cod_pago = ""),
-      (arrayDB.total_a_pagar_s = moneda
+    arrayDB.cod_pago = "";
+
+      arrayDB.total_a_pagar_s = moneda
         .format(total_a_pagar, { locale: "es-CO" })
         .replace("$", "")
-        .trim());
+        .trim();
     arrayDB.total_a_pagar_i = Math.round(total_a_pagar);
 
     return arrayDB;

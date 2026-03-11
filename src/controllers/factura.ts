@@ -233,11 +233,14 @@ export const consultaFacturaService = async (req: any, res: any) => {
 
       guardarLog({
         url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-        json_body: JSON.stringify(body),
-        json_response: JSON.stringify(responseData),
-        estado: 1,
+        body_request: JSON.stringify(body),
+        body_response: JSON.stringify(responseData),
+        header_request: JSON.stringify(req.headers),
+        status_code: 200,
         message: "OK",
-        host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+        client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+        invoice_id: Referencia_pago,
+        created_at: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
       });
 
       res.status(200).json(responseData);
@@ -252,11 +255,14 @@ export const consultaFacturaService = async (req: any, res: any) => {
       "Ocurrió un error inesperado en la operación";
     guardarLog({
       url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-      json_body: JSON.stringify(body),
-      json_response: JSON.stringify(responseData),
-      estado: 0,
+      body_request: JSON.stringify(body),
+      body_response: JSON.stringify(responseData),
+      header_request: JSON.stringify(req.headers),
+      status_code: 500,
       message: error.message,
-      host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      invoice_id: Referencia_pago,
+      created_at: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
     });
     res.status(500).json(responseData);
   }
@@ -426,11 +432,14 @@ export const registrarPagoService = async (req: any, res: any) => {
 
       guardarLog({
         url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-        json_body: JSON.stringify(body),
-        json_response: JSON.stringify(responseData),
-        estado: 1,
+        body_request: JSON.stringify(body),
+        body_response: JSON.stringify(responseData),
+        header_request: JSON.stringify(req.headers),
+        status_code: 200,
         message: "OK",
-        host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+        client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+        invoice_id: Referencia_pago,
+        created_at: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
       });
 
       res.status(200).json(responseData);
@@ -444,11 +453,14 @@ export const registrarPagoService = async (req: any, res: any) => {
     responseData.Descripcion = "Ocurrió un error inesperado en la operación: ";
     guardarLog({
       url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-      json_body: JSON.stringify(body),
-      json_response: JSON.stringify(responseData),
-      estado: 0,
+      body_request: JSON.stringify(body),
+      body_response: JSON.stringify(responseData),
+      header_request: JSON.stringify(req.headers),
+      status_code: 500,
       message: error.message,
-      host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      invoice_id: Referencia_pago,
+      created_at: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
     });
 
     res.status(500).json(responseData);
@@ -506,7 +518,7 @@ export const reversarPagoService = async (req: any, res: any) => {
       if (!resultDBPago) {
         throw new Error(
           "No se encontraron pagos realizados para la factura " +
-            Referencia_pago
+          Referencia_pago
         );
       }
 
@@ -554,11 +566,14 @@ export const reversarPagoService = async (req: any, res: any) => {
 
       guardarLog({
         url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-        json_body: JSON.stringify(body),
-        json_response: JSON.stringify(responseData),
-        estado: 1,
+        body_request: JSON.stringify(body),
+        body_response: JSON.stringify(responseData),
+        header_request: JSON.stringify(req.headers),
+        status_code: 200,
         message: "OK",
-        host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+        client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+        invoice_id: Referencia_pago,
+        created_at: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
       });
       res.status(200).json(responseData);
     } else {
@@ -571,11 +586,14 @@ export const reversarPagoService = async (req: any, res: any) => {
     responseData.Descripcion = "Ocurrió un error inesperado en la operación: ";
     guardarLog({
       url_service: req.protocol + "://" + req.get("host") + req.originalUrl,
-      json_body: JSON.stringify(body),
-      json_response: JSON.stringify(responseData),
-      estado: 0,
+      body_request: JSON.stringify(body),
+      body_response: JSON.stringify(responseData),
+      header_request: JSON.stringify(req.headers),
+      status_code: 500,
       message: error.message,
-      host: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      client_ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+      invoice_id: Referencia_pago,
+      created_at: format(new Date(), "YYYY-MM-DD HH:mm:ss"),
     });
     res.status(500).json(responseData);
   }
@@ -856,8 +874,6 @@ export const uploadMR5 = async (req: any, res = response) => {
             contenido: contenidoArchivo,
             estado: 1,
             fecha_cargue: new Date(),
-            host:
-              req.headers["x-forwarded-for"] || req.connection.remoteAddress,
             metadatos: JSON.stringify(archivo),
             pagos: JSON.stringify(pagoSinRegistrar),
           });

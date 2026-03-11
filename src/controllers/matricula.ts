@@ -13,6 +13,38 @@ import { IStudentType } from "../interfaces/clientes.interface";
 import fetch from "node-fetch";
 import moment from 'moment';
 
+const INSCRIPTION_PACKAGE_TECHNOLOGY = 6;
+const INSCRIPTION_PACKAGE_SPECIALIZATION = 34;
+
+const normalizeLevelName = (value: any): string => {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase();
+};
+
+export const resolverCodigoPaqueteInscripcion = (matricula: any, packageParam?: any): number => {
+    const packageCode = Number(packageParam);
+    if (Number.isFinite(packageCode) && packageCode > 0) {
+        return packageCode;
+    }
+
+    const nivel = normalizeLevelName(matricula?.nom_nivel_educativo);
+    if (nivel.includes("ESPECIALIZ")) {
+        return INSCRIPTION_PACKAGE_SPECIALIZATION;
+    }
+
+    if (nivel.includes("TECNOLOG")) {
+        return INSCRIPTION_PACKAGE_TECHNOLOGY;
+    }
+
+    if (Number(matricula?.cod_nivel_edu) === 11) {
+        return INSCRIPTION_PACKAGE_SPECIALIZATION;
+    }
+
+    return INSCRIPTION_PACKAGE_TECHNOLOGY;
+};
+
 //====================
 //   /matricula/generarpagoinscripcion 
 //=====================
@@ -39,10 +71,10 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
 
         if (result[0].length > 0) {
 
-            const codPaqueteParam = req.query.package;
-            
-            resultPaquete = await getPaquete(codPaqueteParam || 6);
-            if (resultPaquete.length < 1) {
+            const paqueteInscripcion = resolverCodigoPaqueteInscripcion(resultDB, req.query.package);
+
+            resultPaquete = await getPaquete(paqueteInscripcion);
+            if (!resultPaquete || resultPaquete.length < 1) {
                 throw new Error("No se encontraron precios configurados");
             }
             //consular los descuentos y multas que un estudiante tiene asignados
@@ -86,7 +118,8 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
         //verifica si ya existe una factura creada con esa matricula y con ese paquete
 
         let pagoFactura: any = [];
-        let resFactura = await getFacturaByMatricula(id_matricula, '6');
+        const paqueteInscripcion = resolverCodigoPaqueteInscripcion(resultDB, req.query.package);
+        let resFactura = await getFacturaByMatricula(id_matricula, paqueteInscripcion.toString());
         //si encuentra factura creada verifica si tiene pagos
         if (resFactura.length > 0) {
             pagoFactura = await getPagoFactura(resFactura[0]._id);
