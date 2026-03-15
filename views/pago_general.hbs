@@ -5,190 +5,208 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous" />
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous" />
+    <link href="{{BASE_URL}}/static/css/pago_general.css" rel="stylesheet" />
 
     <title>Pago personalizado</title>
 </head>
 
-<body class="bg-dark">
-    <div id="app" class="container mt-3">
+<body class="payment-page">
+    <div id="app" class="container payment-container mt-4 mb-4">
         <div class="row">
-            <div class="offset-md-2 col-md-8">
-                <div class="card">
-                    <div class="card-body pb-1">
-                        <h4 class="card-title text-center text-dark border border border-secondary bg-warning">
-
-                            <img src="{{BASE_URL}}/static/img/LogoITP2.svg" style="height: 50px;" class="img img-fluid"
-                                alt="">
-                            Pagos financieros
+            <div class="offset-md-1 col-md-10">
+                <div class="card payment-shell">
+                    <div class="card-body pb-0">
+                        <h4 class="card-title payment-header">
+                            <img src="{{BASE_URL}}/static/img/LogoITP2.svg" class="img img-fluid logo-itp" alt="">
+                            PAGOS FINANCIEROS
+                            <i class="fa fa-credit-card-alt"></i>
                         </h4>
                     </div>
 
-                    <form @submit.prevent="procesarFormulario" class="needs-validation" novalidate>
-                        <div class="container">
-                            <h5>Datos del cliente</h5>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="">Identificación:
-                                            <span class="text-danger">*</span></label>
-                                        <input v-model.trim="formpago.txtId" type="text" required class="form-control"
-                                            value="" placeholder="Identificación del cliente"
-                                            @change="consultarPersona" />
-                                        <div class="valid-feedback">
-                                            Ok valido
+                    <form @submit.prevent="procesarFormulario" class="needs-validation payment-form" novalidate>
+                        <div class="container payment-content">
+                            <div class="row top-cards-row">
+                                <div class="col-12 col-md-4">
+                                    <div class="top-info-card">
+                                        <div class="top-info-label"><i class="fa fa-user"></i> Cliente</div>
+                                        <div class="top-info-value">{[formpago.txtId || 'Sin identificar']}</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="top-info-card">
+                                        <div class="top-info-label"><i class="fa fa-file-text-o"></i> Concepto</div>
+                                        <div class="top-info-value">{[formpago.txtConcepto || 'Sin concepto']}</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="top-info-card top-info-highlight">
+                                        <div class="top-info-label"><i class="fa fa-money"></i> Total</div>
+                                        <div class="top-info-value">$ {[formpago.txtTotal || 0]}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="payment-card form-section">
+                                <h5 class="section-title"><i class="fa fa-id-card-o"></i> Datos del cliente</h5>
+                                <div class="payment-grid row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Identificación:
+                                                <span class="text-danger">*</span></label>
+                                            <input v-model.trim="formpago.txtId" type="text" required class="form-control"
+                                                value="" placeholder="Identificación del cliente"
+                                                @change="consultarPersona" />
+                                            <div class="valid-feedback">
+                                                Ok valido
+                                            </div>
+
+                                            <div class="invalid-feedback">
+                                                completa este campo
+                                            </div>
                                         </div>
+                                    </div>
 
-                                        <div class="invalid-feedback">
-                                            completa este campo
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Tipo identificación:
+                                                <span class="text-danger">*</span></label>
+                                            <select v-model="formpago.selTipoIde" class="form-select"
+                                                aria-label="Default select example" @change="onChange($event)">
+                                                <option disabled value="">Seleccionar</option>
+                                                <option value="1">CC</option>
+                                                <option value="2">CE</option>
+                                                <option value="0">OTRO</option>
+                                            </select>
                                         </div>
-
                                     </div>
-                                </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="">Tipo identificación:
-                                            <span class="text-danger">*</span></label>
-                                        <select v-model="formpago.selTipoIde" class="form-select"
-                                            aria-label="Default select example" @change="onChange($event)">
-                                            <option disabled value="">Seleccionar</option>
-                                            <option value="1">CC</option>
-                                            <option value="2">CE</option>
-                                            <option value="0">OTRO</option>
-                                        </select>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="">Primer Nombre: <span class="text-danger">*</span></label>
+                                            <input v-model.trim="formpago.txtNom1" type="text"
+                                                placeholder="Nombre1 cliente" class="form-control" value="" />
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <div class="row mt-2">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="">Primer Nombre: <span class="text-danger">*</span></label>
-                                        <input v-model.trim="formpago.txtNom1" type="text" placeholder="Nombre1 cliente"
-                                            class="form-control" value="" />
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="">Segundo Nombre: </label>
+                                            <input type="text" v-model.trim="formpago.txtNom2" class="form-control"
+                                                value="" placeholder="Nombre2 cliente" />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="">Segundo Nombre: </label>
-                                        <input type="text" v-model.trim="formpago.txtNom2" class="form-control" value=""
-                                            placeholder="Nombre2 cliente" />
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="">Primer Apellido: <span class="text-danger">*</span></label>
+                                            <input v-model.trim="formpago.txtApe1" type="text"
+                                                placeholder="Apellido1 cliente" class="form-control" value="" />
+                                        </div>
                                     </div>
-                                </div>
 
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="">Primer Apellido: <span class="text-danger">*</span></label>
-                                        <input v-model.trim="formpago.txtApe1" type="text"
-                                            placeholder="Apellido1 cliente" class="form-control" value="" />
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="">Segundo Apellido: </label>
+                                            <input type="text" v-model.trim="formpago.txtApe2" class="form-control"
+                                                value="" placeholder="Apellido2 cliente" />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="">Segundo Apellido: </label>
-                                        <input type="text" v-model.trim="formpago.txtApe2" class="form-control" value=""
-                                            placeholder="Apellido2 cliente" />
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Correo electronico:
+                                                <span class="text-danger">*</span></label>
+                                            <input type="email" placeholder="Email del cliente"
+                                                v-model.trim="formpago.txtEmail" class="form-control" value="" />
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <div class="row mt-2">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="">Correo electronico:
-                                            <span class="text-danger">*</span></label>
-                                        <input type="email" placeholder="Email del cliente"
-                                            v-model.trim="formpago.txtEmail" class="form-control" value="" />
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="">Celular:</label>
-                                        <input type="text" v-model.trim="formpago.txtCelular" class="form-control"
-                                            value="" placeholder="Número de celular" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mt-2">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label for="">Descripción del concepto: </label>
-                                        <input type="text" v-model.trim="formpago.txtConcepto" class="form-control"
-                                            id="txtConcepto" placeholder="Ej: pago certificado o record academico" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mt-2">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="">Subir documento:</label>
-                                        <input class="form-control" disabled type="file" multiple />
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="">Total a pagar:
-                                            <span class="text-danger">*</span></label>
-                                        <input class="form-control bg-dark" type="text"
-                                            placeholder="Escriba un valor numérico" v-model.number="formpago.txtTotal"
-                                            multiple id="txtTotal" v-on:keyup="numeroALetras"
-                                            style=" color: chartreuse;" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mt-2">
-                                <div class="col-md-12">
-
-
-                                    <div class="form-group mt-2">
-                                        <div class=" border border-secondary p-1 " :class="formpago.colorTextoAlert">
-                                            {[numeroLetras ]}
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Celular:</label>
+                                            <input type="text" v-model.trim="formpago.txtCelular" class="form-control"
+                                                value="" placeholder="Numero de celular" />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="row mt-2">
-                                <div class="col-md-8">
-                                    <button class="btn btn-outline-info" data-bs-toggle="tooltip"
-                                        @click="inicarPago(false)" data-bs-placement="top" :disabled="!activarBotonEf"
-                                        title="Genera PDF para pago en efectivo">
-                                        <i class="fa fa-barcode"></i> {[txtBotonEf]}
-                                    </button>
-                                </div>
-                                <div class="col-md-4 ">
-                                    <div style="float: right;">
-                                        <button type="submit" :disabled="!formpago.activarBoton"
-                                            class="btn btn-success " @click="inicarPago(true)">
-                                            <i id="icon" v-if="!formpago.activarBoton"
-                                                class="fa fa-spinner fa-pulse"></i>
-
-                                            {[ formpago.txtBoton ]} <i class="fa fa-credit-card"></i>
-                                        </button>
+                            <div class="payment-card form-section">
+                                <h5 class="section-title"><i class="fa fa-file-text-o"></i> Informacion del pago</h5>
+                                <div class="payment-grid row g-3">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="">Descripcion del concepto: </label>
+                                            <input type="text" v-model.trim="formpago.txtConcepto" class="form-control"
+                                                id="txtConcepto"
+                                                placeholder="Ej: pago certificado o record academico" />
+                                        </div>
                                     </div>
 
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Subir documento:</label>
+                                            <input class="form-control" disabled type="file" multiple />
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Total a pagar:
+                                                <span class="text-danger">*</span></label>
+                                            <input class="form-control total-input" type="text"
+                                                placeholder="Escriba un valor numerico"
+                                                v-model.number="formpago.txtTotal" multiple id="txtTotal"
+                                                v-on:keyup="numeroALetras" />
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <div class="form-group mt-1">
+                                            <div class="status-box" :class="formpago.colorTextoAlert">
+                                                {[numeroLetras ]}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
+                            <div class="payment-card total-box">
+                                <div class="row align-items-center g-3">
+                                    <div class="col-12 col-lg-5">
+                                        <p class="total-label mb-1">Total a pagar</p>
+                                        <h3 class="total-amount mb-0">$ {[formpago.txtTotal || 0]}</h3>
+                                    </div>
+                                    <div class="col-12 col-lg-7">
+                                        <div class="action-buttons">
+                                            <button class="btn btn-pay-outline" data-bs-toggle="tooltip"
+                                                @click="inicarPago(false)" data-bs-placement="top"
+                                                :disabled="!activarBotonEf" title="Genera PDF para pago en efectivo">
+                                                <i class="fa fa-barcode"></i> {[txtBotonEf]}
+                                            </button>
+                                            <button type="submit" :disabled="!formpago.activarBoton"
+                                                class="btn btn-pay-primary" @click="inicarPago(true)">
+                                                <i id="icon" v-if="!formpago.activarBoton"
+                                                    class="fa fa-spinner fa-pulse"></i>
+                                                {[ formpago.txtBoton ]} <i class="fa fa-credit-card"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                            <br /><br />
+                            <br />
                         </div>
                     </form>
                 </div>
-                <!--container -->
             </div>
         </div>
     </div>
