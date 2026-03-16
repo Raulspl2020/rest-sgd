@@ -286,6 +286,13 @@ body.payment-page {
 }
 
 @media (max-width: 767px) {
+  .payment-form [class*="col-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    box-sizing: border-box;
+  }
+
   .payment-header {
     font-size: 1.03rem;
     padding: 0.9rem 0.7rem;
@@ -326,13 +333,37 @@ body.payment-page {
     width: 100%;
   }
 
-  .search-input-group {
-    display: grid;
-    gap: 8px;
+  .payment-form .input-group.search-input-group {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
   }
 
-  .search-input-group .form-control,
-  .btn-search {
+  .payment-form .input-group.search-input-group > .form-control {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    flex: 0 0 100% !important;
+    min-height: 44px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  .payment-form .input-group.search-input-group > .btn-search {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    min-height: 44px;
+    margin-top: 8px;
+    padding: 0.55rem 0.75rem;
+    box-sizing: border-box;
+  }
+
+  .payment-form .input-group.search-input-group > .form-control,
+  .payment-form .input-group.search-input-group > .btn-search {
     border-radius: 10px !important;
   }
 }
