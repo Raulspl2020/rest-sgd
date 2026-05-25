@@ -214,10 +214,10 @@
                                                         <td>{[row.concepto]}</td>
                                                         <td>{[row.cantidad]}</td>
                                                         <td data-bs-toggle="tooltip" title="Some tooltip text!">
-                                                            {[ (row.descuento *100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })   ]} % </td>
+                                                            {[ (Math.min(Math.max(Number(row.descuento) || 0, 0), 1) * 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })   ]} % </td>
                                                         <td> {[row.aumento *100]}% </td>
                                                         <td> $ {[row.valor_unidad]} </td>
-                                                        <td> $ {[row.subtotal]} </td>
+                                                        <td> $ {[Math.max(Number(row.subtotal) || 0, 0)]} </td>
                                                     </tr>
 
                                                     {{!-- <tr>

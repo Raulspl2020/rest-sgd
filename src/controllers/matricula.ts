@@ -16,6 +16,42 @@ import moment from 'moment';
 const INSCRIPTION_PACKAGE_TECHNOLOGY = 6;
 const INSCRIPTION_PACKAGE_SPECIALIZATION = 34;
 const SPECIALIZATION_LEVEL_CODES = new Set([11, 16]);
+const MAX_DISCOUNT_RATE = 1;
+
+const toNumber = (value: any): number => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const clampDiscountRate = (value: any): number => {
+    const discountRate = toNumber(value);
+    if (discountRate <= 0) {
+        return 0;
+    }
+
+    return discountRate > MAX_DISCOUNT_RATE ? MAX_DISCOUNT_RATE : discountRate;
+};
+
+const sumDiscountRateWithCap = (currentRate: any, incomingRate: any): number => {
+    const current = clampDiscountRate(currentRate);
+    const incoming = clampDiscountRate(incomingRate);
+    return clampDiscountRate(current + incoming);
+};
+
+const calculateSubtotalWithDiscountCap = (
+    unitValue: any,
+    quantity: any,
+    increaseRate: any,
+    discountRate: any,
+): number => {
+    const subtotal = toNumber(unitValue) * toNumber(quantity);
+    const increase = toNumber(increaseRate);
+    const discount = clampDiscountRate(discountRate);
+    const total = (subtotal + (subtotal * increase)) - (subtotal * discount);
+
+    // Defensive floor: billing totals must never be negative.
+    return total < 0 ? 0 : total;
+};
 
 const normalizeLevelName = (value: any): string => {
     return String(value || "")
@@ -245,16 +281,18 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
             resultDto.forEach((row: any) => {
                 //si aplica descuento sino aplica aumento, si es 1 añade un descuento
                 if (row.accion == 1) {
+                    const discountRate = clampDiscountRate(row.porcentaje);
                     let registro = {
                         'id': row._id,
                         'descripcion': row.descripcion,
-                        'descuento': (row.porcentaje * 100)
+                        'descuento': (discountRate * 100)
                     };
                     resultDescuentos.push(registro);
 
-                    porcentaje_descuento = porcentaje_descuento + row.porcentaje;
+                    // Business rule: never allow effective discount over 100%.
+                    porcentaje_descuento = sumDiscountRateWithCap(porcentaje_descuento, discountRate);
                     let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion;
-                    auxDescripcion = `+ DESCUENTO ${(row.porcentaje * 100)}% ${desc}`;
+                    auxDescripcion = `+ DESCUENTO ${(discountRate * 100)}% ${desc}`;
                 } else {
                     porcentaje_aumento = porcentaje_aumento + row.porcentaje;
                     let desc = (row.observacion == null) ? row.descripcion + " " : row.observacion;
@@ -319,11 +357,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                 if (row.accion == 1) {
                                     //si el soporte permite aplicar en todos los conceptos
                                     if (row.tipo == 1) {
-                                        precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                        precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                     } else {
 
                                         if( [ 5,6,7,1,2,52 ].includes(precios[index].concepto_id) ){   
-                                              precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                              precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                          }
                                  
                                     }
@@ -405,8 +443,13 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     total_a_pagar = 0;
                     precios.forEach((element: any, index: number) => {
                         precios[index].paquete = descripcionFactura;
-                        let subtotal = (element.valor_unidad * element.cantidad);
-                        precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
+                        precios[index].descuento = clampDiscountRate(precios[index].descuento);
+                        precios[index].subtotal = calculateSubtotalWithDiscountCap(
+                            element.valor_unidad,
+                            element.cantidad,
+                            element.aumento,
+                            element.descuento,
+                        );
                         total_a_pagar = element.subtotal + total_a_pagar;
                     });
 
@@ -462,11 +505,11 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                 if (row.accion == 1) {
                                     //si el soporte permite aplicar en todos los conceptos
                                     if (row.tipo == 1) {
-                                        precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                        precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                     } else {
 
                                         if( [ 5,6,7,52 ].includes(precios[index].concepto_id) ){
-                                            precios[index].descuento = precios[index].descuento + row.porcentaje;
+                                            precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                         } 
 
                                     }
@@ -558,8 +601,13 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 total_a_pagar = 0;
                 precios.forEach((element: any, index: number) => {
                     precios[index].paquete = descripcionFactura;
-                    let subtotal = (element.valor_unidad * element.cantidad);
-                    precios[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
+                    precios[index].descuento = clampDiscountRate(precios[index].descuento);
+                    precios[index].subtotal = calculateSubtotalWithDiscountCap(
+                        element.valor_unidad,
+                        element.cantidad,
+                        element.aumento,
+                        element.descuento,
+                    );
                     total_a_pagar = element.subtotal + total_a_pagar;
                 });
 
@@ -604,7 +652,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
                             if (con.concepto_id == fact.concepto_id) {
                                 con.cantidad = fact.cantidad;
-                                con.descuento = fact.descuento;
+                                con.descuento = clampDiscountRate(fact.descuento);
                                 con.valor_unidad = fact.valor_unidad;
                                 con.aumento = fact.aumento;
                             }
@@ -616,8 +664,13 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     //actualizamos el total a pagar
                     total_a_pagar = 0;
                     resultPaquete.forEach((element: any, index: number) => {
-                        let subtotal = (element.valor_unidad * element.cantidad);
-                        resultPaquete[index].subtotal = (subtotal + (subtotal * element.aumento)) - (subtotal * element.descuento)
+                        resultPaquete[index].descuento = clampDiscountRate(resultPaquete[index].descuento);
+                        resultPaquete[index].subtotal = calculateSubtotalWithDiscountCap(
+                            element.valor_unidad,
+                            element.cantidad,
+                            element.aumento,
+                            element.descuento,
+                        );
                         total_a_pagar = element.subtotal + total_a_pagar;
                     });
 
@@ -626,9 +679,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
             }
-
-
-
+            // Defensive guard: never expose payable totals below zero.
+            // This protects payment flows even if upstream data is inconsistent.
+            const safeTotalToPay = Math.max(toNumber(total_a_pagar), 0);
 
             return {
                 error: false,
@@ -638,9 +691,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 soportes: await getCategoriaPorcentajeByMatricula('1', resultDB.ide_persona, resultDB.cod_periodo),
                 descuentos: resultDescuentos,
                 detalle_factura: resultPaquete,
-                total_a_pagar: moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(),
+                total_a_pagar: moneda.format(safeTotalToPay, { locale: 'es-CO' }).replace('$', '').trim(),
                 total_general: moneda.format(total_sin_descuento, { locale: 'es-CO' }).replace('$', '').trim(),
-                total_a_pagar_int: moneda.unformat(moneda.format(total_a_pagar, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' })
+                total_a_pagar_int: moneda.unformat(moneda.format(safeTotalToPay, { locale: 'es-CO' }).replace('$', '').trim(), { locale: 'es-CO' })
 
             };
 
