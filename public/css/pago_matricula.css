@@ -376,6 +376,72 @@ body.payment-page {
   margin-bottom: 10px;
 }
 
+.discount-wrapper {
+  background: linear-gradient(180deg, #f9fcff 0%, #f2f7ff 100%);
+}
+
+.discount-header {
+  margin-bottom: 6px;
+}
+
+.discount-form {
+  padding: 0;
+}
+
+.discount-form-card {
+  margin-right: 1px;
+}
+
+.discount-upload-hint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.discount-file-input {
+  border: 1px solid #b9cde5;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.43rem 0.55rem;
+  min-height: 40px;
+  font-size: 0.82rem;
+}
+
+.discount-submit-btn {
+  margin-top: 8px;
+}
+
+.discount-status-card {
+  margin-top: 0;
+}
+
+.discount-status-table td:last-child,
+.discount-status-table th:last-child {
+  text-align: right;
+}
+
+.status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+}
+
+.status-badge-ok {
+  color: #0d7b55;
+  background: #dcf6eb;
+  border: 1px solid #95ddbf;
+}
+
+.status-badge-warn {
+  color: #8d5f00;
+  background: #fff3d4;
+  border: 1px solid #f2d790;
+}
+
 .payment-shell .alert {
   border-radius: 10px;
 }

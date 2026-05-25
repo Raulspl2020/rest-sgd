@@ -29,6 +29,23 @@ import { EDataInsertPago } from "../interfaces/facturas.interface";
 import { decodePagoToList } from "../helpers/decodePagoToList";
 let Validator = require("validatorjs");
 
+const syncSysApoloInBackground = (invoiceId: number, source: string) => {
+  console.log(
+    `[SYSAPOLO_SYNC_TRIGGER] source=${source} factura=${invoiceId} dispatch`,
+  );
+  void registroFacturaSysApolo(invoiceId)
+    .then(([ok, message]) => {
+      console.log(
+        `[SYSAPOLO_SYNC_TRIGGER] source=${source} factura=${invoiceId} ok=${ok} message=${message}`,
+      );
+    })
+    .catch((error) => {
+      console.error(
+        `[SYSAPOLO_SYNC_TRIGGER] source=${source} factura=${invoiceId} error=${error?.message || error}`,
+      );
+    });
+};
+
 //====================
 //   /transaccion/soporteDescuento
 //=====================
@@ -38,10 +55,62 @@ export const soporteDescuento = async (req: any, res = response) => {
   try {
     let body = req.body;
 
+    const observacion = String(body.observacion || "").trim();
+    if (!body.porcentaje_categoria_id) {
+      return res.status(400).json({
+        message: "Debe seleccionar un tipo de descuento válido",
+        error: true,
+      });
+    }
+
+    if (!observacion) {
+      return res.status(400).json({
+        message: "La observación es obligatoria",
+        error: true,
+      });
+    }
+
+    if (!req.files || !req.files.archivo) {
+      return res.status(400).json({
+        message: "Debe adjuntar un archivo PDF como soporte",
+        error: true,
+      });
+    }
+
+    const archivo: any = req.files.archivo;
+    const fileName = String(archivo.name || "").toLowerCase();
+    const mimeType = String(archivo.mimetype || "").toLowerCase();
+    if (!fileName.endsWith(".pdf") || (mimeType && mimeType !== "application/pdf")) {
+      return res.status(400).json({
+        message: "El archivo adjunto debe ser un PDF válido",
+        error: true,
+      });
+    }
+
+    let resultCategoria = await getCategoriaPorcentaje(
+      body.porcentaje_categoria_id
+    );
+    if (!resultCategoria) {
+      return res.status(400).json({
+        message: "La categoría de descuento no existe",
+        error: true,
+      });
+    }
+
+    const descripcionCategoria = String(resultCategoria.descripcion || "")
+      .trim()
+      .toUpperCase();
+    if (descripcionCategoria === "NO APLICA") {
+      return res.status(400).json({
+        message: "La categoría NO APLICA no permite registrar solicitudes",
+        error: true,
+      });
+    }
+
     //subir el archivo si existe
     if (req.files && req.files.archivo) {
       const carpeta = `soportedescuento/${body.estudiante_id}-${body.matricula_id}/`;
-      const dataFile: any = await subirArchivo(req.files, undefined, carpeta);
+      const dataFile: any = await subirArchivo(req.files, ["pdf"], carpeta);
       console.log(dataFile);
 
       metadatos = {
@@ -54,9 +123,6 @@ export const soporteDescuento = async (req: any, res = response) => {
     }
 
     let resultConfig = await getConfigPeriodo();
-    let resultCategoria = await getCategoriaPorcentaje(
-      body.porcentaje_categoria_id
-    );
     console.log(resultCategoria);
     console.log(resultConfig);
     if (resultConfig) {
@@ -73,7 +139,7 @@ export const soporteDescuento = async (req: any, res = response) => {
       matricula_id: body.matricula_id,
       nom_periodo: body.nom_periodo,
       periodo_id: body.periodo_id,
-      observacion: body.observacion,
+      observacion,
       accion: body.accion ? body.accion : 1,
       tipo: body.accion ? body.tipo : 0,
       json_file: JSON.stringify(metadatos),
@@ -288,7 +354,7 @@ export const actualizarTransaccion = async (req: any, res = response) => {
             req.headers["x-forwarded-for"] || req.connection.remoteAddress;
           console.log(ip);
           if (`${ip}` == "200.41.6.47") complileTemplateReciboPago(codigo_pago);
-          registroFacturaSysApolo(codigo_pago);
+          syncSysApoloInBackground(Number(codigo_pago), "transaccion.estado");
         }
 
         guardarLog({

@@ -13,6 +13,24 @@ import { IStudentType } from "../interfaces/clientes.interface";
 import fetch from "node-fetch";
 import moment from 'moment';
 
+const getFinancieroApiUrl = (): string => {
+    const baseUrl = (process.env.FINANCIERO_API_URL || "").trim();
+    if (baseUrl.length > 0) {
+        return baseUrl.replace(/\/+$/, "");
+    }
+
+    return "";
+};
+
+const getStudentTypeUrl = (): string => {
+    const financieroApiUrl = getFinancieroApiUrl();
+    if (financieroApiUrl.length > 0) {
+        return `${financieroApiUrl}/invoice/studenttype`;
+    }
+
+    return (process.env.URL_GET_DATE || "").trim();
+};
+
 const INSCRIPTION_PACKAGE_TECHNOLOGY = 6;
 const INSCRIPTION_PACKAGE_SPECIALIZATION = 34;
 const SPECIALIZATION_LEVEL_CODES = new Set([11, 16]);
@@ -251,7 +269,8 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
             // TODO: para consultar las fechas de matriculas 
             // periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
 
-           const response = await fetch(`${process.env.URL_GET_DATE}?matriculaId=${id_matricula}`);
+           const studentTypeUrl = getStudentTypeUrl();
+           const response = await fetch(`${studentTypeUrl}?matriculaId=${id_matricula}`);
            const studentType: IStudentType =  await response.json();
            const currenDate =  new Date();
 

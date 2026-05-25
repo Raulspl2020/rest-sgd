@@ -22,6 +22,43 @@ import { getInfoUsuario } from "../provider/usuario_provider";
 const fs = require("fs");
 const { DOMImplementation, XMLSerializer } = require("xmldom");
 
+const getFinancieroApiUrl = (): string => {
+  const baseUrl = (process.env.FINANCIERO_API_URL || "").trim();
+  if (baseUrl.length > 0) {
+    return baseUrl.replace(/\/+$/, "");
+  }
+
+  return "";
+};
+
+const getInvoiceCreateUrl = (): string => {
+  const financieroApiUrl = getFinancieroApiUrl();
+  if (financieroApiUrl.length > 0) {
+    return `${financieroApiUrl}/invoice/create`;
+  }
+
+  return (process.env.URL_INVOICE || "").trim();
+};
+
+const getFinancieroPublicUrl = (): string => {
+  const configuredPublicUrl = (process.env.FINANCIERO_PUBLIC_URL || "").trim();
+  if (configuredPublicUrl.length > 0) {
+    return configuredPublicUrl.replace(/\/+$/, "");
+  }
+
+  const financieroApiUrl = getFinancieroApiUrl();
+  if (financieroApiUrl.length > 0) {
+    return financieroApiUrl;
+  }
+
+  const invoiceCreateUrl = getInvoiceCreateUrl();
+  if (invoiceCreateUrl.length > 0) {
+    return invoiceCreateUrl.replace(/\/invoice\/create\/?$/i, "");
+  }
+
+  return "";
+};
+
 //====================
 //   /page/inicio
 //=====================
@@ -119,7 +156,7 @@ export const pagoPersonalizado = async (req: any, res = response) => {
 export const pagosvariosView = async (req: any, res = response) => {
   let data: any = {};
   data.BASE_URL = process.env.BASE_URL.toString();
-  data.URL_INVOICE = process.env.URL_INVOICE.toString();
+  data.URL_INVOICE = getInvoiceCreateUrl();
   res.render("pago_varios", data);
 };
 //====================
@@ -131,7 +168,8 @@ export const pagoMatricula = async (req: any, res = response) => {
   let data: any = {};
   data.BASE_URL = process.env.BASE_URL.toString();
   data.ID_MATRICULA = id_matricula;
-  data.URL_INVOICE = process.env.URL_INVOICE.toString();
+  data.URL_INVOICE = getInvoiceCreateUrl();
+  data.FINANCIERO_PUBLIC_URL = getFinancieroPublicUrl();
   res.render("pago_matricula", data);
 };
 
@@ -145,7 +183,7 @@ export const pagoInscripcion = async (req: any, res = response) => {
   let data: any = {};
   data.BASE_URL = process.env.BASE_URL.toString();
   data.ID_MATRICULA = id_matricula;
-  data.URL_INVOICE = process.env.URL_INVOICE.toString();
+  data.URL_INVOICE = getInvoiceCreateUrl();
   data.PACKAGE_CODE = packageCode;
   res.render("pago_inscripcion", data);
 };

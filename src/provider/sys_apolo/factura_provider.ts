@@ -180,6 +180,21 @@ export const createReciboPago = async (encabezado: FacturaSysApolo, detalle: Fac
 
     return new Promise((resolve, reject) => {
         let transaction = new sql.Transaction(cnn);
+        const queryCheck = `IF EXISTS (
+            SELECT 1
+            FROM vup_fact_concepto_escolar_encabezado WITH (UPDLOCK, HOLDLOCK)
+            WHERE num_recibo = ${encabezado.num_recibo}
+        )
+        BEGIN
+            SELECT TOP 1 ide_fact_concepto_enc AS ide_fact_concepto_enc, 1 AS already_exists
+            FROM vup_fact_concepto_escolar_encabezado
+            WHERE num_recibo = ${encabezado.num_recibo}
+            ORDER BY ide_fact_concepto_enc DESC
+        END
+        ELSE
+        BEGIN
+            SELECT 0 AS already_exists
+        END`;
         const query1: string = `INSERT INTO vup_fact_concepto_escolar_encabezado (
             ide_fact_concepto_enc,
             num_recibo,
@@ -272,40 +287,73 @@ export const createReciboPago = async (encabezado: FacturaSysApolo, detalle: Fac
                 rolledBack = true
             });
 
-            let result = new sql.Request(transaction)
-                .query(query1, (err: any, result: any) => {
-
-                    if (err) {
+            let resultCheck = new sql.Request(transaction)
+                .query(queryCheck, (errCheck: any, resultCheck: any) => {
+                    if (errCheck) {
                         if (!rolledBack) {
                             transaction.rollback((err2: any) => {
-                                // ... error checks
-                                console.log("ejecutando rollback");
-                                reject([false, err, query1 + " ; " + queryFinal]);
-                            })
+                                reject({ inserted: false, alreadyExists: false, error: errCheck, sql: queryCheck });
+                            });
                         }
-                    } else {
-                        //ejecutar la siguiente consulta
-                        let result2 = new sql.Request(transaction)
-                            .query(queryFinal, (err: any, result: any) => {
+                        return;
+                    }
 
-                                if (err) {
+                    const checkRow = resultCheck?.recordset?.[0];
+                    if (checkRow && (checkRow.already_exists === 1 || checkRow.already_exists === true)) {
+                        console.log(`[SYSAPOLO_SYNC] Recibo ${encabezado.num_recibo} ya existe en encabezado (${checkRow.ide_fact_concepto_enc})`);
+                        transaction.commit((err2: any) => {
+                            if (err2) {
+                                return reject({ inserted: false, alreadyExists: false, error: err2, sql: queryCheck });
+                            }
+                            resolve({
+                                inserted: false,
+                                alreadyExists: true,
+                                ideFactConceptoEnc: checkRow.ide_fact_concepto_enc,
+                            });
+                        });
+                        return;
+                    }
+
+                    let result = new sql.Request(transaction)
+                        .query(query1, (err: any, result: any) => {
+
+                            if (err) {
+                                if (!rolledBack) {
                                     transaction.rollback((err2: any) => {
-                                        reject([false, err, query1 + " ; " + queryFinal]);
-                                    });
-                                } else {
-                                    transaction.commit((err2: any) => {
                                         // ... error checks
-                                        console.log("ejecutando commit");
-                                        resolve([true, null]);
-
+                                        console.log("ejecutando rollback");
+                                        reject({ inserted: false, alreadyExists: false, error: err, sql: query1 + " ; " + queryFinal });
                                     })
                                 }
+                            } else {
+                                //ejecutar la siguiente consulta
+                                let result2 = new sql.Request(transaction)
+                                    .query(queryFinal, (err: any, result: any) => {
 
-                            });
+                                        if (err) {
+                                            transaction.rollback((err2: any) => {
+                                                reject({ inserted: false, alreadyExists: false, error: err, sql: query1 + " ; " + queryFinal });
+                                            });
+                                        } else {
+                                            transaction.commit((err2: any) => {
+                                                // ... error checks
+                                                console.log("ejecutando commit");
+                                                resolve({
+                                                    inserted: true,
+                                                    alreadyExists: false,
+                                                    ideFactConceptoEnc: encabezado.ide_fact_concepto_enc,
+                                                });
+
+                                            })
+                                        }
+
+                                    });
 
 
 
-                    }
+                            }
+                        });
+
                 });
 
         });

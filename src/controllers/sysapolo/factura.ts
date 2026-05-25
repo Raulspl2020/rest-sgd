@@ -228,6 +228,7 @@ export const registroFacturaSysApolo = async (ref: number) => {
   let DATA: any;
 
   try {
+    console.log(`[SYSAPOLO_SYNC] Iniciando sincronizacion factura ${ref}`);
 
     let jsonData: any = {};
     let terceroSys: ClienteSysApolo = null;
@@ -338,9 +339,23 @@ export const registroFacturaSysApolo = async (ref: number) => {
 
       if (facturaSys.length > 0) {
         //ACTUALIZAR ESTADO FACTURA EN SIGEDIN
-        sysregistrarFacturasPagadas([ref]);
-        //se debe actualziar las factutas, cambiar el estado en sigedin para que no se registre 2 veces
-        throw new Error(`La factura ${ref} ya se encuentra registrada en sysapolo`);
+        await sysregistrarFacturasPagadas([ref]);
+        console.log(
+          `[SYSAPOLO_SYNC] Factura ${ref} ya existe en sysApolo, se marca sysapolo_verify=1`,
+        );
+        guardarLogFacturaSys({
+          factura_id: ref,
+          cliente_id: ID_CLIENTE,
+          estado: 1,
+          mensaje: `Factura ${ref} ya sincronizada en sysApolo`,
+          fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+          data: JSON.stringify({
+            alreadyExists: true,
+            ide_fact_concepto_enc: facturaSys[0].ide_fact_concepto_enc,
+            num_recibo: facturaSys[0].num_recibo,
+          }),
+        });
+        return [true, `La factura ${ref} ya se encontraba sincronizada`];
 
       } else {
         //registramos la factura con el detalle directamente
@@ -398,11 +413,15 @@ export const registroFacturaSysApolo = async (ref: number) => {
         DATA.detalle = DetFactSys;
 
         //ejecutamos la instruccion en sobre la base de datos SQLServer
-        let [resp, error, sql]: boolean | any | string = await createReciboPago(facturaSys, DetFactSys);
+        const resultSync: any = await createReciboPago(facturaSys, DetFactSys);
+        const { inserted, alreadyExists, ideFactConceptoEnc, error, sql } = resultSync;
 
-        if (resp) {
+        if (inserted) {
           //actualizar estado en base de datos
-          sysregistrarFacturasPagadas([ref]);
+          await sysregistrarFacturasPagadas([ref]);
+          console.log(
+            `[SYSAPOLO_SYNC] Factura ${ref} insertada en sysApolo, se marca sysapolo_verify=1`,
+          );
 
           guardarLogFacturaSys({
             factura_id: ref,
@@ -412,7 +431,25 @@ export const registroFacturaSysApolo = async (ref: number) => {
             fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
             data: JSON.stringify(DATA)
           });
-          return [resp, "Factura registrada exitosamente"];
+          return [true, "Factura registrada exitosamente"];
+        } else if (alreadyExists) {
+          await sysregistrarFacturasPagadas([ref]);
+          console.log(
+            `[SYSAPOLO_SYNC] Factura ${ref} detectada como duplicada concurrente, se evita reinsercion y se marca sysapolo_verify=1`,
+          );
+          guardarLogFacturaSys({
+            factura_id: ref,
+            cliente_id: ID_CLIENTE,
+            estado: 1,
+            mensaje: `Factura ${ref} ya existia en sysApolo (id ${ideFactConceptoEnc})`,
+            fecha: format(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+            data: JSON.stringify({
+              alreadyExists: true,
+              ide_fact_concepto_enc: ideFactConceptoEnc,
+              num_recibo: ref,
+            }),
+          });
+          return [true, `La factura ${ref} ya se encontraba sincronizada`];
         } else {
           //guardar log error
           throw new Error(error + " " + sql);

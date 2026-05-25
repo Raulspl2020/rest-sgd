@@ -316,24 +316,28 @@
                             <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
 
 
-                                <div class="card mt-3 mb-4 section-card">
-                                    <div class="card-body discount-body">
-                                        <h5 class="card-title">Solicitud de descuento </h5>
-                                        <h6 class="card-subtitle mb-2 text-muted">No aplica para derechos
-                                            complementarios</h6>
+                                <div class="section-card mt-3 mb-4 discount-wrapper">
+                                    <div class="discount-header">
+                                        <h5 class="card-title mb-1">Solicitud de descuento</h5>
+                                        <h6 class="card-subtitle mb-0">No aplica para derechos complementarios</h6>
+                                    </div>
 
-
-                                        <div>
-
+                                    <div class="row" v-if="descuentoError || descuentoSuccess">
+                                        <div class="col-12">
+                                            <div class="alert alert-danger p-2 mt-2 mb-2" role="alert" v-if="descuentoError">
+                                                {[descuentoError]}
+                                            </div>
+                                            <div class="alert alert-success p-2 mt-2 mb-2" role="alert" v-if="descuentoSuccess">
+                                                {[descuentoSuccess]}
+                                            </div>
                                         </div>
+                                    </div>
 
-
-
-                                        <form class="p-4" @submit.prevent="enviarArchivo" enctype="multipart/form-data">
+                                    <form class="discount-form" @submit.prevent="enviarArchivo" enctype="multipart/form-data">
                                             <div class="row">
                                                 <div class="col-md-6">
 
-                                                    <div class="row">
+                                                    <div class="row section-card discount-form-card">
 
                                                         <div class="form-group">
                                                             <label for="">Tipo descuento:
@@ -351,7 +355,7 @@
 
                                                         <div class="col-md-12">
                                                             <div class="form-group">
-                                                                <label for="txtObservacion">Observación </label>
+                                                                <label for="txtObservacion">Observación <span class="text-danger">*</span></label>
                                                                 <input type="text" class="form-control"
                                                                     v-model="porcentaje.observacion" id="txtObservacion"
                                                                     placeholder="Ej: pago certificado o record academico" />
@@ -359,28 +363,17 @@
                                                         </div>
 
                                                         <div class="col-md-12 mt-2">
-                                                            <label for="formFileLg" style="cursor: pointer"
-                                                                class="form-label">Arrastra
-                                                                aquí un
-                                                                documento
-                                                                para solicitar descuento en tu
-                                                                matricula, Ej: certificado de votación para descuento de
-                                                                10%
-                                                                <div>
-                                                                    <input v-show="true"
-                                                                        style="border: 2px dashed #0087F7;  background: white; cursor: pointer"
-                                                                        class="form-control form-control-lg"
-                                                                        id="formFileLg" type="file"
-                                                                        v-on:change="handleFileUpload()" ref="file">
-
-                                                                </div>
-                                                            </label>
+                                                            <label for="formFileLg" class="form-label">Adjuntar soporte PDF <span class="text-danger">*</span></label>
+                                                            <div class="discount-upload-hint">Archivo obligatorio en formato PDF.</div>
+                                                            <input v-show="true" class="form-control form-control-lg discount-file-input"
+                                                                id="formFileLg" type="file" accept=".pdf,application/pdf"
+                                                                v-on:change="handleFileUpload()" ref="file">
                                                         </div>
 
                                                         <div class="col-md-12">
-                                                            <button class="btn btn-success"
+                                                            <button class="btn btn-pay-primary discount-submit-btn"
                                                                 :disabled="desactivarBotonSoporte"
-                                                                type="submit">Enviar</button>
+                                                                type="submit">{[desactivarBotonSoporte ? 'Enviando...' : 'Enviar solicitud']}</button>
                                                         </div>
 
 
@@ -390,22 +383,34 @@
                                                 </div>
 
                                                 <div class="col-md-6">
-                                                    <p>Estado de la solicitud</p>
-                                                    <ol class="list-group list-group-numbered">
-                                                        <li v-for="(row, index) in soportes"
-                                                            class="list-group-item d-flex justify-content-between align-items-start">
-                                                            <div class="ms-2 me-auto">
-                                                                <div class="fw-bold"> {[row.descripcion]} </div>
-                                                                {[row.observacion]}
-                                                            </div>
-                                                            <span
-                                                                :class="[row.estado=='APROBADO' || row.estado=='FACTURADO'  ? 'bg-success' : 'bg-warning']"
-                                                                class="badge  rounded-pill">{[row.estado]}
-                                                                {[row.porcentaje*100]} %</span>
-                                                        </li>
-
-
-                                                    </ol>
+                                                    <div class="section-card discount-status-card">
+                                                        <h3 class="section-title">Estado de la solicitud</h3>
+                                                        <div class="table-responsive">
+                                                            <table class="table payment-table discount-status-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th scope="col">Concepto</th>
+                                                                        <th scope="col">Observación</th>
+                                                                        <th scope="col">Estado</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr v-if="!soportes || soportes.length === 0">
+                                                                        <td colspan="3" class="text-center text-muted">No hay solicitudes registradas.</td>
+                                                                    </tr>
+                                                                    <tr v-for="(row, index) in soportes" :key="index">
+                                                                        <td><strong>{[row.descripcion]}</strong></td>
+                                                                        <td>{[row.observacion || 'Sin observación']}</td>
+                                                                        <td>
+                                                                            <span :class="[row.estado=='APROBADO' || row.estado=='FACTURADO' ? 'status-badge status-badge-ok' : 'status-badge status-badge-warn']">
+                                                                                {[row.estado]} {[row.porcentaje*100]}%
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
 
@@ -418,7 +423,6 @@
 
 
                                         </form>
-                                    </div>
                                 </div>
 
 
@@ -508,7 +512,7 @@
                         pagos: []
                     },
                     porcentaje: {
-                        categoria: 1,
+                        categoria: '',
                         observacion: ''
                     },
                     detFactura: [],
@@ -522,21 +526,69 @@
                     msjResp: "",
                     mostrarAlert: false,
                     file: '',
-                    desactivarBotonSoporte: false
+                    desactivarBotonSoporte: false,
+                    descuentoError: '',
+                    descuentoSuccess: ''
                 };
             },
             methods: {
 
-                enviarArchivo() {
-                    console.log("Enviar archivo file");
+                getCategoriaSeleccionada() {
+                    return this.categorias.find((row) => String(row._id) === String(this.porcentaje.categoria));
+                },
 
+                validarSolicitudDescuento() {
+                    this.descuentoError = '';
+                    this.descuentoSuccess = '';
+
+                    const categoriaSeleccionada = this.getCategoriaSeleccionada();
+                    if (!this.porcentaje.categoria || !categoriaSeleccionada) {
+                        this.descuentoError = 'Debe seleccionar un tipo de descuento válido.';
+                        return false;
+                    }
+
+                    const categoriaDescripcion = String(categoriaSeleccionada.descripcion || '').trim().toUpperCase();
+                    if (categoriaDescripcion === 'NO APLICA') {
+                        this.descuentoError = 'La opción NO APLICA no permite enviar solicitud de descuento.';
+                        return false;
+                    }
+
+                    const observacion = String(this.porcentaje.observacion || '').trim();
+                    if (!observacion) {
+                        this.descuentoError = 'La observación es obligatoria.';
+                        return false;
+                    }
+
+                    if (!this.file) {
+                        this.descuentoError = 'Debe adjuntar un archivo PDF como soporte.';
+                        return false;
+                    }
+
+                    const fileName = String(this.file.name || '').toLowerCase();
+                    const fileType = String(this.file.type || '').toLowerCase();
+                    if (!fileName.endsWith('.pdf') || (fileType && fileType !== 'application/pdf')) {
+                        this.descuentoError = 'El archivo adjunto debe estar en formato PDF.';
+                        return false;
+                    }
+
+                    return true;
+                },
+
+                enviarArchivo() {
+                    if (this.desactivarBotonSoporte) {
+                        return;
+                    }
+
+                    if (!this.validarSolicitudDescuento()) {
+                        return;
+                    }
 
                     let formData = new FormData();
                     this.desactivarBotonSoporte = true;
 
                     formData.append('archivo', this.file);
 
-                    formData.append('observacion', this.porcentaje.observacion);
+                    formData.append('observacion', this.porcentaje.observacion.trim());
                     formData.append('porcentaje_categoria_id', this.porcentaje.categoria);
                     formData.append('estudiante_id', this.matricula.txtId);
                     formData.append('matricula_id', '{{ID_MATRICULA}}');
@@ -552,12 +604,25 @@
                         }
                     ).then((response) => response.json())
                         .then(function (data) {
-                            console.log('SUCCESS!!');
+                            if (data.error) {
+                                this.descuentoError = data.message || 'No fue posible enviar la solicitud.';
+                                this.desactivarBotonSoporte = false;
+                                return;
+                            }
+
+                            this.descuentoSuccess = 'Solicitud enviada exitosamente.';
+                            this.porcentaje.observacion = '';
+                            this.porcentaje.categoria = '';
+                            this.file = '';
+                            if (this.$refs.file) {
+                                this.$refs.file.value = '';
+                            }
+                            this.desactivarBotonSoporte = false;
                             this.consultarPersona();
 
                         }.bind(this))
                         .catch(function () {
-                            console.log('FAILURE!!');
+                            this.descuentoError = 'Servicio no disponible temporalmente para registrar la solicitud.';
                             this.desactivarBotonSoporte = false;
                         });
 
@@ -565,54 +630,76 @@
 
                 },
                 handleFileUpload() {
+                    this.descuentoError = '';
+                    this.descuentoSuccess = '';
                     this.file = this.$refs.file.files[0];
                 },
-                continuarPagoEfectivo() {
-
-
-                    // this.formpago.activarBoton = false;
-                    //  this.formpago.txtBoton = "Procesando...";
-
-
-                    let data = {
-                        "cod_matricula": '{{ ID_MATRICULA }}',
-                        "isPagoOnline": false,
+                async continuarPagoEfectivo() {
+                    if (!this.activarBotonEf) {
+                        return;
                     }
 
+                    this.mostrarAlert = false;
+                    this.msjResp = '';
+
+                    const descripcionFactura = String(this.factura.txtDescFactura || '').trim();
+                    const descripcionDetalle = Array.isArray(this.detFactura)
+                        ? this.detFactura
+                            .map((row) => String(row?.descripcion || row?.concepto || '').trim())
+                            .filter((row) => row.length > 0)
+                            .join(' + ')
+                        : '';
+
                     const dataCaja = {
-                        "isPagoOnline": false,
-                        "codPaquete": this.factura.cod_paquete,
-                        "programaPersonaId": this.matricula.programaPersonaId,
-                        "total": this.factura.txtTotalPagarInt,
-                        "personaId": this.matricula.txtId,
-                        "matriculaId": '{{ ID_MATRICULA }}',
+                        isPagoOnline: false,
+                        codPaquete: this.factura.cod_paquete,
+                        programaPersonaId: this.matricula.programaPersonaId,
+                        total: this.factura.txtTotalPagarInt,
+                        personaId: this.matricula.txtId,
+                        matriculaId: '{{ ID_MATRICULA }}',
+                        descripcion: descripcionFactura || descripcionDetalle || 'PAGO MATRICULA',
                     };
 
-
                     this.activarBotonEf = false;
-                    this.txtBotonEf = "Procesando...";
-                    fetch(
-                        `{{URL_INVOICE}}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(dataCaja)
-                    })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (data.error) {
-                                alert(data.message);
-                            } else {
-                                this.activarBotonEf = false;
-                                this.txtBotonEf = "Redireccionando...";
-                                window.location =  data.redirectPayment;
+                    this.txtBotonEf = 'Procesando...';
 
-                            }
-
-                        }).catch((err) => {
-                            console.log(err);
+                    try {
+                        const response = await fetch('{{URL_INVOICE}}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(dataCaja)
                         });
+
+                        const data = await response.json();
+
+                        if (!response.ok || data.error) {
+                            throw new Error(data?.message || 'No fue posible generar el pago en efectivo.');
+                        }
+
+                        const invoiceId = Number(data?.invoiceId || 0);
+                        const financieroPublicUrl = String('{{FINANCIERO_PUBLIC_URL}}').trim().replace(/\/+$/, '');
+                        const localRedirect = invoiceId > 0 && financieroPublicUrl
+                            ? `${financieroPublicUrl}/invoice/pdf/${invoiceId}`
+                            : '';
+
+                        const finalRedirect = localRedirect || data.redirectPayment;
+                        if (!finalRedirect) {
+                            throw new Error('No se pudo construir la URL de redirección de la factura.');
+                        }
+
+                        this.txtBotonEf = 'Redireccionando...';
+                        window.location = finalRedirect;
+                    } catch (err) {
+                        this.msjResp = err?.message || 'Servicio no disponible temporalmente para pago en efectivo.';
+                        this.mostrarAlert = true;
+                    } finally {
+                        if (this.txtBotonEf !== 'Redireccionando...') {
+                            this.activarBotonEf = true;
+                            this.txtBotonEf = 'Pagar en efectivo';
+                        }
+                    }
                 },
 
                 consultarPersona() {

@@ -42,6 +42,23 @@ import { DetallePago } from "../interfaces/facturas.interface";
 import Cargue from "../models/Mongo/Cargue";
 import { updateDataPagoWebService } from "../helpers/updateDataPago";
 
+const syncSysApoloInBackground = (invoiceId: number, source: string) => {
+  console.log(
+    `[SYSAPOLO_SYNC_TRIGGER] source=${source} factura=${invoiceId} dispatch`,
+  );
+  void registroFacturaSysApolo(invoiceId)
+    .then(([ok, message]) => {
+      console.log(
+        `[SYSAPOLO_SYNC_TRIGGER] source=${source} factura=${invoiceId} ok=${ok} message=${message}`,
+      );
+    })
+    .catch((error) => {
+      console.error(
+        `[SYSAPOLO_SYNC_TRIGGER] source=${source} factura=${invoiceId} error=${error?.message || error}`,
+      );
+    });
+};
+
 //====================
 //   /transaccion/notificacionfactura
 //=====================
@@ -382,7 +399,10 @@ export const registrarPagoService = async (req: any, res: any) => {
 
       if (resultUpdatePago != false) {
         //registra la factura en sysApolo
-        registroFacturaSysApolo(Referencia_pago);
+        syncSysApoloInBackground(
+          Number(Referencia_pago),
+          "factura.registrarPagoService",
+        );
         //enviar recibo de pago al correo electronico
         //complileTemplateReciboPago(Referencia_pago);
         setTimeout(() => complileTemplateReciboPago(Referencia_pago), 60000);
@@ -862,7 +882,10 @@ export const uploadMR5 = async (req: any, res = response) => {
 
         if (insertDB) {
           for (const item of pagoSinRegistrar) {
-            registroFacturaSysApolo(item.pago_id);
+            syncSysApoloInBackground(
+              Number(item.pago_id),
+              "factura.uploadMR5",
+            );
             setTimeout(() => complileTemplateReciboPago(item.pago_id), 60000);
           }
 
