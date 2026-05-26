@@ -1,6 +1,8 @@
 import { response } from "express";
 import cryptoRandomString from "crypto-random-string";
 import { v4 as uuidv4 } from "uuid";
+import fs from "fs";
+import path from "path";
 
 import { Pago } from "../models/Pago";
 import fetch from "node-fetch";
@@ -17,6 +19,7 @@ import {
   getConfigPeriodo,
   getCategoriaPorcentaje,
   guardarProcentajeSoporte,
+  getSoporteDescuentoById,
   detIdPagoByID,
   getDescuento,
   updateEstadoDescuentoFac,
@@ -180,6 +183,94 @@ export const soporteDescuento = async (req: any, res = response) => {
       message: "Servicio no disponible temporalmente",
       error: true,
       det_error: error.message,
+    });
+  }
+};
+
+const resolveSupportFilePath = (metadata: any) => {
+  const nombre = path.basename(String(metadata?.nombre || "")).trim();
+  if (!nombre || !nombre.toLowerCase().endsWith(".pdf")) {
+    return "";
+  }
+
+  const candidateRoots = [
+    path.resolve(__dirname, "../uploads"),
+    path.resolve(process.cwd(), "uploads"),
+    path.resolve(process.cwd(), "dist/uploads"),
+    path.resolve(process.cwd(), "src/uploads"),
+  ];
+
+  const candidateFiles: string[] = [];
+  const rawBasepath = String(metadata?.basepath || "").replace(/\\/g, "/");
+  if (rawBasepath) {
+    const absoluteFromMetadata = path.resolve(rawBasepath);
+    candidateFiles.push(absoluteFromMetadata);
+
+    const idxUploads = rawBasepath.indexOf("/uploads/");
+    if (idxUploads >= 0) {
+      const relativeFromUploads = rawBasepath.substring(idxUploads + "/uploads/".length);
+      for (const root of candidateRoots) {
+        candidateFiles.push(path.resolve(root, relativeFromUploads));
+      }
+    }
+  }
+
+  for (const filePath of candidateFiles) {
+    const normalized = path.resolve(filePath);
+    const baseName = path.basename(normalized);
+    if (baseName !== nombre) {
+      continue;
+    }
+    if (fs.existsSync(normalized) && fs.statSync(normalized).isFile()) {
+      return normalized;
+    }
+  }
+
+  return "";
+};
+
+export const soporteDescuentoPdf = async (req: any, res = response) => {
+  try {
+    const soporteId = String(req.params.id || "").trim();
+    if (!/^\d+$/.test(soporteId)) {
+      return res.status(400).json({
+        error: true,
+        message: "Identificador de soporte inválido",
+      });
+    }
+
+    const soporte = await getSoporteDescuentoById(soporteId);
+    if (!soporte || !soporte.json_file) {
+      return res.status(404).json({
+        error: true,
+        message: "No hay soporte disponible para visualizar.",
+      });
+    }
+
+    let metadata: any = null;
+    try {
+      metadata =
+        typeof soporte.json_file === "string"
+          ? JSON.parse(soporte.json_file)
+          : soporte.json_file;
+    } catch (error) {
+      metadata = null;
+    }
+
+    const resolvedPath = resolveSupportFilePath(metadata);
+    if (!resolvedPath) {
+      return res.status(404).json({
+        error: true,
+        message: "No hay soporte disponible para visualizar.",
+      });
+    }
+
+    return res.sendFile(resolvedPath);
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Servicio no disponible temporalmente",
+      det_error: error?.message || error,
     });
   }
 };

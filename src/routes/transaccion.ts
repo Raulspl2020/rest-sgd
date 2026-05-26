@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import cors from 'cors';
 const router = Router();
-import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento } from '../controllers/transaccion';
+import { actualizarTransaccion, inicioPago,verificaPago,soporteDescuento, soporteDescuentoPdf } from '../controllers/transaccion';
 import { check } from 'express-validator';
 import { validarCampos, validatorCampos,validarIdPago,consultaFacturaMid,registrarPagoMid,reversarPagoMid,actualizarPago, pagoPersonalizadoMid, pagoVariosMid } from '../middlewares/validar-campos';
 import { existePagoDB, getInfoPagoFactura, InicioPagoCodigoBarras } from '../controllers/pago';
@@ -40,6 +40,7 @@ router.get('/estado', [actualizarPago],actualizarTransaccion);
 
 
 router.post('/soportedescuento', soporteDescuento);
+router.get('/soportedescuento/pdf/:id', soporteDescuentoPdf);
 
 router.post('/InicioPago', [validatorCampos], inicioPago);
 router.post('/VerificacionPago',[validarIdPago], verificaPago);

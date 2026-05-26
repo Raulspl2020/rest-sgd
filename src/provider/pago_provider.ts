@@ -376,6 +376,17 @@ export const guardarProcentajeSoporte = async (data: any) => {
   return result;
 };
 
+export const getSoporteDescuentoById = async (id: any) => {
+  const result = await conDB
+    .select("_id", "json_file")
+    .from("fin_porcentaje_soporte")
+    .where("_id", id)
+    .limit(1)
+    .first();
+
+  return result || null;
+};
+
 //obtiene el detalle de un paquete
 export const getPaquete = async (codigo: any) => {
   let sql = `SELECT

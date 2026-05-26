@@ -577,7 +577,16 @@
                 },
 
                 resolveSupportPdfUrl(row) {
-                    if (!row || !row.json_file) {
+                    if (!row) {
+                        return '';
+                    }
+
+                    const soporteId = String(row._id || '').trim();
+                    if (soporteId) {
+                        return `{{BASE_URL}}/transaccion/soportedescuento/pdf/${encodeURIComponent(soporteId)}`;
+                    }
+
+                    if (!row.json_file) {
                         return '';
                     }
 
@@ -597,9 +606,23 @@
                     return '';
                 },
 
-                openSupportPdf(row) {
-                    this.supportPdfUrl = this.resolveSupportPdfUrl(row);
+                async openSupportPdf(row) {
+                    const candidateUrl = this.resolveSupportPdfUrl(row);
+                    this.supportPdfUrl = '';
                     this.showSupportPdfModal = true;
+
+                    if (!candidateUrl) {
+                        return;
+                    }
+
+                    try {
+                        const headResponse = await fetch(candidateUrl, { method: 'HEAD' });
+                        if (headResponse.ok) {
+                            this.supportPdfUrl = candidateUrl;
+                        }
+                    } catch (error) {
+                        this.supportPdfUrl = '';
+                    }
                 },
 
                 closeSupportPdfModal() {

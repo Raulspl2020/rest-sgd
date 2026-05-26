@@ -11,6 +11,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import fileUpload from "express-fileupload";
 import path from "path";
+import fs from "fs";
 import cron from "node-cron";
 import { conMongo } from "../config/database";
 
@@ -53,7 +54,21 @@ class Server {
     );
     //carpeta publica
     this.app.use("/api/static", express.static("public"));
-    this.app.use("/api/static/uploads", express.static(path.join(__dirname, "../uploads")));
+
+    const uploadsCandidates = [
+      path.resolve(__dirname, "../uploads"),
+      path.resolve(process.cwd(), "uploads"),
+      path.resolve(process.cwd(), "dist/uploads"),
+      path.resolve(process.cwd(), "src/uploads"),
+    ];
+
+    const uniqueExistingCandidates = Array.from(new Set(uploadsCandidates)).filter((dir) =>
+      fs.existsSync(dir)
+    );
+
+    for (const uploadsDir of uniqueExistingCandidates) {
+      this.app.use("/api/static/uploads", express.static(uploadsDir));
+    }
   }
 
   async dbConnection() {
