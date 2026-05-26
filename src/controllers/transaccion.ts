@@ -131,7 +131,7 @@ export const soporteDescuento = async (req: any, res = response) => {
       return res.status(413).json({
         error: true,
         message:
-          "El archivo supera el tamano maximo permitido. Por favor cargue un PDF de maximo 1 MB.",
+          "El archivo supera el tamano maximo permitido. Por favor cargue un PDF de maximo 200 KB.",
         traceId,
       });
     }
@@ -143,12 +143,13 @@ export const soporteDescuento = async (req: any, res = response) => {
       elapsedMs: Date.now() - startedAt,
     });
 
-    const MAX_FILE_SIZE = 1024 * 1024;
+    const MAX_FILE_SIZE = 200 * 1024;
     if (Number(archivo?.size || 0) > MAX_FILE_SIZE) {
       return res.status(413).json({
         message:
-          "El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.",
+          "El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 200 KB.",
         error: true,
+        traceId,
       });
     }
 

@@ -45,9 +45,10 @@ class Server {
       fileUpload({
         useTempFiles: false,
         createParentPath: true,
-        limits: { fileSize: 1024 * 1024 },
+        limits: { fileSize: 200 * 1024 },
         abortOnLimit: true,
-        responseOnLimit: "El archivo supera el tamano maximo permitido.",
+        responseOnLimit:
+          "El archivo supera el tamano maximo permitido. Por favor cargue un PDF de maximo 200 KB.",
         uploadTimeout: 120000,
         parseNested: true,
       })

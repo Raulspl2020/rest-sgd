@@ -745,9 +745,9 @@
                         sizeMb: fileSizeMb,
                         type: archivo?.type,
                     });
-                    const MAX_FILE_SIZE = 1024 * 1024;
+                    const MAX_FILE_SIZE = 200 * 1024;
                     if (!archivo || fileSizeBytes > MAX_FILE_SIZE) {
-                        this.descuentoError = 'El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.';
+                        this.descuentoError = 'El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 200 KB.';
                         this.descuentoSuccess = '';
                         this.desactivarBotonSoporte = false;
                         this.mostrarProgresoSoporte = false;
@@ -836,7 +836,7 @@
 
                                 if (status === 413) {
                                     const trace = parsedBody?.traceId ? ` (trace: ${parsedBody.traceId})` : '';
-                                    reject(new Error(`El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.${trace}`));
+                                    reject(new Error(`El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 200 KB.${trace}`));
                                     return;
                                 }
 
