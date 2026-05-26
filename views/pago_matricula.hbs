@@ -562,11 +562,40 @@
                     progresoSoporte: 0,
                     mostrarProgresoSoporte: false,
                     textoProgresoSoporte: '',
+                    progresoSoporteTimer: null,
                     showSupportPdfModal: false,
                     supportPdfUrl: ''
                 };
             },
             methods: {
+
+                clearProgressAnimation() {
+                    if (this.progresoSoporteTimer) {
+                        clearInterval(this.progresoSoporteTimer);
+                        this.progresoSoporteTimer = null;
+                    }
+                },
+
+                animateProgressWithMinDuration(durationMs = 4000) {
+                    this.clearProgressAnimation();
+                    this.progresoSoporte = 0;
+                    this.textoProgresoSoporte = 'Cargando archivo... 0%';
+
+                    return new Promise((resolve) => {
+                        const startedAt = Date.now();
+                        this.progresoSoporteTimer = setInterval(() => {
+                            const elapsed = Date.now() - startedAt;
+                            const progress = Math.min(100, Math.floor((elapsed / durationMs) * 100));
+                            this.progresoSoporte = progress;
+                            this.textoProgresoSoporte = `Cargando archivo... ${progress}%`;
+
+                            if (progress >= 100) {
+                                this.clearProgressAnimation();
+                                resolve(true);
+                            }
+                        }, 40);
+                    });
+                },
 
                 truncateSupportDescription(value) {
                     const text = String(value || '');
@@ -695,8 +724,7 @@
                     let formData = new FormData();
                     this.desactivarBotonSoporte = true;
                     this.mostrarProgresoSoporte = true;
-                    this.progresoSoporte = 0;
-                    this.textoProgresoSoporte = 'Cargando archivo... 0%';
+                    const progressPromise = this.animateProgressWithMinDuration(4000);
 
                     const estudianteId = String(this.matricula.txtId || '').trim();
                     const matriculaId = String('{{ID_MATRICULA}}').trim();
@@ -729,12 +757,8 @@
                             const xhr = new XMLHttpRequest();
                             xhr.open('POST', '{{BASE_URL}}/transaccion/soporteDescuento', true);
 
-                            xhr.upload.onprogress = (event) => {
-                                if (event.lengthComputable) {
-                                    const percent = Math.round((event.loaded / event.total) * 100);
-                                    this.progresoSoporte = percent;
-                                    this.textoProgresoSoporte = `Cargando archivo... ${percent}%`;
-                                }
+                            xhr.upload.onprogress = () => {
+                                // El progreso visual se controla por una duracion minima de 4 segundos.
                             };
 
                             xhr.onload = () => {
@@ -795,6 +819,7 @@
                             xhr.send(formData);
                         });
 
+                        await progressPromise;
                         this.progresoSoporte = 100;
                         this.textoProgresoSoporte = 'Cargando archivo... 100%';
 
@@ -812,9 +837,11 @@
                         }
                         this.consultarPersona();
                     } catch (error) {
+                        this.clearProgressAnimation();
                         this.descuentoSuccess = '';
                         this.descuentoError = error?.message || 'Servicio no disponible temporalmente para registrar la solicitud.';
                     } finally {
+                        this.clearProgressAnimation();
                         this.desactivarBotonSoporte = false;
                         this.mostrarProgresoSoporte = false;
                         this.progresoSoporte = 0;
