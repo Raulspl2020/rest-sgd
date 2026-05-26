@@ -55,7 +55,14 @@ const syncSysApoloInBackground = (invoiceId: number, source: string) => {
 export const soporteDescuento = async (req: any, res = response) => {
   let metadatos: any = null;
   let id_config: any = null;
+  const startedAt = Date.now();
+  const traceId = `SUP-${startedAt}-${Math.floor(Math.random() * 100000)}`;
   try {
+    console.log("[SOPORTE_UPLOAD] inicio request", {
+      traceId,
+      startedAt,
+      ip: req.headers["x-forwarded-for"] || req.connection?.remoteAddress,
+    });
     let body = req.body || {};
 
     const estudianteId = String(body.estudiante_id || "").trim();
@@ -93,6 +100,13 @@ export const soporteDescuento = async (req: any, res = response) => {
     }
 
     const archivo: any = req.files.archivo;
+    console.log("[SOPORTE_UPLOAD] archivo recibido", {
+      traceId,
+      name: archivo?.name,
+      sizeBytes: Number(archivo?.size || 0),
+      mimeType: archivo?.mimetype,
+      elapsedMs: Date.now() - startedAt,
+    });
 
     const MAX_FILE_SIZE = 1024 * 1024;
     if (Number(archivo?.size || 0) > MAX_FILE_SIZE) {
@@ -136,6 +150,14 @@ export const soporteDescuento = async (req: any, res = response) => {
     if (req.files && req.files.archivo) {
       const carpeta = `soportedescuento/${estudianteId}-${matriculaId}/`;
       const dataFile: any = await subirArchivo(req.files, ["pdf"], carpeta);
+      console.log("[SOPORTE_UPLOAD] archivo guardado", {
+        traceId,
+        nombre: dataFile?.[0],
+        extension: dataFile?.[1],
+        sizeBytes: dataFile?.[2],
+        basepath: dataFile?.[3],
+        elapsedMs: Date.now() - startedAt,
+      });
 
       metadatos = {
         url: "",
@@ -147,6 +169,11 @@ export const soporteDescuento = async (req: any, res = response) => {
     }
 
     let resultConfig = await getConfigPeriodo();
+    console.log("[SOPORTE_UPLOAD] config periodo consultada", {
+      traceId,
+      found: !!resultConfig,
+      elapsedMs: Date.now() - startedAt,
+    });
     if (resultConfig) {
       id_config = resultConfig._id;
     } else {
@@ -171,17 +198,32 @@ export const soporteDescuento = async (req: any, res = response) => {
     };
 
     let resultInsert = await guardarProcentajeSoporte(dataPorcentaje);
+    console.log("[SOPORTE_UPLOAD] soporte insertado", {
+      traceId,
+      resultInsert,
+      elapsedMs: Date.now() - startedAt,
+    });
 
+    console.log("[SOPORTE_UPLOAD] respuesta enviada", {
+      traceId,
+      elapsedMs: Date.now() - startedAt,
+    });
     return res.status(200).json({
-      message: "Enviado exitosamente",
+      message: "Solicitud enviada exitosamente.",
       error: false,
+      traceId,
       dataPorcentaje,
     });
   } catch (error) {
-    console.log("error soporteDescuento", error);
+    console.log("[SOPORTE_UPLOAD] error soporteDescuento", {
+      traceId,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    });
     return res.status(500).json({
       message: "Servicio no disponible temporalmente",
       error: true,
+      traceId,
       det_error: error.message,
     });
   }

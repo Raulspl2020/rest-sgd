@@ -450,7 +450,7 @@
                                             <div v-if="supportPdfUrl">
                                                 <iframe :src="supportPdfUrl" title="Soporte PDF" style="width:100%;height:70vh;border:1px solid #dee2e6;border-radius:8px;"></iframe>
                                             </div>
-                                            <div v-else class="alert alert-warning mb-0">No hay soporte disponible para visualizar.</div>
+                                            <div v-else class="alert alert-warning mb-0">{[supportPdfError || 'No hay soporte disponible para visualizar.']}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -564,7 +564,8 @@
                     textoProgresoSoporte: '',
                     progresoSoporteTimer: null,
                     showSupportPdfModal: false,
-                    supportPdfUrl: ''
+                    supportPdfUrl: '',
+                    supportPdfError: ''
                 };
             },
             methods: {
@@ -621,47 +622,64 @@
                         return `{{BASE_URL}}/transaccion/soportedescuento/pdf/${encodeURIComponent(soporteId)}`;
                     }
 
-                    if (!row.json_file) {
-                        return '';
-                    }
-
-                    try {
-                        const metadata = typeof row.json_file === 'string' ? JSON.parse(row.json_file) : row.json_file;
-                        const basepath = String(metadata?.basepath || '').replace(/\\/g, '/');
-                        const idxUploads = basepath.indexOf('/uploads/');
-
-                        if (idxUploads >= 0) {
-                            const relativePath = basepath.substring(idxUploads + '/uploads/'.length);
-                            return `{{BASE_URL}}/static/uploads/${relativePath}`;
-                        }
-                    } catch (error) {
-                        return '';
-                    }
-
                     return '';
                 },
 
                 async openSupportPdf(row) {
                     const candidateUrl = this.resolveSupportPdfUrl(row);
+                    const supportId = String(row?._id || '').trim();
                     console.log('[SOPORTE_PDF] click ver soporte', {
                         soporte: row,
-                        soporteId: row?._id,
+                        soporteId: supportId,
                         candidateUrl,
                     });
                     this.supportPdfUrl = '';
+                    this.supportPdfError = '';
                     this.showSupportPdfModal = true;
 
-                    if (!candidateUrl) {
+                    if (!supportId || !candidateUrl) {
                         console.log('[SOPORTE_PDF] sin URL de soporte');
+                        this.supportPdfError = 'No hay soporte disponible para visualizar.';
                         return;
                     }
 
-                    this.supportPdfUrl = candidateUrl;
+                    console.log('[SOPORTE_PDF_UI] soporte seleccionado', row);
+                    console.log('[SOPORTE_PDF_UI] id usado', supportId);
+                    console.log('[SOPORTE_PDF_UI] url final', candidateUrl);
+
+                    try {
+                        const probe = await fetch(candidateUrl, { method: 'GET' });
+                        const contentType = String(probe.headers.get('content-type') || '').toLowerCase();
+
+                        if (!probe.ok) {
+                            let message = 'No hay soporte disponible para visualizar.';
+                            if (contentType.includes('application/json')) {
+                                try {
+                                    const body = await probe.json();
+                                    message = body?.message || message;
+                                } catch (error) {
+                                    message = 'No hay soporte disponible para visualizar.';
+                                }
+                            }
+                            this.supportPdfError = message;
+                            return;
+                        }
+
+                        if (!contentType.includes('application/pdf')) {
+                            this.supportPdfError = 'No hay soporte disponible para visualizar.';
+                            return;
+                        }
+
+                        this.supportPdfUrl = candidateUrl;
+                    } catch (error) {
+                        this.supportPdfError = 'No hay soporte disponible para visualizar.';
+                    }
                 },
 
                 closeSupportPdfModal() {
                     this.showSupportPdfModal = false;
                     this.supportPdfUrl = '';
+                    this.supportPdfError = '';
                 },
 
                 getCategoriaSeleccionada() {
@@ -706,6 +724,7 @@
                 },
 
                 async enviarArchivo() {
+                    const startedAt = Date.now();
                     console.log('[DESCUENTO_UPLOAD] inicio enviarArchivo');
                     if (this.desactivarBotonSoporte) {
                         console.log('[DESCUENTO_UPLOAD] cancelado, boton ya bloqueado');
@@ -717,13 +736,16 @@
                     }
 
                     const archivo = this.file;
+                    const fileSizeBytes = Number(archivo?.size || 0);
+                    const fileSizeMb = Number((fileSizeBytes / (1024 * 1024)).toFixed(4));
                     console.log('[DESCUENTO_UPLOAD] archivo seleccionado', {
                         name: archivo?.name,
-                        size: archivo?.size,
+                        sizeBytes: fileSizeBytes,
+                        sizeMb: fileSizeMb,
                         type: archivo?.type,
                     });
                     const MAX_FILE_SIZE = 1024 * 1024;
-                    if (!archivo || Number(archivo.size || 0) > MAX_FILE_SIZE) {
+                    if (!archivo || fileSizeBytes > MAX_FILE_SIZE) {
                         this.descuentoError = 'El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.';
                         this.descuentoSuccess = '';
                         this.desactivarBotonSoporte = false;
@@ -777,7 +799,8 @@
                         const responseData = await new Promise((resolve, reject) => {
                             const xhr = new XMLHttpRequest();
                             xhr.open('POST', '{{BASE_URL}}/transaccion/soporteDescuento', true);
-                            xhr.timeout = 30000;
+                            xhr.timeout = 90000;
+                            console.log('[DESCUENTO_UPLOAD] xhr timeout configurado', xhr.timeout);
 
                             xhr.upload.onprogress = () => {
                                 // El progreso visual se controla por una duracion minima de 4 segundos.
@@ -790,7 +813,14 @@
                                 const isJson = contentType.includes('application/json');
                                 const rawResponse = xhr.responseText;
                                 let parsedBody = null;
-                                console.log('[DESCUENTO_UPLOAD] respuesta XHR', { status, contentType, isJson });
+                                console.log('[DESCUENTO_UPLOAD] respuesta XHR', {
+                                    status,
+                                    contentType,
+                                    isJson,
+                                    elapsedMs: Date.now() - startedAt,
+                                });
+                                console.log('[DESCUENTO_UPLOAD] xhr.onload status', status);
+                                console.log('[DESCUENTO_UPLOAD] xhr.responseText', rawResponse);
 
                                 if (isJson) {
                                     try {
@@ -835,12 +865,15 @@
                             };
 
                             xhr.onerror = () => {
-                                console.log('[DESCUENTO_UPLOAD] xhr.onerror');
+                                console.log('[DESCUENTO_UPLOAD] xhr.onerror', { elapsedMs: Date.now() - startedAt });
                                 reject(new Error('No fue posible enviar la solicitud. Intente nuevamente.'));
                             };
 
                             xhr.ontimeout = () => {
-                                console.log('[DESCUENTO_UPLOAD] xhr.ontimeout');
+                                console.log('[DESCUENTO_UPLOAD] xhr.ontimeout', {
+                                    elapsedMs: Date.now() - startedAt,
+                                    timeoutMs: xhr.timeout,
+                                });
                                 reject(new Error('El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.'));
                             };
 
@@ -857,7 +890,7 @@
                         }
 
                         this.descuentoError = '';
-                        console.log('[DESCUENTO_UPLOAD] antes de mostrar exito');
+                        console.log('[DESCUENTO_UPLOAD] antes de mostrar exito', { elapsedMs: Date.now() - startedAt });
                         this.descuentoSuccess = 'Solicitud enviada exitosamente.';
                         this.porcentaje.observacion = '';
                         this.porcentaje.categoria = '';
@@ -867,12 +900,15 @@
                         }
                         this.consultarPersona();
                     } catch (error) {
-                        console.log('[DESCUENTO_UPLOAD] antes de mostrar error', error);
+                        console.log('[DESCUENTO_UPLOAD] antes de mostrar error', {
+                            error,
+                            elapsedMs: Date.now() - startedAt,
+                        });
                         this.clearProgressAnimation();
                         this.descuentoSuccess = '';
                         this.descuentoError = error?.message || 'Servicio no disponible temporalmente para registrar la solicitud.';
                     } finally {
-                        console.log('[DESCUENTO_UPLOAD] finally: restaurando estado del formulario');
+                        console.log('[DESCUENTO_UPLOAD] finally: restaurando estado del formulario', { elapsedMs: Date.now() - startedAt });
                         this.clearProgressAnimation();
                         this.desactivarBotonSoporte = false;
                         this.mostrarProgresoSoporte = false;
