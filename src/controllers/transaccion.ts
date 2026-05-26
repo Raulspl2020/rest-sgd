@@ -193,6 +193,10 @@ const resolveSupportFilePath = (metadata: any) => {
     return "";
   }
 
+  if (nombre.includes("..")) {
+    return "";
+  }
+
   const candidateRoots = [
     path.resolve(__dirname, "../uploads"),
     path.resolve(process.cwd(), "uploads"),
@@ -202,6 +206,11 @@ const resolveSupportFilePath = (metadata: any) => {
 
   const candidateFiles: string[] = [];
   const rawBasepath = String(metadata?.basepath || "").replace(/\\/g, "/");
+  const basepathExists = rawBasepath ? fs.existsSync(path.resolve(rawBasepath)) : false;
+
+  if (basepathExists) {
+    return path.resolve(rawBasepath);
+  }
 
   if (nombre) {
     for (const root of candidateRoots) {
@@ -219,13 +228,22 @@ const resolveSupportFilePath = (metadata: any) => {
       for (const root of candidateRoots) {
         candidateFiles.push(path.resolve(root, relativeFromUploads));
       }
+
+      const relativeDir = path.dirname(relativeFromUploads);
+      if (relativeDir && relativeDir !== ".") {
+        for (const root of candidateRoots) {
+          candidateFiles.push(path.resolve(root, relativeDir, nombre));
+        }
+      }
     }
   }
 
-  console.log("[SOPORTE_PDF] candidate roots", candidateRoots);
-  console.log("[SOPORTE_PDF] candidate files", candidateFiles);
+  const uniqueCandidateFiles = Array.from(new Set(candidateFiles));
 
-  for (const filePath of candidateFiles) {
+  console.log("[SOPORTE_PDF] candidate roots", candidateRoots);
+  console.log("[SOPORTE_PDF] candidate files", uniqueCandidateFiles);
+
+  for (const filePath of uniqueCandidateFiles) {
     const normalized = path.resolve(filePath);
     const baseName = path.basename(normalized);
     if (baseName !== nombre) {
@@ -273,8 +291,16 @@ export const soporteDescuentoPdf = async (req: any, res = response) => {
     }
 
     const resolvedPath = resolveSupportFilePath(metadata);
-    console.log("[SOPORTE_PDF] ruta resuelta", resolvedPath);
+    const resolvedPathExists = resolvedPath ? fs.existsSync(resolvedPath) : false;
+    console.log("[SOPORTE_PDF] ruta resuelta", resolvedPath, resolvedPathExists);
     if (!resolvedPath) {
+      return res.status(404).json({
+        error: true,
+        message: "No hay soporte disponible para visualizar.",
+      });
+    }
+
+    if (!resolvedPathExists) {
       return res.status(404).json({
         error: true,
         message: "No hay soporte disponible para visualizar.",
@@ -284,7 +310,16 @@ export const soporteDescuentoPdf = async (req: any, res = response) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", "inline");
     console.log("[SOPORTE_PDF] enviando archivo", resolvedPath);
-    return res.sendFile(resolvedPath);
+    return res.sendFile(resolvedPath, (err) => {
+      if (err) {
+        console.error("[SOPORTE_PDF] error sendFile", err);
+        if (!res.headersSent) {
+          return res.status(500).send("No fue posible visualizar el soporte PDF.");
+        }
+        return;
+      }
+      console.log("[SOPORTE_PDF] archivo enviado ok", resolvedPath);
+    });
   } catch (error) {
     console.log("[SOPORTE_PDF] error endpoint", error);
     return res.status(500).json({
