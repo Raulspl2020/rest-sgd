@@ -370,6 +370,15 @@
                                                                 v-on:change="handleFileUpload()" ref="file">
                                                         </div>
 
+                                                        <div class="col-md-12 mt-2" v-if="mostrarProgresoSoporte">
+                                                            <div class="progress" style="height: 8px;">
+                                                                <div class="progress-bar" role="progressbar"
+                                                                    :style="{ width: progresoSoporte + '%' }"
+                                                                    :aria-valuenow="progresoSoporte" aria-valuemin="0" aria-valuemax="100"></div>
+                                                            </div>
+                                                            <small class="text-muted">{[textoProgresoSoporte]}</small>
+                                                        </div>
+
                                                         <div class="col-md-12">
                                                             <button class="btn btn-pay-primary discount-submit-btn"
                                                                 :disabled="desactivarBotonSoporte"
@@ -528,7 +537,10 @@
                     file: '',
                     desactivarBotonSoporte: false,
                     descuentoError: '',
-                    descuentoSuccess: ''
+                    descuentoSuccess: '',
+                    progresoSoporte: 0,
+                    mostrarProgresoSoporte: false,
+                    textoProgresoSoporte: ''
                 };
             },
             methods: {
@@ -590,11 +602,17 @@
                         this.descuentoError = 'El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.';
                         this.descuentoSuccess = '';
                         this.desactivarBotonSoporte = false;
+                        this.mostrarProgresoSoporte = false;
+                        this.progresoSoporte = 0;
+                        this.textoProgresoSoporte = '';
                         return;
                     }
 
                     let formData = new FormData();
                     this.desactivarBotonSoporte = true;
+                    this.mostrarProgresoSoporte = true;
+                    this.progresoSoporte = 0;
+                    this.textoProgresoSoporte = 'Cargando archivo... 0%';
 
                     formData.append('archivo', archivo);
 
@@ -607,38 +625,81 @@
                     formData.append('accion', '1');
 
                     try {
-                        const response = await fetch('{{BASE_URL}}/transaccion/soporteDescuento',
-                            {
-                                method: 'POST',
-                                body: formData
-                            }
-                        );
+                        const responseData = await new Promise((resolve, reject) => {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('POST', '{{BASE_URL}}/transaccion/soporteDescuento', true);
 
-                        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
-                        const isJson = contentType.includes('application/json');
-                        const responseBody = isJson ? await response.json() : await response.text();
+                            xhr.upload.onprogress = (event) => {
+                                if (event.lengthComputable) {
+                                    const percent = Math.round((event.loaded / event.total) * 100);
+                                    this.progresoSoporte = percent;
+                                    this.textoProgresoSoporte = `Cargando archivo... ${percent}%`;
+                                }
+                            };
 
-                        if (response.status === 413) {
-                            throw new Error('El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.');
-                        }
+                            xhr.onload = () => {
+                                const status = xhr.status;
+                                const contentType = String(xhr.getResponseHeader('content-type') || '').toLowerCase();
+                                const isJson = contentType.includes('application/json');
+                                const rawResponse = xhr.responseText;
+                                let parsedBody = null;
 
-                        if (response.status === 504) {
-                            throw new Error('El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.');
-                        }
+                                if (isJson) {
+                                    try {
+                                        parsedBody = JSON.parse(rawResponse);
+                                    } catch (error) {
+                                        parsedBody = null;
+                                    }
+                                }
 
-                        if (!response.ok) {
-                            if (isJson && responseBody && responseBody.message) {
-                                throw new Error(responseBody.message);
-                            }
-                            throw new Error('No fue posible enviar la solicitud. Intente nuevamente.');
-                        }
+                                if (status === 413) {
+                                    reject(new Error('El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.'));
+                                    return;
+                                }
 
-                        if (!isJson) {
-                            throw new Error('Respuesta inválida del servidor al enviar la solicitud.');
-                        }
+                                if (status === 504) {
+                                    reject(new Error('El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.'));
+                                    return;
+                                }
 
-                        if (responseBody.error) {
-                            throw new Error(responseBody.message || 'No fue posible enviar la solicitud.');
+                                if (status === 500) {
+                                    reject(new Error('Ocurrió un error interno al guardar el soporte. Intente nuevamente.'));
+                                    return;
+                                }
+
+                                if (status < 200 || status >= 300) {
+                                    if (isJson && parsedBody && parsedBody.message) {
+                                        reject(new Error(parsedBody.message));
+                                        return;
+                                    }
+                                    reject(new Error('No fue posible enviar la solicitud. Intente nuevamente.'));
+                                    return;
+                                }
+
+                                if (!isJson) {
+                                    resolve({ error: false, rawText: rawResponse });
+                                    return;
+                                }
+
+                                resolve(parsedBody || { error: false });
+                            };
+
+                            xhr.onerror = () => {
+                                reject(new Error('No fue posible enviar la solicitud. Intente nuevamente.'));
+                            };
+
+                            xhr.ontimeout = () => {
+                                reject(new Error('El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.'));
+                            };
+
+                            xhr.send(formData);
+                        });
+
+                        this.progresoSoporte = 100;
+                        this.textoProgresoSoporte = 'Cargando archivo... 100%';
+
+                        if (responseData && responseData.error) {
+                            throw new Error(responseData.message || 'No fue posible enviar la solicitud.');
                         }
 
                         this.descuentoError = '';
@@ -655,6 +716,9 @@
                         this.descuentoError = error?.message || 'Servicio no disponible temporalmente para registrar la solicitud.';
                     } finally {
                         this.desactivarBotonSoporte = false;
+                        this.mostrarProgresoSoporte = false;
+                        this.progresoSoporte = 0;
+                        this.textoProgresoSoporte = '';
                     }
                 },
                 handleFileUpload() {

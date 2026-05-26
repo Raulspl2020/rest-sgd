@@ -52,8 +52,15 @@ const syncSysApoloInBackground = (invoiceId: number, source: string) => {
 export const soporteDescuento = async (req: any, res = response) => {
   let metadatos: any = null;
   let id_config: any = null;
+  const traceId = `SUPDESC-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   try {
     let body = req.body;
+    console.log(`[${traceId}] soporteDescuento inicio`, {
+      estudiante_id: body?.estudiante_id,
+      matricula_id: body?.matricula_id,
+      porcentaje_categoria_id: body?.porcentaje_categoria_id,
+      periodo_id: body?.periodo_id,
+    });
 
     const observacion = String(body.observacion || "").trim();
     if (!body.porcentaje_categoria_id) {
@@ -78,6 +85,22 @@ export const soporteDescuento = async (req: any, res = response) => {
     }
 
     const archivo: any = req.files.archivo;
+    console.log(`[${traceId}] archivo recibido`, {
+      name: archivo?.name,
+      size: Number(archivo?.size || 0),
+      mimetype: archivo?.mimetype,
+    });
+
+    const MAX_FILE_SIZE = 1024 * 1024;
+    if (Number(archivo?.size || 0) > MAX_FILE_SIZE) {
+      console.log(`[${traceId}] archivo excede maximo permitido`);
+      return res.status(413).json({
+        message:
+          "El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.",
+        error: true,
+      });
+    }
+
     const fileName = String(archivo.name || "").toLowerCase();
     const mimeType = String(archivo.mimetype || "").toLowerCase();
     if (!fileName.endsWith(".pdf") || (mimeType && mimeType !== "application/pdf")) {
@@ -110,8 +133,14 @@ export const soporteDescuento = async (req: any, res = response) => {
     //subir el archivo si existe
     if (req.files && req.files.archivo) {
       const carpeta = `soportedescuento/${body.estudiante_id}-${body.matricula_id}/`;
+      console.log(`[${traceId}] antes de guardar archivo`, { carpeta });
       const dataFile: any = await subirArchivo(req.files, ["pdf"], carpeta);
-      console.log(dataFile);
+      console.log(`[${traceId}] archivo guardado`, {
+        nombre: dataFile?.[0],
+        ext: dataFile?.[1],
+        size: dataFile?.[2],
+        basepath: dataFile?.[3],
+      });
 
       metadatos = {
         url: "",
@@ -123,8 +152,10 @@ export const soporteDescuento = async (req: any, res = response) => {
     }
 
     let resultConfig = await getConfigPeriodo();
-    console.log(resultCategoria);
-    console.log(resultConfig);
+    console.log(`[${traceId}] categoria/config`, {
+      categoria: resultCategoria,
+      config: resultConfig,
+    });
     if (resultConfig) {
       id_config = resultConfig._id;
     } else {
@@ -148,16 +179,19 @@ export const soporteDescuento = async (req: any, res = response) => {
         : 1,
     };
 
+    console.log(`[${traceId}] antes de insertar soporte en DB`);
     let resultInsert = await guardarProcentajeSoporte(dataPorcentaje);
+    console.log(`[${traceId}] soporte insertado en DB`, { resultInsert });
 
-    res.status(200).json({
+    console.log(`[${traceId}] respondiendo ok`);
+    return res.status(200).json({
       message: "Enviado exitosamente",
       error: false,
       dataPorcentaje,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
+    console.log(`[${traceId}] error soporteDescuento`, error);
+    return res.status(500).json({
       message: "Servicio no disponible temporalmente",
       error: true,
       det_error: error.message,
