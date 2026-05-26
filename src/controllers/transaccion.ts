@@ -202,6 +202,13 @@ const resolveSupportFilePath = (metadata: any) => {
 
   const candidateFiles: string[] = [];
   const rawBasepath = String(metadata?.basepath || "").replace(/\\/g, "/");
+
+  if (nombre) {
+    for (const root of candidateRoots) {
+      candidateFiles.push(path.resolve(root, nombre));
+    }
+  }
+
   if (rawBasepath) {
     const absoluteFromMetadata = path.resolve(rawBasepath);
     candidateFiles.push(absoluteFromMetadata);
@@ -214,6 +221,9 @@ const resolveSupportFilePath = (metadata: any) => {
       }
     }
   }
+
+  console.log("[SOPORTE_PDF] candidate roots", candidateRoots);
+  console.log("[SOPORTE_PDF] candidate files", candidateFiles);
 
   for (const filePath of candidateFiles) {
     const normalized = path.resolve(filePath);
@@ -232,6 +242,7 @@ const resolveSupportFilePath = (metadata: any) => {
 export const soporteDescuentoPdf = async (req: any, res = response) => {
   try {
     const soporteId = String(req.params.id || "").trim();
+    console.log("[SOPORTE_PDF] id recibido", soporteId);
     if (!/^\d+$/.test(soporteId)) {
       return res.status(400).json({
         error: true,
@@ -240,6 +251,7 @@ export const soporteDescuentoPdf = async (req: any, res = response) => {
     }
 
     const soporte = await getSoporteDescuentoById(soporteId);
+    console.log("[SOPORTE_PDF] resultado DB", soporte);
     if (!soporte || !soporte.json_file) {
       return res.status(404).json({
         error: true,
@@ -249,15 +261,19 @@ export const soporteDescuentoPdf = async (req: any, res = response) => {
 
     let metadata: any = null;
     try {
+      console.log("[SOPORTE_PDF] json_file crudo", soporte.json_file);
       metadata =
         typeof soporte.json_file === "string"
           ? JSON.parse(soporte.json_file)
           : soporte.json_file;
+      console.log("[SOPORTE_PDF] metadata parseada", metadata);
     } catch (error) {
+      console.log("[SOPORTE_PDF] error parseando metadata", error);
       metadata = null;
     }
 
     const resolvedPath = resolveSupportFilePath(metadata);
+    console.log("[SOPORTE_PDF] ruta resuelta", resolvedPath);
     if (!resolvedPath) {
       return res.status(404).json({
         error: true,
@@ -265,8 +281,12 @@ export const soporteDescuentoPdf = async (req: any, res = response) => {
       });
     }
 
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "inline");
+    console.log("[SOPORTE_PDF] enviando archivo", resolvedPath);
     return res.sendFile(resolvedPath);
   } catch (error) {
+    console.log("[SOPORTE_PDF] error endpoint", error);
     return res.status(500).json({
       error: true,
       message: "Servicio no disponible temporalmente",

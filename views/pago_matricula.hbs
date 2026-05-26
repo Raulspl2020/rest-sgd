@@ -578,6 +578,7 @@
 
                 animateProgressWithMinDuration(durationMs = 4000) {
                     this.clearProgressAnimation();
+                    console.log('[DESCUENTO_UPLOAD] inicio animacion progreso', { durationMs });
                     this.progresoSoporte = 0;
                     this.textoProgresoSoporte = 'Cargando archivo... 0%';
 
@@ -589,8 +590,13 @@
                             this.progresoSoporte = progress;
                             this.textoProgresoSoporte = `Cargando archivo... ${progress}%`;
 
+                            if (progress % 25 === 0 || progress === 100) {
+                                console.log('[DESCUENTO_UPLOAD] progreso visual', { progress, elapsed });
+                            }
+
                             if (progress >= 100) {
                                 this.clearProgressAnimation();
+                                console.log('[DESCUENTO_UPLOAD] fin animacion progreso');
                                 resolve(true);
                             }
                         }, 40);
@@ -637,21 +643,20 @@
 
                 async openSupportPdf(row) {
                     const candidateUrl = this.resolveSupportPdfUrl(row);
+                    console.log('[SOPORTE_PDF] click ver soporte', {
+                        soporte: row,
+                        soporteId: row?._id,
+                        candidateUrl,
+                    });
                     this.supportPdfUrl = '';
                     this.showSupportPdfModal = true;
 
                     if (!candidateUrl) {
+                        console.log('[SOPORTE_PDF] sin URL de soporte');
                         return;
                     }
 
-                    try {
-                        const headResponse = await fetch(candidateUrl, { method: 'HEAD' });
-                        if (headResponse.ok) {
-                            this.supportPdfUrl = candidateUrl;
-                        }
-                    } catch (error) {
-                        this.supportPdfUrl = '';
-                    }
+                    this.supportPdfUrl = candidateUrl;
                 },
 
                 closeSupportPdfModal() {
@@ -701,7 +706,9 @@
                 },
 
                 async enviarArchivo() {
+                    console.log('[DESCUENTO_UPLOAD] inicio enviarArchivo');
                     if (this.desactivarBotonSoporte) {
+                        console.log('[DESCUENTO_UPLOAD] cancelado, boton ya bloqueado');
                         return;
                     }
 
@@ -710,6 +717,11 @@
                     }
 
                     const archivo = this.file;
+                    console.log('[DESCUENTO_UPLOAD] archivo seleccionado', {
+                        name: archivo?.name,
+                        size: archivo?.size,
+                        type: archivo?.type,
+                    });
                     const MAX_FILE_SIZE = 1024 * 1024;
                     if (!archivo || Number(archivo.size || 0) > MAX_FILE_SIZE) {
                         this.descuentoError = 'El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.';
@@ -724,7 +736,6 @@
                     let formData = new FormData();
                     this.desactivarBotonSoporte = true;
                     this.mostrarProgresoSoporte = true;
-                    const progressPromise = this.animateProgressWithMinDuration(4000);
 
                     const estudianteId = String(this.matricula.txtId || '').trim();
                     const matriculaId = String('{{ID_MATRICULA}}').trim();
@@ -733,6 +744,14 @@
                     const observacion = String(this.porcentaje.observacion || '').trim();
 
                     if (!estudianteId || !matriculaId || !porcentajeCategoriaId || !periodoId || !observacion) {
+                        this.clearProgressAnimation();
+                        console.log('[DESCUENTO_UPLOAD] faltan datos requeridos', {
+                            estudianteId,
+                            matriculaId,
+                            porcentajeCategoriaId,
+                            periodoId,
+                            observacionLength: observacion.length,
+                        });
                         this.descuentoError = 'Faltan datos requeridos para registrar el soporte de descuento.';
                         this.descuentoSuccess = '';
                         this.desactivarBotonSoporte = false;
@@ -753,26 +772,33 @@
                     formData.append('accion', '1');
 
                     try {
+                        const progressPromise = this.animateProgressWithMinDuration(4000);
+                        console.log('[DESCUENTO_UPLOAD] inicio XHR');
                         const responseData = await new Promise((resolve, reject) => {
                             const xhr = new XMLHttpRequest();
                             xhr.open('POST', '{{BASE_URL}}/transaccion/soporteDescuento', true);
+                            xhr.timeout = 30000;
 
                             xhr.upload.onprogress = () => {
                                 // El progreso visual se controla por una duracion minima de 4 segundos.
                             };
 
                             xhr.onload = () => {
+                                console.log('[DESCUENTO_UPLOAD] xhr.onload');
                                 const status = xhr.status;
                                 const contentType = String(xhr.getResponseHeader('content-type') || '').toLowerCase();
                                 const isJson = contentType.includes('application/json');
                                 const rawResponse = xhr.responseText;
                                 let parsedBody = null;
+                                console.log('[DESCUENTO_UPLOAD] respuesta XHR', { status, contentType, isJson });
 
                                 if (isJson) {
                                     try {
                                         parsedBody = JSON.parse(rawResponse);
+                                        console.log('[DESCUENTO_UPLOAD] respuesta JSON parseada', parsedBody);
                                     } catch (error) {
                                         parsedBody = null;
+                                        console.log('[DESCUENTO_UPLOAD] fallo parse JSON', error);
                                     }
                                 }
 
@@ -809,16 +835,19 @@
                             };
 
                             xhr.onerror = () => {
+                                console.log('[DESCUENTO_UPLOAD] xhr.onerror');
                                 reject(new Error('No fue posible enviar la solicitud. Intente nuevamente.'));
                             };
 
                             xhr.ontimeout = () => {
+                                console.log('[DESCUENTO_UPLOAD] xhr.ontimeout');
                                 reject(new Error('El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.'));
                             };
 
                             xhr.send(formData);
                         });
 
+                        console.log('[DESCUENTO_UPLOAD] esperando fin animacion para exito');
                         await progressPromise;
                         this.progresoSoporte = 100;
                         this.textoProgresoSoporte = 'Cargando archivo... 100%';
@@ -828,6 +857,7 @@
                         }
 
                         this.descuentoError = '';
+                        console.log('[DESCUENTO_UPLOAD] antes de mostrar exito');
                         this.descuentoSuccess = 'Solicitud enviada exitosamente.';
                         this.porcentaje.observacion = '';
                         this.porcentaje.categoria = '';
@@ -837,15 +867,18 @@
                         }
                         this.consultarPersona();
                     } catch (error) {
+                        console.log('[DESCUENTO_UPLOAD] antes de mostrar error', error);
                         this.clearProgressAnimation();
                         this.descuentoSuccess = '';
                         this.descuentoError = error?.message || 'Servicio no disponible temporalmente para registrar la solicitud.';
                     } finally {
+                        console.log('[DESCUENTO_UPLOAD] finally: restaurando estado del formulario');
                         this.clearProgressAnimation();
                         this.desactivarBotonSoporte = false;
                         this.mostrarProgresoSoporte = false;
                         this.progresoSoporte = 0;
                         this.textoProgresoSoporte = '';
+                        console.log('[DESCUENTO_UPLOAD] boton restaurado');
                     }
                 },
                 handleFileUpload() {
