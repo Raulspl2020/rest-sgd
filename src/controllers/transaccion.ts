@@ -54,7 +54,7 @@ export const soporteDescuento = async (req: any, res = response) => {
   let id_config: any = null;
   const traceId = `SUPDESC-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   try {
-    let body = req.body;
+    let body = req.body || {};
     console.log(`[${traceId}] soporteDescuento inicio`, {
       estudiante_id: body?.estudiante_id,
       matricula_id: body?.matricula_id,
@@ -62,7 +62,20 @@ export const soporteDescuento = async (req: any, res = response) => {
       periodo_id: body?.periodo_id,
     });
 
+    const estudianteId = String(body.estudiante_id || "").trim();
+    const matriculaId = String(body.matricula_id || "").trim();
+    const porcentajeCategoriaId = String(body.porcentaje_categoria_id || "").trim();
+    const periodoId = String(body.periodo_id || "").trim();
     const observacion = String(body.observacion || "").trim();
+
+    if (!estudianteId || !matriculaId || !porcentajeCategoriaId || !periodoId || !observacion) {
+      console.log(`[${traceId}] faltan datos requeridos en body`);
+      return res.status(400).json({
+        error: true,
+        message: "Faltan datos requeridos para registrar el soporte de descuento.",
+      });
+    }
+
     if (!body.porcentaje_categoria_id) {
       return res.status(400).json({
         message: "Debe seleccionar un tipo de descuento válido",
@@ -111,7 +124,7 @@ export const soporteDescuento = async (req: any, res = response) => {
     }
 
     let resultCategoria = await getCategoriaPorcentaje(
-      body.porcentaje_categoria_id
+      porcentajeCategoriaId
     );
     if (!resultCategoria) {
       return res.status(400).json({
@@ -132,7 +145,7 @@ export const soporteDescuento = async (req: any, res = response) => {
 
     //subir el archivo si existe
     if (req.files && req.files.archivo) {
-      const carpeta = `soportedescuento/${body.estudiante_id}-${body.matricula_id}/`;
+      const carpeta = `soportedescuento/${estudianteId}-${matriculaId}/`;
       console.log(`[${traceId}] antes de guardar archivo`, { carpeta });
       const dataFile: any = await subirArchivo(req.files, ["pdf"], carpeta);
       console.log(`[${traceId}] archivo guardado`, {
@@ -163,13 +176,13 @@ export const soporteDescuento = async (req: any, res = response) => {
     }
 
     const dataPorcentaje: any = {
-      estudiante_id: body.estudiante_id,
+      estudiante_id: estudianteId,
       porcentaje: resultCategoria.valor ? resultCategoria.valor : 0,
       config_id: id_config,
-      porcentaje_categoria_id: body.porcentaje_categoria_id,
-      matricula_id: body.matricula_id,
+      porcentaje_categoria_id: porcentajeCategoriaId,
+      matricula_id: matriculaId,
       nom_periodo: body.nom_periodo,
-      periodo_id: body.periodo_id,
+      periodo_id: periodoId,
       observacion,
       accion: body.accion ? body.accion : 1,
       tipo: body.accion ? body.tipo : 0,

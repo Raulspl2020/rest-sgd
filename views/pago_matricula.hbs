@@ -614,15 +614,35 @@
                     this.progresoSoporte = 0;
                     this.textoProgresoSoporte = 'Cargando archivo... 0%';
 
+                    const estudianteId = String(this.matricula.txtId || '').trim();
+                    const matriculaId = String('{{ID_MATRICULA}}').trim();
+                    const porcentajeCategoriaId = String(this.porcentaje.categoria || '').trim();
+                    const periodoId = String(this.matricula.cod_periodo || '').trim();
+                    const observacion = String(this.porcentaje.observacion || '').trim();
+
+                    if (!estudianteId || !matriculaId || !porcentajeCategoriaId || !periodoId || !observacion) {
+                        this.descuentoError = 'Faltan datos requeridos para registrar el soporte de descuento.';
+                        this.descuentoSuccess = '';
+                        this.desactivarBotonSoporte = false;
+                        this.mostrarProgresoSoporte = false;
+                        this.progresoSoporte = 0;
+                        this.textoProgresoSoporte = '';
+                        return;
+                    }
+
                     formData.append('archivo', archivo);
 
-                    formData.append('observacion', this.porcentaje.observacion.trim());
-                    formData.append('porcentaje_categoria_id', this.porcentaje.categoria);
-                    formData.append('estudiante_id', this.matricula.txtId);
-                    formData.append('matricula_id', '{{ID_MATRICULA}}');
-                    formData.append('periodo_id', this.matricula.cod_periodo);
+                    formData.append('observacion', observacion);
+                    formData.append('porcentaje_categoria_id', porcentajeCategoriaId);
+                    formData.append('estudiante_id', estudianteId);
+                    formData.append('matricula_id', matriculaId);
+                    formData.append('periodo_id', periodoId);
                     formData.append('nom_periodo', this.matricula.txtPeriodo);
                     formData.append('accion', '1');
+
+                    for (const pair of formData.entries()) {
+                        console.log('FormData soporte:', pair[0], pair[1]);
+                    }
 
                     try {
                         const responseData = await new Promise((resolve, reject) => {
