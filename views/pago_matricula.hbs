@@ -583,8 +583,10 @@
                         return;
                     }
 
-                    const maxFileSizeBytes = 1024 * 1024;
-                    if (!this.file || Number(this.file.size || 0) > maxFileSizeBytes) {
+                    const archivo = this.file;
+                    const MAX_FILE_SIZE = 1024 * 1024;
+                    console.log('Tamaño archivo soporte:', Number(archivo?.size || 0));
+                    if (!archivo || Number(archivo.size || 0) > MAX_FILE_SIZE) {
                         this.descuentoError = 'El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.';
                         this.descuentoSuccess = '';
                         this.desactivarBotonSoporte = false;
@@ -594,7 +596,7 @@
                     let formData = new FormData();
                     this.desactivarBotonSoporte = true;
 
-                    formData.append('archivo', this.file);
+                    formData.append('archivo', archivo);
 
                     formData.append('observacion', this.porcentaje.observacion.trim());
                     formData.append('porcentaje_categoria_id', this.porcentaje.categoria);
@@ -618,6 +620,10 @@
 
                         if (response.status === 413) {
                             throw new Error('El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.');
+                        }
+
+                        if (response.status === 504) {
+                            throw new Error('El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.');
                         }
 
                         if (!response.ok) {
