@@ -43,12 +43,13 @@ class Server {
     //File-uploads (must run before body parsers for multipart/form-data)
     this.app.use(
       fileUpload({
-        useTempFiles: true,
-        tempFileDir: "/tmp/",
+        useTempFiles: false,
         createParentPath: true,
         limits: { fileSize: 1024 * 1024 },
         abortOnLimit: true,
         responseOnLimit: "El archivo supera el tamano maximo permitido.",
+        uploadTimeout: 120000,
+        parseNested: true,
       })
     );
 
