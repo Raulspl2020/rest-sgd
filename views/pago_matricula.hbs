@@ -348,7 +348,7 @@
                                                                 <option disabled value="">Seleccionar</option>
                                                                 <option :value="row._id"
                                                                     v-for="(row, index) in categorias">
-                                                                    {[row.descripcion]}</option>
+                                                                    {[formatCategoriaLabel(row)]}</option>
 
                                                             </select>
                                                         </div>
@@ -610,6 +610,31 @@
                         return text;
                     }
                     return `${text.slice(0, 10)}...`;
+                },
+
+                formatCategoriaLabel(row) {
+                    const descripcion = String(row?.descripcion || '').trim();
+                    if (!descripcion) {
+                        return 'Sin descripción';
+                    }
+
+                    const upperDesc = descripcion.toUpperCase();
+                    if (upperDesc === 'NO APLICA' || upperDesc === 'OTRO') {
+                        return descripcion;
+                    }
+
+                    const rawValue = Number(row?.valor);
+                    if (!Number.isFinite(rawValue)) {
+                        return descripcion;
+                    }
+
+                    const porcentaje = rawValue <= 1 ? rawValue * 100 : rawValue;
+                    if (!Number.isFinite(porcentaje) || porcentaje <= 0) {
+                        return descripcion;
+                    }
+
+                    const porcentajeTexto = Number(porcentaje.toFixed(2)).toString().replace(/\.0+$/, '');
+                    return `${descripcion} - ${porcentajeTexto}%`;
                 },
 
                 resolveSupportPdfUrl(row) {
