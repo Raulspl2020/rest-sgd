@@ -355,10 +355,10 @@
 
                                                         <div class="col-md-12">
                                                             <div class="form-group">
-                                                                <label for="txtObservacion">Observación <span class="text-danger">*</span></label>
+                                                                <label for="txtObservacion">Descripción del soporte <span class="text-danger">*</span></label>
                                                                 <input type="text" class="form-control"
                                                                     v-model="porcentaje.observacion" id="txtObservacion"
-                                                                    placeholder="Ej: pago certificado o record academico" />
+                                                                    placeholder="Ej: certificado, recibo, constancia o soporte académico" />
                                                             </div>
                                                         </div>
 
@@ -399,21 +399,27 @@
                                                                 <thead>
                                                                     <tr>
                                                                         <th scope="col">Concepto</th>
-                                                                        <th scope="col">Observación</th>
+                                                                        <th scope="col">Descripción</th>
                                                                         <th scope="col">Estado</th>
+                                                                        <th scope="col">Ver</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
                                                                     <tr v-if="!soportes || soportes.length === 0">
-                                                                        <td colspan="3" class="text-center text-muted">No hay solicitudes registradas.</td>
+                                                                        <td colspan="4" class="text-center text-muted">No hay solicitudes registradas.</td>
                                                                     </tr>
                                                                     <tr v-for="(row, index) in soportes" :key="index">
                                                                         <td><strong>{[row.descripcion]}</strong></td>
-                                                                        <td>{[row.observacion || 'Sin observación']}</td>
+                                                                        <td :title="row.observacion || 'Sin descripción'">{[truncateSupportDescription(row.observacion || 'Sin descripción')]}</td>
                                                                         <td>
                                                                             <span :class="[row.estado=='APROBADO' || row.estado=='FACTURADO' ? 'status-badge status-badge-ok' : 'status-badge status-badge-warn']">
                                                                                 {[row.estado]} {[row.porcentaje*100]}%
                                                                             </span>
+                                                                        </td>
+                                                                        <td>
+                                                                            <button type="button" class="btn btn-sm btn-outline-primary" @click="openSupportPdf(row)" title="Ver soporte PDF"> 
+                                                                                <i class="fa fa-eye" aria-hidden="true"></i>
+                                                                            </button>
                                                                         </td>
                                                                     </tr>
                                                                 </tbody>
@@ -432,6 +438,21 @@
 
 
                                         </form>
+                                </div>
+
+                                <div v-if="showSupportPdfModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem;">
+                                    <div style="background:#fff;border-radius:10px;max-width:960px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+                                        <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #e9ecef;">
+                                            <strong>Soporte PDF</strong>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" @click="closeSupportPdfModal">Cerrar</button>
+                                        </div>
+                                        <div style="padding:1rem;min-height:280px;">
+                                            <div v-if="supportPdfUrl">
+                                                <iframe :src="supportPdfUrl" title="Soporte PDF" style="width:100%;height:70vh;border:1px solid #dee2e6;border-radius:8px;"></iframe>
+                                            </div>
+                                            <div v-else class="alert alert-warning mb-0">No hay soporte disponible para visualizar.</div>
+                                        </div>
+                                    </div>
                                 </div>
 
 
@@ -540,10 +561,51 @@
                     descuentoSuccess: '',
                     progresoSoporte: 0,
                     mostrarProgresoSoporte: false,
-                    textoProgresoSoporte: ''
+                    textoProgresoSoporte: '',
+                    showSupportPdfModal: false,
+                    supportPdfUrl: ''
                 };
             },
             methods: {
+
+                truncateSupportDescription(value) {
+                    const text = String(value || '');
+                    if (text.length <= 10) {
+                        return text;
+                    }
+                    return `${text.slice(0, 10)}...`;
+                },
+
+                resolveSupportPdfUrl(row) {
+                    if (!row || !row.json_file) {
+                        return '';
+                    }
+
+                    try {
+                        const metadata = typeof row.json_file === 'string' ? JSON.parse(row.json_file) : row.json_file;
+                        const basepath = String(metadata?.basepath || '').replace(/\\/g, '/');
+                        const idxUploads = basepath.indexOf('/uploads/');
+
+                        if (idxUploads >= 0) {
+                            const relativePath = basepath.substring(idxUploads + '/uploads/'.length);
+                            return `{{BASE_URL}}/static/uploads/${relativePath}`;
+                        }
+                    } catch (error) {
+                        return '';
+                    }
+
+                    return '';
+                },
+
+                openSupportPdf(row) {
+                    this.supportPdfUrl = this.resolveSupportPdfUrl(row);
+                    this.showSupportPdfModal = true;
+                },
+
+                closeSupportPdfModal() {
+                    this.showSupportPdfModal = false;
+                    this.supportPdfUrl = '';
+                },
 
                 getCategoriaSeleccionada() {
                     return this.categorias.find((row) => String(row._id) === String(this.porcentaje.categoria));
@@ -597,7 +659,6 @@
 
                     const archivo = this.file;
                     const MAX_FILE_SIZE = 1024 * 1024;
-                    console.log('Tamaño archivo soporte:', Number(archivo?.size || 0));
                     if (!archivo || Number(archivo.size || 0) > MAX_FILE_SIZE) {
                         this.descuentoError = 'El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.';
                         this.descuentoSuccess = '';
@@ -639,10 +700,6 @@
                     formData.append('periodo_id', periodoId);
                     formData.append('nom_periodo', this.matricula.txtPeriodo);
                     formData.append('accion', '1');
-
-                    for (const pair of formData.entries()) {
-                        console.log('FormData soporte:', pair[0], pair[1]);
-                    }
 
                     try {
                         const responseData = await new Promise((resolve, reject) => {

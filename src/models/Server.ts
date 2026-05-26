@@ -53,6 +53,7 @@ class Server {
     );
     //carpeta publica
     this.app.use("/api/static", express.static("public"));
+    this.app.use("/api/static/uploads", express.static(path.join(__dirname, "../uploads")));
   }
 
   async dbConnection() {

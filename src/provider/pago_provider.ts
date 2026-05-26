@@ -334,9 +334,11 @@ export const getCategoriaPorcentajeByMatricula = async (
 ) => {
   let result = await conDB
     .select(
+      "fin_porcentaje_soporte._id",
       "fin_porcentaje_soporte.fecha",
       "fin_porcentaje_soporte.porcentaje",
       "fin_porcentaje_soporte.observacion",
+      "fin_porcentaje_soporte.json_file",
       "fin_porcetaje_categoria.descripcion",
       "fin_porcentaje_estado.descripcion as estado"
     )
