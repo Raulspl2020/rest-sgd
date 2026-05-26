@@ -741,6 +741,7 @@
                     console.log('[DESCUENTO_UPLOAD] archivo seleccionado', {
                         name: archivo?.name,
                         sizeBytes: fileSizeBytes,
+                        sizeKb: Number((fileSizeBytes / 1024).toFixed(2)),
                         sizeMb: fileSizeMb,
                         type: archivo?.type,
                     });
@@ -792,6 +793,7 @@
                     formData.append('periodo_id', periodoId);
                     formData.append('nom_periodo', this.matricula.txtPeriodo);
                     formData.append('accion', '1');
+                    console.log('[DESCUENTO_UPLOAD] formData keys', ['archivo', 'observacion', 'porcentaje_categoria_id', 'estudiante_id', 'matricula_id', 'periodo_id', 'nom_periodo', 'accion']);
 
                     try {
                         const progressPromise = this.animateProgressWithMinDuration(4000);
@@ -833,23 +835,27 @@
                                 }
 
                                 if (status === 413) {
-                                    reject(new Error('El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.'));
+                                    const trace = parsedBody?.traceId ? ` (trace: ${parsedBody.traceId})` : '';
+                                    reject(new Error(`El archivo supera el tamaño máximo permitido. Por favor cargue un PDF de máximo 1 MB.${trace}`));
                                     return;
                                 }
 
                                 if (status === 504) {
-                                    reject(new Error('El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.'));
+                                    const trace = parsedBody?.traceId ? ` (trace: ${parsedBody.traceId})` : '';
+                                    reject(new Error(`El servidor tardó demasiado en responder. Intente nuevamente o cargue un PDF más liviano.${trace}`));
                                     return;
                                 }
 
                                 if (status === 500) {
-                                    reject(new Error('Ocurrió un error interno al guardar el soporte. Intente nuevamente.'));
+                                    const trace = parsedBody?.traceId ? ` (trace: ${parsedBody.traceId})` : '';
+                                    reject(new Error(`Ocurrió un error interno al guardar el soporte. Intente nuevamente.${trace}`));
                                     return;
                                 }
 
                                 if (status < 200 || status >= 300) {
                                     if (isJson && parsedBody && parsedBody.message) {
-                                        reject(new Error(parsedBody.message));
+                                        const trace = parsedBody?.traceId ? ` (trace: ${parsedBody.traceId})` : '';
+                                        reject(new Error(`${parsedBody.message}${trace}`));
                                         return;
                                     }
                                     reject(new Error('No fue posible enviar la solicitud. Intente nuevamente.'));

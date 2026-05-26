@@ -40,18 +40,22 @@ class Server {
     //Cors
     this.app.use(cors());
 
-    // parse application/x-www-form-urlencoded
-    this.app.use(bodyParser.urlencoded({ extended: false }));
-    //body-parser-json
-    this.app.use(bodyParser.json());
-    //File-upploads
+    //File-uploads (must run before body parsers for multipart/form-data)
     this.app.use(
       fileUpload({
         useTempFiles: true,
         tempFileDir: "/tmp/",
         createParentPath: true,
+        limits: { fileSize: 1024 * 1024 },
+        abortOnLimit: true,
+        responseOnLimit: "El archivo supera el tamano maximo permitido.",
       })
     );
+
+    // parse application/x-www-form-urlencoded
+    this.app.use(bodyParser.urlencoded({ extended: false }));
+    //body-parser-json
+    this.app.use(bodyParser.json());
     //carpeta publica
     this.app.use("/api/static", express.static("public"));
 

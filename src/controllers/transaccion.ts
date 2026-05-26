@@ -63,7 +63,33 @@ export const soporteDescuento = async (req: any, res = response) => {
       startedAt,
       ip: req.headers["x-forwarded-for"] || req.connection?.remoteAddress,
     });
+    console.log("[SOPORTE_UPLOAD] headers", {
+      traceId,
+      contentLength: req.headers["content-length"],
+      contentType: req.headers["content-type"],
+      elapsedMs: Date.now() - startedAt,
+    });
+    console.log("[SOPORTE_UPLOAD] antes de leer req.files", {
+      traceId,
+      elapsedMs: Date.now() - startedAt,
+    });
     let body = req.body || {};
+    console.log("[SOPORTE_UPLOAD] body keys", {
+      traceId,
+      keys: Object.keys(body || {}),
+      elapsedMs: Date.now() - startedAt,
+    });
+    console.log("[SOPORTE_UPLOAD] files keys", {
+      traceId,
+      keys: Object.keys(req.files || {}),
+      elapsedMs: Date.now() - startedAt,
+    });
+    console.log("[SOPORTE_UPLOAD] req.files leido", {
+      traceId,
+      hasFiles: !!req.files,
+      hasArchivo: !!req.files?.archivo,
+      elapsedMs: Date.now() - startedAt,
+    });
 
     const estudianteId = String(body.estudiante_id || "").trim();
     const matriculaId = String(body.matricula_id || "").trim();
@@ -94,12 +120,21 @@ export const soporteDescuento = async (req: any, res = response) => {
 
     if (!req.files || !req.files.archivo) {
       return res.status(400).json({
-        message: "Debe adjuntar un archivo PDF como soporte",
+        message: "No se recibio el archivo de soporte.",
         error: true,
+        traceId,
       });
     }
 
     const archivo: any = req.files.archivo;
+    if (archivo?.truncated) {
+      return res.status(413).json({
+        error: true,
+        message:
+          "El archivo supera el tamano maximo permitido. Por favor cargue un PDF de maximo 1 MB.",
+        traceId,
+      });
+    }
     console.log("[SOPORTE_UPLOAD] archivo recibido", {
       traceId,
       name: archivo?.name,
