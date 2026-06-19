@@ -9,7 +9,7 @@ const db = {
     user: process.env.MYSQL_SGD_USER,
     password: process.env.MYSQL_SGD_PASS,
     database: process.env.MYSQL_SGD_DATABASE,
-    port: 3306,
+    port: Number(process.env.MYSQL_SGD_PORT || 3306),
   },
 
   seguridad: {
@@ -17,7 +17,7 @@ const db = {
     user: process.env.MYSQL_SGD_USER,
     password: process.env.MYSQL_SGD_PASS,
     database: process.env.MYSQL_AUTH_DATABASE,
-    port: 3306,
+    port: Number(process.env.MYSQL_AUTH_PORT || process.env.MYSQL_SGD_PORT || 3306),
   },
 };
 
