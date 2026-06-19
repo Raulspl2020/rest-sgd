@@ -1027,13 +1027,24 @@
                 },
 
                 consultarPersona() {
+                    const perfStart = performance.now();
+                    const perfEndpoint = `{{BASE_URL}}/matricula/generarpagomatricula/{{ID_MATRICULA}}`;
+                    console.log(`[perf:pagomatricula:frontend] consultarPersona start endpoint=${perfEndpoint}`);
                     this.cargandoDatos = true;
                     this.mostrarAlert = false;
                     this.msjResp = '';
 
-                    fetch(`{{BASE_URL}}/matricula/generarpagomatricula/{{ID_MATRICULA}}`)
-                        .then((response) => response.json())
+                    fetch(perfEndpoint)
+                        .then((response) => {
+                            console.log(`[perf:pagomatricula:frontend] consultarPersona fetch-response ${(performance.now() - perfStart).toFixed(1)}ms status=${response.status}`);
+                            const jsonStart = performance.now();
+                            return response.json().then((data) => {
+                                console.log(`[perf:pagomatricula:frontend] consultarPersona json-parse ${(performance.now() - jsonStart).toFixed(1)}ms`);
+                                return data;
+                            });
+                        })
                         .then((data) => {
+                            const bindStart = performance.now();
                             if (!data.error) {
 
                                 if (data.estadopago.length > 0) {
@@ -1082,13 +1093,18 @@
                                 this.msjResp = data.message || 'No fue posible consultar la información de matrícula.';
                                 this.mostrarAlert = true;
                             }
+                            console.log(`[perf:pagomatricula:frontend] consultarPersona bind-data ${(performance.now() - bindStart).toFixed(1)}ms`);
                         })
                         .catch((error) => {
                             this.msjResp = error?.message || 'Servicio no disponible temporalmente para consultar la matrícula.';
                             this.mostrarAlert = true;
+                            console.log(`[perf:pagomatricula:frontend] consultarPersona failed ${(performance.now() - perfStart).toFixed(1)}ms error=${error?.message}`);
                         })
                         .finally(() => {
                             this.cargandoDatos = false;
+                            this.$nextTick(() => {
+                                console.log(`[perf:pagomatricula:frontend] consultarPersona total-nextTick ${(performance.now() - perfStart).toFixed(1)}ms`);
+                            });
                         });
                 },
                 continuarPago(isPagoOnline = true) {

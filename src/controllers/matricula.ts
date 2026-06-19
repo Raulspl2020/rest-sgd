@@ -287,8 +287,8 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
             // periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
 
            const studentTypeUrl = getStudentTypeUrl();
-           const response = await profile("getStudentType", () => fetch(`${studentTypeUrl}?matriculaId=${id_matricula}`));
-           const studentType: IStudentType =  await response.json();
+           const response = await profile("getStudentType.fetch", () => fetch(`${studentTypeUrl}?matriculaId=${id_matricula}`));
+           const studentType: IStudentType =  await profile("getStudentType.parseJson", () => response.json());
            const currenDate =  new Date();
 
            const momentCurrent = moment().utcOffset(-5);
@@ -717,20 +717,25 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
 //   /matricula/generarpagomatricula 
 //=====================
 export const generarpagoMatricula = async (req: any, res: any) => {
+    const startedAt = Date.now();
+    const idMatricula = req.params.id_matricula?.trim();
+    const endpoint = `/api/matricula/generarpagomatricula/${idMatricula}`;
+    console.log(`[perf:rest-sgd] GET ${endpoint} start params=${JSON.stringify(req.params)} query=${JSON.stringify(req.query)}`);
 
     try {
-        const nodeEnv = String(process.env.NODE_ENV || "").toLowerCase();
-        const enableProfile = req.query.profile === "1" && nodeEnv !== "pro" && nodeEnv !== "production";
-        const profile = createProfileLogger(enableProfile, `pagomatricula:${req.params.id_matricula}`);
+        const enableProfile = req.query.profile === "1";
+        const profile = createProfileLogger(enableProfile, `pagomatricula:${idMatricula}`);
         const [result, categorias]: any[] = await Promise.all([
-            profile("consultarpagoMatricula", () => consultarpagoMatricula(req.params.id_matricula.trim(), profile)),
+            profile("consultarpagoMatricula", () => consultarpagoMatricula(idMatricula, profile)),
             profile("getCategriaDescuento", () => getCategriaDescuento(1)),
         ]);
 
         result.categorias = categorias;
+        console.log(`[perf:rest-sgd] GET ${endpoint} total ${Date.now() - startedAt}ms`);
         return res.status(200).json(result);
 
     } catch (error) {
+        console.log(`[perf:rest-sgd] GET ${endpoint} failed ${Date.now() - startedAt}ms error=${error?.message}`);
         return res.status(500).json({
             error: true,
             message: error.message

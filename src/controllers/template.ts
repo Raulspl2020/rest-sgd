@@ -163,14 +163,17 @@ export const pagosvariosView = async (req: any, res = response) => {
 //   /page/pagoMatricula
 //=====================
 export const pagoMatricula = async (req: any, res = response) => {
+  const startedAt = Date.now();
   let id_matricula = req.params.id_matricula;
-  console.log(id_matricula);
+  console.log(`[perf:rest-sgd] GET /api/page/pagomatricula/${id_matricula} start params=${JSON.stringify(req.params)}`);
   let data: any = {};
   data.BASE_URL = process.env.BASE_URL.toString();
   data.ID_MATRICULA = id_matricula;
   data.URL_INVOICE = getInvoiceCreateUrl();
   data.FINANCIERO_PUBLIC_URL = getFinancieroPublicUrl();
+  console.log(`[perf:rest-sgd] GET /api/page/pagomatricula/${id_matricula} render-context ${Date.now() - startedAt}ms`);
   res.render("pago_matricula", data);
+  console.log(`[perf:rest-sgd] GET /api/page/pagomatricula/${id_matricula} total ${Date.now() - startedAt}ms`);
 };
 
 //====================
