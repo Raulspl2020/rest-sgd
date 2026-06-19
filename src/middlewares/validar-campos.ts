@@ -219,8 +219,6 @@ export const pagoPersonalizadoMid = (req: any, res: any, next: any) => {
 
 //valida los campos enviados desde el formualrio de pago personalizado
 export const pagoVariosMid = (req: any, res: any, next: any) => {
-  console.log("Disparando middleware");
-  console.log(req.body);
   const validationRule = {
     isPagoOnline : "required|boolean",
     total : "required|numeric",
@@ -237,6 +235,7 @@ export const pagoVariosMid = (req: any, res: any, next: any) => {
     str_opcional2 : "present|string",
     id_paquete : "required|numeric",
     id_programa_persona : "required|numeric",
+    cantidad: "required|numeric",
   };
 
 

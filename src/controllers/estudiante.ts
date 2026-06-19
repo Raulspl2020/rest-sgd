@@ -231,9 +231,14 @@ export const getInfoEstudiante = async (req: any, res: any) => {
 //=====================
 export const getProgramaEstudiante = async (req: any, res: any) => {
     let id_estudiante = req.params.id_estudiante;
+    const nodeEnv = String(process.env.NODE_ENV || "").toLowerCase();
+    const profile = req.query?.profile === "1" && nodeEnv !== "pro" && nodeEnv !== "production";
+    const startedAt = Date.now();
     try {
         let resultDB = await getProgramasEstudiante(id_estudiante);
-        console.log(resultDB);
+        if (profile) {
+            console.log(`[profile:estudiante/programas] getProgramasEstudiante: ${Date.now() - startedAt}ms`);
+        }
 
         res.status(200).json({
             error: false,

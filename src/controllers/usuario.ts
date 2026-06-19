@@ -120,6 +120,9 @@ export const getInfoUser = async (req: any, res = response) => {
 export const getInfoBasicUser = async (req: any, res = response) => {
     let body = req.body;
     let ideUsuario = req.params.ideUsuario;
+    const nodeEnv = String(process.env.NODE_ENV || "").toLowerCase();
+    const profile = req.query?.profile === "1" && nodeEnv !== "pro" && nodeEnv !== "production";
+    const startedAt = Date.now();
 
     interface UserBasicInfo {
         ide_persona: string;
@@ -138,7 +141,9 @@ export const getInfoBasicUser = async (req: any, res = response) => {
 
     try {
         let result: UserBasicInfo[] = await usuarioProvider.getInfoUsuario(ideUsuario);
-        console.log(result);
+        if (profile) {
+            console.log(`[profile:usuario/infobasica] getInfoUsuario: ${Date.now() - startedAt}ms`);
+        }
 
         let json: any = {};
         if (result.length > 0) {

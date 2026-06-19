@@ -67,9 +67,9 @@
                                         <div class="input-group search-input-group">
                                             <input v-model.trim="formpago.txtId" type="text" required class="form-control"
                                                 value="" placeholder="Identificación del estudiante" />
-                                            <button type="button" class="btn btn-search" @click="consultarPersona">
+                                            <button type="button" class="btn btn-search" @click="consultarPersona" :disabled="cargandoPersona">
                                                 <span class="sr-only">Loading...</span>
-                                                Buscar <i class="fa fa-search"></i>
+                                                {[ cargandoPersona ? 'Buscando...' : 'Buscar' ]} <i class="fa fa-search"></i>
                                             </button>
                                         </div>
 
@@ -135,7 +135,7 @@
                                     <div class="col-md-5">
                                         <div class="form-group">
                                             <label for="">Programa academico: <span class="text-danger">*</span></label>
-                                            <select v-model="sel_programa" class="form-select" required
+                                            <select v-model="sel_programa" class="form-select" required :disabled="cargandoPersona"
                                                 aria-label="Default select example" @change="onChange($event)">
                                                 <option disabled value="">Seleccionar</option>
                                                 <option :value="row.id_programa_persona" v-for="(row, index) in programas">
@@ -156,7 +156,7 @@
                                             <label for="">Concepto: <span class="text-danger">*</span></label>
                                             <select v-model="sel_concepto" id="select_concepto"
                                                 style="width: 100%; height: 100%;" class="form-select"
-                                                aria-label="Default select example">
+                                                aria-label="Default select example" :disabled="cargandoConceptos">
                                                 <option disabled value="">Seleccionar</option>
                                                 <option :value="row.paquete_id" v-for="(row, index) in conceptos"
                                                     :title="row.concepto_id">
@@ -170,7 +170,7 @@
                                         <div class="form-group">
                                             <label for="">Cantidad concepto: <span class="text-danger">*</span></label>
 
-                                            <input type="number" value="1" v-model="cantidad" :disabled="desactivarCantidad"
+                                            <input type="number" value="1" v-model="cantidad" :disabled="desactivarCantidad || procesandoPago"
                                                 class="form-control" min="1" max="99" maxlength="2"
                                                 placeholder="Cantidad"
                                                 oninput="if(this.value.length > 2) this.value = this.value.slice(0,2)"
@@ -205,6 +205,9 @@
                             </div>
 
                             <div class="payment-card total-box">
+                                <div class="alert alert-info py-2" role="status" v-if="cargandoPersona || cargandoConceptos">
+                                    Cargando información para el pago...
+                                </div>
                                 <div class="row align-items-center g-3">
                                     <div class="col-12 col-lg-5">
                                         <p class="total-label mb-1">Total a pagar</p>
@@ -212,12 +215,12 @@
                                     </div>
                                     <div class="col-12 col-lg-7">
                                         <div class="action-buttons">
-                                            <button class="btn btn-pay-outline" data-bs-toggle="tooltip"
-                                                @click="inicarPago(false)" data-bs-placement="top" :disabled="!activarBotonEf"
+                                            <button type="button" class="btn btn-pay-outline" data-bs-toggle="tooltip"
+                                                @click="inicarPago(false)" data-bs-placement="top" :disabled="cargandoPersona || cargandoConceptos || procesandoPago || !activarBotonEf"
                                                 title="Genera PDF para pago en efectivo">
                                                 <i class="fa fa-barcode"></i> {[txtBotonEf]}
                                             </button>
-                                            <button type="button" :disabled="!formpago.activarBoton"
+                                            <button type="button" :disabled="cargandoPersona || cargandoConceptos || procesandoPago || !formpago.activarBoton"
                                                 class="btn btn-pay-primary" @click="inicarPago(true)">
                                                 <i id="icon" v-if="!formpago.activarBoton"
                                                     class="fa fa-spinner fa-pulse"></i>
@@ -293,7 +296,10 @@
                     numeroLetras: "CERO PESOS",
                     activarBotonEf: true,
                     txtBotonEf: "Pagar en efectivo",
-                    txtBoton: "Pago en linea"
+                    txtBoton: "Pago en linea",
+                    cargandoPersona: false,
+                    cargandoConceptos: false,
+                    procesandoPago: false
                 };
             },
             computed: {
@@ -303,68 +309,76 @@
                 }
             },
             methods: {
-                consultarPersona() {
+                async consultarPersona() {
+                    if (!this.formpago.txtId || this.cargandoPersona) {
+                        return;
+                    }
 
+                    this.cargandoPersona = true;
+                    this.cargandoConceptos = true;
+                    this.formpago.colorTextoAlert = "text-success";
+                    this.numeroLetras = "Consultando información...";
 
-                    fetch(`{{BASE_URL}}/usuario/infobasica/${this.formpago.txtId}`)
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (!data.error) {
-                                let user = data.data;
-                                this.estudiante.txtNom1 = user.nombre1;
-                                this.estudiante.txtNom2 = user.nombre2;
-                                this.estudiante.txtApe1 = user.apellido1;
-                                this.estudiante.txtApe2 = user.apellido2;
+                    try {
+                        const response = await fetch(`{{BASE_URL}}/usuario/infobasica/${this.formpago.txtId}`);
+                        const data = await response.json();
+                        if (!response.ok || data.error) {
+                            throw new Error(data?.message || 'No se encontró información para la identificación ingresada.');
+                        }
 
-                                this.formpago.txtNom1 = user.nombre1 + " " + user.nombre2;
-                                this.formpago.txtApe1 = user.apellido1 + " " + user.apellido2;
-                                this.formpago.txtEmail = user.email_persona;
-                                this.formpago.txtCelular = user.cel_persona;
-                                this.formpago.selTipoIde = user.tipo_doc;
-                                this.formpago.txtConcepto = "SIN CONCEPTO DE PAGO";
-                                this.consultarProgramas();
-                                this.buscarConceptos();
-                            } else {
-                                this.formpago.txtApe1 = "";
-                                this.formpago.txtApe2 = "";
-                                this.formpago.txtNom1 = "";
-                                this.formpago.txtNom2 = "";
-                                this.formpago.txtEmail = "";
-                                this.formpago.txtCelular = "";
-                                this.formpago.selTipoIde = "";
-                            }
-                        });
+                        let user = data.data;
+                        this.estudiante.txtNom1 = user.nombre1;
+                        this.estudiante.txtNom2 = user.nombre2;
+                        this.estudiante.txtApe1 = user.apellido1;
+                        this.estudiante.txtApe2 = user.apellido2;
+
+                        this.formpago.txtNom1 = user.nombre1 + " " + user.nombre2;
+                        this.formpago.txtApe1 = user.apellido1 + " " + user.apellido2;
+                        this.formpago.txtEmail = user.email_persona;
+                        this.formpago.txtCelular = user.cel_persona;
+                        this.formpago.selTipoIde = user.tipo_doc;
+                        this.formpago.txtConcepto = "SIN CONCEPTO DE PAGO";
+
+                        await Promise.all([this.consultarProgramas(), this.buscarConceptos()]);
+                        this.numeroALetras(this.total_a_pagar);
+                    } catch (error) {
+                        this.formpago.txtApe1 = "";
+                        this.formpago.txtApe2 = "";
+                        this.formpago.txtNom1 = "";
+                        this.formpago.txtNom2 = "";
+                        this.formpago.txtEmail = "";
+                        this.formpago.txtCelular = "";
+                        this.formpago.selTipoIde = "";
+                        this.programas = [];
+                        this.formpago.colorTextoAlert = "text-danger";
+                        this.numeroLetras = error?.message || 'No fue posible consultar la información.';
+                    } finally {
+                        this.cargandoPersona = false;
+                        this.cargandoConceptos = false;
+                    }
                 },
 
-                consultarProgramas() {
+                async consultarProgramas() {
+                    const response = await fetch(`{{BASE_URL}}/estudiante/programas/${this.formpago.txtId}`);
+                    const data = await response.json();
+                    if (!response.ok || data.error) {
+                        this.programas = [];
+                        return;
+                    }
 
-
-                    fetch(`{{BASE_URL}}/estudiante/programas/${this.formpago.txtId}`)
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (!data.error) {
-                                let programas = data.data;
-                                this.programas = programas;
-                            } else {
-                                this.programas = [];
-                            }
-                        });
+                    this.programas = data.data;
                 },
 
 
-                buscarConceptos() {
+                async buscarConceptos() {
+                    const response = await fetch(`{{BASE_URL}}/factura/obtenerconceptos`);
+                    const data = await response.json();
+                    if (!response.ok || data.error) {
+                        this.conceptos = [];
+                        return;
+                    }
 
-                    fetch(`{{BASE_URL}}/factura/obtenerconceptos`)
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (!data.error) {
-                                let conceptos = data.data;
-                                this.conceptos = conceptos;
-
-                            } else {
-                                this.conceptos = [];
-                            }
-                        });
+                    this.conceptos = data.data;
                 },
 
 
@@ -373,20 +387,23 @@
                     if (this.cantidad < 1) {
                         this.cantidad = 1;
                     }
-                    console.log(this.valor_unidad);
                     this.total_a_pagar = this.cantidad * this.valor_unidad;
-                    console.log(this.total_a_pagar);
                     this.numeroALetras(this.total_a_pagar);
                 },
 
 
                 inicarPago(isPagoOnline = true) {
 
+                    if (this.procesandoPago) {
+                        return;
+                    }
+
 
                     if (this.total_a_pagar < 100) {
                         this.numeroLetras = "Ingrese un valor mayor o igual que 100";
                         this.formpago.colorTextoAlert = "text-danger";
                     } else {
+                        this.procesandoPago = true;
                         this.activarBotonEf = false;
                         this.formpago.activarBoton = false;
 
@@ -434,10 +451,6 @@
                         const finalURL = isPagoOnline ? `{{BASE_URL}}/transaccion/InicioPagosVarios` : "{{URL_INVOICE}}";
 
 
-                        this.formpago.activarBoton = true;
-
-
-
                         fetch(
                             finalURL, {
                             method: 'POST',
@@ -451,10 +464,6 @@
                                 if (data.error) {
                                     this.formpago.colorTextoAlert = "text-danger";
                                     this.numeroLetras = data.message;
-                                    this.formpago.activarBoton = true;
-                                    this.formpago.txtBoton = "Pago en linea";
-                                    this.activarBotonEf = true;
-                                    this.txtBotonEf = "Pago en efectivo";
                                 } else {
 
                                     if (isPagoOnline) {
@@ -469,7 +478,16 @@
                                 }
 
                             }).catch((err) => {
-                                console.log(err);
+                                this.formpago.colorTextoAlert = "text-danger";
+                                this.numeroLetras = 'Servicio no disponible temporalmente. Intente nuevamente en unos minutos.';
+                            }).finally(() => {
+                                if (this.formpago.txtBoton !== "Redireccionando..." && this.txtBotonEf !== "Redireccionando...") {
+                                    this.formpago.activarBoton = true;
+                                    this.formpago.txtBoton = "Pago en linea";
+                                    this.activarBotonEf = true;
+                                    this.txtBotonEf = "Pagar en efectivo";
+                                    this.procesandoPago = false;
+                                }
                             });
                     }
                 },
@@ -491,18 +509,14 @@
 
                 onChange2(paquete_id, id_concepto, event) {
 
-                    console.log("el paquete id es:", paquete_id, " y el valor");
                     if (paquete_id == '0') {
-                        console.log("activando escritura");
                         this.desactivarTotal = false;
                         this.desactivarCantidad = true;
                         this.cantidad = 1;
                     } else {
-                        console.log("desactivando escritura");
                         this.desactivarTotal = true;
                         this.desactivarCantidad = false;
                     }
-                    console.log(event);
 
                     for (const rr of this.conceptos) {
 

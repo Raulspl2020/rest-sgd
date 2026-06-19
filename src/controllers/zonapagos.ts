@@ -43,6 +43,58 @@ import { calcularTotales } from "../helpers/factura.util";
 import { IParamsOnline } from "../interfaces/zonapagos.interface";
 import { decodePagoToList } from "../helpers/decodePagoToList";
 
+type ProfileLogger = <T>(label: string, task: () => Promise<T>) => Promise<T>;
+
+const createProfileLogger = (enabled: boolean, scope: string): ProfileLogger => {
+  return async <T>(label: string, task: () => Promise<T>): Promise<T> => {
+    if (!enabled) {
+      return task();
+    }
+
+    const start = Date.now();
+    try {
+      return await task();
+    } finally {
+      console.log(`[profile:${scope}] ${label}: ${Date.now() - start}ms`);
+    }
+  };
+};
+
+const isProfileEnabled = (req: any): boolean => {
+  const nodeEnv = String(process.env.NODE_ENV || "").toLowerCase();
+  return req.query?.profile === "1" && nodeEnv !== "pro" && nodeEnv !== "production";
+};
+
+const getZonaPagosTimeoutMs = (): number => {
+  const timeout = Number(process.env.ZONAPAGOS_TIMEOUT_MS || 15000);
+  return Number.isFinite(timeout) && timeout > 0 ? timeout : 15000;
+};
+
+const getZonaPagosUserMessage = (error: any): string => {
+  const code = String(error?.code || "");
+  if (["ENOTFOUND", "EAI_AGAIN"].includes(code)) {
+    return "No fue posible resolver o conectar con la pasarela de pagos. Intente nuevamente en unos minutos.";
+  }
+
+  if (["ECONNREFUSED", "ETIMEDOUT", "ECONNRESET"].includes(code) || error?.type === "request-timeout") {
+    return "La pasarela de pagos no respondió a tiempo. Intente nuevamente en unos minutos.";
+  }
+
+  return "La pasarela de pagos no está disponible temporalmente. Intente nuevamente en unos minutos.";
+};
+
+const logZonaPagosError = (error: any, context: { endpoint: string; pagoId?: any; elapsedMs?: number }) => {
+  console.log("[ZONAPAGOS_ERROR]", {
+    endpoint: context.endpoint,
+    pagoId: context.pagoId,
+    elapsedMs: context.elapsedMs,
+    code: error?.code,
+    type: error?.type,
+    status: error?.status,
+    message: error?.message,
+  });
+};
+
 //=================================
 //   /transaccion/InicioPagoMatricula
 //=================================
@@ -484,20 +536,42 @@ const quitarAumentoDetalle = async (detalle: any, newAumento: number) => {
   return auxDetalle;
 };
 
-const inicarPagoZonaPagos = async (body: string) => {
-  console.log(body);
+const inicarPagoZonaPagos = async (body: any, context: { pagoId?: any } = {}) => {
   //INICAMOS EL PAGO CON ZONAPAGOS
-  let responseZona = await fetch(process.env.ZONAPAGOS_URL + "/InicioPago", {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
-  });
-  let responseData = await responseZona.json();
-  //si el int_codigo es igual a 1 todo salio bien
-  if (responseData.int_codigo != 1) {
-    throw new Error("Parámetros enviados de forma incorrecta");
-  } else {
-    return responseData;
+  const startedAt = Date.now();
+  const endpoint = `${process.env.ZONAPAGOS_URL}/InicioPago`;
+  try {
+    let responseZona = await fetch(endpoint, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      timeout: getZonaPagosTimeoutMs(),
+    });
+
+    if (!responseZona.ok) {
+      const error: any = new Error(`ZonaPagos respondió HTTP ${responseZona.status}`);
+      error.status = responseZona.status;
+      throw error;
+    }
+
+    let responseData = await responseZona.json();
+    //si el int_codigo es igual a 1 todo salio bien
+    if (responseData.int_codigo != 1) {
+      const error: any = new Error("ZonaPagos rechazó los parámetros enviados");
+      error.status = responseZona.status;
+      throw error;
+    } else {
+      return responseData;
+    }
+  } catch (error) {
+    logZonaPagosError(error, {
+      endpoint,
+      pagoId: context.pagoId,
+      elapsedMs: Date.now() - startedAt,
+    });
+    const controlledError: any = new Error(getZonaPagosUserMessage(error));
+    controlledError.originalCode = error?.code;
+    throw controlledError;
   }
 };
 
@@ -699,6 +773,7 @@ export const inicioPagoInscripcion = async (req: any, res: any) => {
 //   /transaccion/InicioPagosVarios
 //====================================
 export const inicioPagosVarios = async (req: any, res: any) => {
+  const profile = createProfileLogger(isProfileEnabled(req), "InicioPagosVarios");
   let fechaActual = new Date();
   //fechaActual.setMonth(fechaActual.getMonth() + 12);
 
@@ -730,16 +805,25 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       body.apellido1 +
       body.apellido2 +
       body.id_cliente;
-    let codigoFactura = await generarCodigoFactura(
-      cadenaCodigo.toUpperCase().trim()
-    );
-    let resultPaquete = await getPaquete(body.id_paquete);
-    console.log("paquete encontrado : ", body.id_paquete);
-    console.log(resultPaquete);
-    let programa = await getProgramaByIdProPersona(
-      body.id_programa_persona.trim()
-    );
-    let estudianteDb: any = await getInfoUsuario(body.id_persona);
+    const [codigoFactura, resultPaquete, programa, estudianteDb] = await Promise.all([
+      profile("generarCodigoFactura", () => generarCodigoFactura(cadenaCodigo.toUpperCase().trim())),
+      profile("getPaquete", () => getPaquete(body.id_paquete)),
+      profile("getProgramaByIdProPersona", () => getProgramaByIdProPersona(String(body.id_programa_persona).trim())),
+      profile("getInfoUsuario", () => getInfoUsuario(body.id_persona)),
+    ]);
+
+    if (resultPaquete == false || resultPaquete.length === 0) {
+      throw new Error("No se encontraron conceptos configurados para el pago seleccionado");
+    }
+
+    if (Number(body.id_paquete) !== 0 && !resultPaquete.some((concepto: any) => Number(concepto.concepto_id) === 0)) {
+      const expectedTotal = resultPaquete.reduce((sum: number, concepto: any) => {
+        return sum + (Number(concepto.valor_unidad) * cantidad);
+      }, 0);
+      if (Math.round(expectedTotal) !== Math.round(totalRequest)) {
+        throw new Error("El total enviado no coincide con el concepto seleccionado");
+      }
+    }
 
     info_cliente = {
       cod_matricula: null,
@@ -760,7 +844,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       nom_nivel_educativo: null,
       cod_nivel_edu: null,
       cod_nivel_educativo: null,
-      id_programa_persona: Number(body.id_programa_persona.trim()) ?? null,
+      id_programa_persona: Number(String(body.id_programa_persona).trim()) ?? null,
       nro_creditos: null,
     };
 
@@ -773,8 +857,6 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       info_cliente.cod_nivel_edu = programa[0].cod_nivel_edu;
       info_cliente.cod_nivel_educativo = programa[0].cod_nivel_educativo;
     } else {
-      console.log("NO SE ENCONTRÓ EL PROGRAMA");
-      console.log(programa);
       throw new Error(
         "No se ha podido consultar el programa academico, intente nuevamente"
       );
@@ -794,10 +876,10 @@ export const inicioPagosVarios = async (req: any, res: any) => {
     }
 
     // verificar si ya existe una factura sin pagar
-    const resultExistePago = await existeFactura(
+    const resultExistePago = await profile("existeFactura", () => existeFactura(
       body.id_persona,
       resultPaquete[0].categoria_id
-    );
+    ));
 
     //GUARDAR EL PAGO EN LA DB
     const tPago: any = {
@@ -837,8 +919,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
 
     if (!resultExistePago) {
       //preparamos la data para guardar
-      resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
-      console.log(resultSavePago);
+      resultSavePago = await profile("guardarPagoyDetalle", () => guardarPagoyDetalle(tPago, tDetallePago));
       //   no se guardó exitosamente
       if (resultSavePago == false) {
         throw new Error("No se ha podido guardar el pago");
@@ -846,11 +927,11 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       id_pago = resultSavePago[0];
     } else {
       id_pago = resultExistePago._id;
-      resultSavePago = await actualizarPagoyDetalleNew(
+      resultSavePago = await profile("actualizarPagoyDetalleNew", () => actualizarPagoyDetalleNew(
         tPago,
         tDetallePago,
         id_pago
-      );
+      ));
 
       if (resultSavePago != false) {
         id_pago = resultSavePago[0];
@@ -879,17 +960,17 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       total_a_pagar_i: parseInt(Math.round(body.total).toString()),
     };
 
-    let [codigo1] = await generarCodigoBarrasText(
+    let [codigo1] = await profile("generarCodigoBarrasText", () => generarCodigoBarrasText(
       resultSavePago[0],
       body.total,
       fechaLimitepago2
-    );
+    ));
     //acualizar codigo de barras en la base de datos y el json con la referencia
     let dataPagoUpdate = {
       codigo_barras: codigo1,
       json_response: JSON.stringify(json_detalle),
     };
-    let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+    let respDB = await profile("updateDataPago", () => updateDataPago(dataPagoUpdate, resultSavePago[0]));
 
     //INICAMOS EL PAGO CON ZONAPAGOS
     if (isPagoOnline) {
@@ -920,7 +1001,7 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       );
 
       let bodyZonapagos = dataConfigPago(finpago2);
-      responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
+      responseDataZonaPagos = await profile("ZonaPagos InicioPago", () => inicarPagoZonaPagos(bodyZonapagos, { pagoId: id_pago }));
     } else {
       //llenamos el idpago al detalle
       resultPaquete.forEach(
@@ -947,10 +1028,13 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       data: responseDataZonaPagos,
     });
   } catch (error) {
-    console.log(error);
+    console.log("[INICIO_PAGOS_VARIOS_ERROR]", {
+      code: error?.originalCode || error?.code,
+      message: error?.message,
+    });
     res.status(500).json({
       error: true,
-      message: "El servicio no esta disponible: " + error.message,
+      message: error.message || "El servicio no está disponible temporalmente.",
     });
   }
 };
