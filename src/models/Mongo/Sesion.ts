@@ -39,4 +39,6 @@ const SesionSchema = new Schema<SesionInterface>({
     },
 });
 
+SesionSchema.set("bufferCommands", false);
+
 export default model<SesionInterface>('Sesion', SesionSchema);

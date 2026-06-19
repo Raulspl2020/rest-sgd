@@ -13,6 +13,13 @@ import { decodePagoToList } from "./decodePagoToList";
 
 // pendiente borrar los pagos que lleven mas de 7 dias iniciados y no tengan detalle_pago
 
+let isVerificandoPagosOnline = false;
+
+const getCronNumber = (value: any, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 export const verificaPagosPendientes = async () => {
   const startedAt = Date.now();
   console.log(`[perf] cron verificaPagosPendientes inicio`);
@@ -46,37 +53,73 @@ export const verificaPagosPendientes = async () => {
 };
 export const verificaPagosPendientesOnline = async () => {
   const startedAt = Date.now();
+  if (isVerificandoPagosOnline) {
+    console.log("[cron] verificaPagosPendientesOnline omitido: ya hay una ejecución activa");
+    return null;
+  }
+
+  isVerificandoPagosOnline = true;
   console.log(`[perf] cron verificaPagosPendientesOnline inicio`);
   let minutos = !process.env.TIEMPO_VERIFICACION_MIN
     ? 7
     : parseInt(process.env.TIEMPO_VERIFICACION_MIN.toString());
+  const limit = getCronNumber(process.env.CRON_PAGOS_ONLINE_LIMIT, 10);
+  const timeoutMs = getCronNumber(process.env.CRON_PAGOS_ONLINE_TIMEOUT_MS, 10000);
   try {
     const sqlStartedAt = Date.now();
-    let result = await getPagosOnlinePendientes(minutos);
+    let result = await getPagosOnlinePendientes(minutos, limit);
     console.log(`[perf] SQL getPagosOnlinePendientes ${Date.now() - sqlStartedAt}ms`);
-    if (result != false) {
-      result.forEach((row: any) => {
-        console.log(`VERIFICANDO FACTURA: ${row.id_factura}`);
-
-        const fetchStartedAt = Date.now();
-        fetch(
-          `${process.env.BASE_URL}/transaccion/estado?id_pago=${row.id_factura}`
-        )
-          .then((response) => response.json())
-          .then((responseData) => {
-            console.log(`[perf] HTTP cron.verificaPagosPendientesOnline.estado ${Date.now() - fetchStartedAt}ms`);
-            console.log("Ejecutando tarea de verificacion");
-            return responseData;
-          });
-      });
-    } else {
+    if (result == false) {
+      console.log("[cron] pagos pendientes encontrados: 0");
       return null;
+    }
+
+    console.log(`[cron] pagos pendientes encontrados: ${result.length}`);
+    let index = 0;
+    for (const row of result) {
+      index++;
+      const idPago = row.id_factura;
+      const paymentStartedAt = Date.now();
+      console.log(`[cron] verificando pago ${index} de ${result.length} id_pago=${idPago}`);
+
+      try {
+        const fetchStartedAt = Date.now();
+        const response = await fetch(
+          `${process.env.BASE_URL}/transaccion/estado?id_pago=${idPago}`,
+          { timeout: timeoutMs },
+        );
+        const elapsedMs = Date.now() - fetchStartedAt;
+        console.log(`[perf] HTTP cron.verificaPagosPendientesOnline.estado ${elapsedMs}ms`);
+
+        let responseData: any = null;
+        try {
+          responseData = await response.json();
+        } catch (parseError) {
+          responseData = { error: true, message: "Respuesta no JSON" };
+        }
+
+        if (!response.ok || responseData?.error) {
+          console.log(
+            `[cron] pago id_pago=${idPago} fail tiempo=${Date.now() - paymentStartedAt}ms status=${response.status} message=${responseData?.message || responseData?.data?.str_detalle || "sin detalle"}`,
+          );
+          continue;
+        }
+
+        console.log(`[cron] pago id_pago=${idPago} ok tiempo=${Date.now() - paymentStartedAt}ms`);
+      } catch (error) {
+        const timeoutMessage = error?.type === "request-timeout" || error?.code === "ETIMEDOUT"
+          ? "timeout"
+          : error?.message || "error desconocido";
+        console.log(`[cron] pago id_pago=${idPago} fail tiempo=${Date.now() - paymentStartedAt}ms error=${timeoutMessage}`);
+      }
     }
   } catch (error) {
     console.log("Error de SONDA");
     console.log(error);
     return false;
   } finally {
+    isVerificandoPagosOnline = false;
+    console.log(`[cron] total verificaPagosPendientesOnline ${Date.now() - startedAt}ms`);
     console.log(`[perf] cron verificaPagosPendientesOnline fin ${Date.now() - startedAt}ms`);
   }
 };

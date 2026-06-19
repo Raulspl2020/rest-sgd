@@ -90,7 +90,9 @@ export const googleAuth = async (req: any, res: any) => {
         fecha_caducidad: new Date(exp * 1000),
       });
       //no es necesario esperar que se guarde
-      sesion.save();
+      sesion.save().catch((error) => {
+        console.log(`[mongo] no se pudo guardar sesión: ${error?.message || error}`);
+      });
 
       res.json({
         error: false,
@@ -172,7 +174,9 @@ export const auth = async (req: any, res: any = response) => {
       });
 
       //no es necesario esperar que se guarde
-      sesion.save();
+      sesion.save().catch((error) => {
+        console.log(`[mongo] no se pudo guardar sesión: ${error?.message || error}`);
+      });
 
       data = {
         usuario,

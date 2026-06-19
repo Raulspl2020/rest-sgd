@@ -105,7 +105,8 @@ export const obtenerPagosPendientes = async (
   }
 };
 
-export const getPagosOnlinePendientes = async (minutos: number) => {
+export const getPagosOnlinePendientes = async (minutos: number, limit: number = 10) => {
+  const safeLimit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
   const sql = `SELECT  
   fin_pago._id AS id_factura,
   fin_pago.codigo,
@@ -115,15 +116,15 @@ export const getPagosOnlinePendientes = async (minutos: number) => {
   fin_pago.valor
   FROM fin_pago 
 
-  WHERE  TIMESTAMPDIFF(MINUTE,fin_pago.fecha,NOW()) >= ?
+  WHERE fin_pago.fecha <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
    AND ( fin_pago.is_online='1' OR fin_pago.is_online IS NULL )
-and TIMESTAMPDIFF(MONTH ,fin_pago.fecha,NOW()) <=3
+and fin_pago.fecha >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
   and fin_pago.estado_id <> 1      
   ORDER BY fin_pago.fecha desc
-  limit 10
+  limit ?
      `;
 
-  let result = await conDB.raw(sql, [minutos]);
+  let result = await conDB.raw(sql, [minutos, safeLimit]);
   if (result[0].length > 0) {
     return result[0];
   }
