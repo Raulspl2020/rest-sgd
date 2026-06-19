@@ -1,5 +1,6 @@
 import { conDB } from '../config/database';
 export const getInfoMatricula = async (cod_matricula: any) => {
+    const startedAt = Date.now();
     // cod_nivel_edu: 6= tecnologico 7= profesional
     let sql = `SELECT
     col_matricula.cod_matricula
@@ -53,42 +54,56 @@ export const getInfoMatricula = async (cod_matricula: any) => {
           ON (col_colegio_periodo.cod_periodo = col_periodo.cod_periodo)
                 WHERE col_matricula.cod_matricula =? 
         GROUP BY col_matricula.cod_matricula`;
-    return await conDB.raw(sql, [cod_matricula]);
+    try {
+        return await conDB.raw(sql, [cod_matricula]);
+    } finally {
+        console.log(`[perf] SQL getInfoMatricula ${Date.now() - startedAt}ms`);
+    }
 };
 
 
 export const getDetPeriodo = async (cod_colegio: any, cod_periodo: any, fechaActual: string) => {
+    const startedAt = Date.now();
     // let fechaActual='2021-03-29';
-    let result = await conDB
-        .select("cod_colegio_periodo", "fec_inicio", "fec_fin", "cod_estado", "fec_ini_matordinaria", "fec_fin_matordinaria", "fec_ini_matextraord", "fec_fin_matextraord")
-        .from("col_colegio_periodo")
-        .whereRaw('? BETWEEN fec_ini_matordinaria AND fec_fin_matordinaria', [fechaActual])
-        .where({
-            'cod_colegio': cod_colegio,
-            'cod_periodo': cod_periodo
-        });
-    if (result.length > 0) {
-        return result[0];
-    } else {
-        return false;
+    try {
+        let result = await conDB
+            .select("cod_colegio_periodo", "fec_inicio", "fec_fin", "cod_estado", "fec_ini_matordinaria", "fec_fin_matordinaria", "fec_ini_matextraord", "fec_fin_matextraord")
+            .from("col_colegio_periodo")
+            .whereRaw('? BETWEEN fec_ini_matordinaria AND fec_fin_matordinaria', [fechaActual])
+            .where({
+                'cod_colegio': cod_colegio,
+                'cod_periodo': cod_periodo
+            });
+        if (result.length > 0) {
+            return result[0];
+        } else {
+            return false;
+        }
+    } finally {
+        console.log(`[perf] SQL getDetPeriodo ${Date.now() - startedAt}ms`);
     }
 };
 
 
 //obtiene las fechas configuradas en cada sede: col_colegio_periodo
 export const getFechasPeriodo = async (cod_colegio: any, cod_periodo: any) => {
+    const startedAt = Date.now();
     // let fechaActual='2021-03-29';
-    let result = await conDB
-        .select()
-        .from("col_colegio_periodo")
-        .where({
-            'cod_colegio': cod_colegio,
-            'cod_periodo': cod_periodo
-        });
-    if (result.length > 0) {
-        return result[0];
-    } else {
-        return false;
+    try {
+        let result = await conDB
+            .select()
+            .from("col_colegio_periodo")
+            .where({
+                'cod_colegio': cod_colegio,
+                'cod_periodo': cod_periodo
+            });
+        if (result.length > 0) {
+            return result[0];
+        } else {
+            return false;
+        }
+    } finally {
+        console.log(`[perf] SQL getFechasPeriodo ${Date.now() - startedAt}ms`);
     }
 };
 
@@ -251,7 +266,6 @@ export const getProgramaByIdProPersona = async (id_programa_persona: string) => 
     }
 
 }
-
 
 
 

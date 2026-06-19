@@ -306,13 +306,18 @@ export const actualizarPagoyDetalle = async (
 //obtiene la configuracion del periodo
 //traer la configuracion mas reciente
 export const getConfigPeriodo = async () => {
-  let result = await conDB
-    .select()
-    .from("fin_config")
-    .where("estado", 1)
-    .limit(1)
-    .first();
-  return result;
+  const startedAt = Date.now();
+  try {
+    let result = await conDB
+      .select()
+      .from("fin_config")
+      .where("estado", 1)
+      .limit(1)
+      .first();
+    return result;
+  } finally {
+    console.log(`[perf] SQL getConfigPeriodo ${Date.now() - startedAt}ms`);
+  }
 };
 
 //obtiene una categoria de porcentaje
@@ -332,8 +337,10 @@ export const getCategoriaPorcentajeByMatricula = async (
   estudiante_id: any,
   periodo_id: any
 ) => {
-  let result = await conDB
-    .select(
+  const startedAt = Date.now();
+  try {
+    let result = await conDB
+      .select(
       "fin_porcentaje_soporte._id",
       "fin_porcentaje_soporte.fecha",
       "fin_porcentaje_soporte.porcentaje",
@@ -366,14 +373,22 @@ export const getCategoriaPorcentajeByMatricula = async (
       { column: "fin_porcentaje_soporte.accion" },
       { column: "fin_porcentaje_soporte.porcentaje_estado_id" },
       { column: "fin_porcentaje_soporte.porcentaje", order: "asc" },
-    ]);
-  return result;
+      ]);
+    return result;
+  } finally {
+    console.log(`[perf] SQL getCategoriaPorcentajeByMatricula ${Date.now() - startedAt}ms`);
+  }
 };
 
 //guarda una solicitud de descuento o aumento
 export const guardarProcentajeSoporte = async (data: any) => {
-  let result = await conDB("fin_porcentaje_soporte").insert(data);
-  return result;
+  const startedAt = Date.now();
+  try {
+    let result = await conDB("fin_porcentaje_soporte").insert(data);
+    return result;
+  } finally {
+    console.log(`[perf] SQL guardarProcentajeSoporte ${Date.now() - startedAt}ms`);
+  }
 };
 
 export const getSoporteDescuentoById = async (id: any) => {
@@ -389,6 +404,7 @@ export const getSoporteDescuentoById = async (id: any) => {
 
 //obtiene el detalle de un paquete
 export const getPaquete = async (codigo: any) => {
+  const startedAt = Date.now();
   let sql = `SELECT
   fin_paquete.codigo
   , fin_paquete.descripcion AS paquete
@@ -414,11 +430,15 @@ FROM
       GROUP BY fin_detalle_paquete._id
       `;
 
-  let result = await conDB.raw(sql, [codigo]);
-  if (result[0].length > 0) {
-    return result[0];
-  } else {
-    return false;
+  try {
+    let result = await conDB.raw(sql, [codigo]);
+    if (result[0].length > 0) {
+      return result[0];
+    } else {
+      return false;
+    }
+  } finally {
+    console.log(`[perf] SQL getPaquete ${Date.now() - startedAt}ms`);
   }
 };
 
@@ -428,8 +448,10 @@ export const getDescuento = async (
   periodo_id: any,
   estudiante_id: any
 ) => {
-  let result = await conDB
-    .select(
+  const startedAt = Date.now();
+  try {
+    let result = await conDB
+      .select(
       "fin_porcentaje_soporte._id",
       "fin_porcentaje_soporte.porcentaje",
       "fin_porcentaje_soporte.accion",
@@ -454,8 +476,11 @@ export const getDescuento = async (
     .orderBy([
       { column: "fin_porcentaje_soporte.accion" },
       { column: "fin_porcentaje_soporte.porcentaje", order: "asc" },
-    ]);
-  return result;
+      ]);
+    return result;
+  } finally {
+    console.log(`[perf] SQL getDescuento ${Date.now() - startedAt}ms`);
+  }
 };
 
 //cambia el estado del descuento a Facturado para que no se pueda volver a usar
@@ -492,11 +517,16 @@ export const updateEstadoDescuentoFac = async (ids: any, pago_id: any) => {
 
 //consulta las categorias de descuento disponibles
 export const getCategriaDescuento = async (accion: any) => {
-  let result = await conDB
-    .select()
-    .from("fin_porcetaje_categoria")
-    .where({ accion: accion });
-  return result;
+  const startedAt = Date.now();
+  try {
+    let result = await conDB
+      .select()
+      .from("fin_porcetaje_categoria")
+      .where({ accion: accion });
+    return result;
+  } finally {
+    console.log(`[perf] SQL getCategriaDescuento ${Date.now() - startedAt}ms`);
+  }
 };
 
 //añade el codigo de barras a un pago ya creado
@@ -538,8 +568,10 @@ export const getPagoByID = async (id: number) => {
 
 //verificar si ya se genero un pago antes y no esta pagado
 export const existePago = async (cod_paquete: string, matricula_id: string) => {
-  let result = await conDB
-    .select(
+  const startedAt = Date.now();
+  try {
+    let result = await conDB
+      .select(
       "fin_pago._id",
       "fin_pago.json_response",
       "fin_pago.codigo",
@@ -554,10 +586,13 @@ export const existePago = async (cod_paquete: string, matricula_id: string) => {
       "fin_pago.matricula_id": matricula_id,
     });
 
-  if (result.length > 0) {
-    return result[0];
-  } else {
-    return false;
+    if (result.length > 0) {
+      return result[0];
+    } else {
+      return false;
+    }
+  } finally {
+    console.log(`[perf] SQL existePago ${Date.now() - startedAt}ms`);
   }
 };
 
@@ -659,8 +694,10 @@ export const getFacturaByMatricula = async (
   matricula_id: any,
   cod_paquete: any
 ) => {
-  let result = await conDB
-    .select(
+  const startedAt = Date.now();
+  try {
+    let result = await conDB
+      .select(
       "fin_pago._id",
       "fin_pago.codigo",
       "fin_pago.descripcion AS desc_factura",
@@ -689,10 +726,13 @@ export const getFacturaByMatricula = async (
     })
     .orderBy([{ column: "fin_pago.fecha", order: "desc" }]);
 
-  if (result.length > 0) {
-    return result;
-  } else {
-    return [];
+    if (result.length > 0) {
+      return result;
+    } else {
+      return [];
+    }
+  } finally {
+    console.log(`[perf] SQL getFacturaByMatricula ${Date.now() - startedAt}ms`);
   }
 };
 
@@ -744,13 +784,16 @@ export const getPagoFactura = async (id_factura: any): Promise<any[]> => {
 };
 
 export const getPagoFacturaByFacturaIds = async (ids_factura: any[]): Promise<any[]> => {
+  const startedAt = Date.now();
   const invoiceIds = Array.from(new Set(ids_factura.filter((id) => id !== undefined && id !== null)));
   if (invoiceIds.length === 0) {
+    console.log(`[perf] SQL getPagoFacturaByFacturaIds ${Date.now() - startedAt}ms`);
     return [];
   }
 
-  const result = await conDB
-    .select(
+  try {
+    const result = await conDB
+      .select(
       "fin_detalle_pago._id",
       "fin_detalle_pago.pago_id",
       "fin_detalle_pago.valor_pago",
@@ -787,7 +830,10 @@ export const getPagoFacturaByFacturaIds = async (ids_factura: any[]): Promise<an
       "fin_detalle_pago.estado_pago_id": 1,
     });
 
-  return result.length > 0 ? result : [];
+    return result.length > 0 ? result : [];
+  } finally {
+    console.log(`[perf] SQL getPagoFacturaByFacturaIds ${Date.now() - startedAt}ms`);
+  }
 };
 
 //obtiene los descuentos aplicados a una factura  con su respectivo estado

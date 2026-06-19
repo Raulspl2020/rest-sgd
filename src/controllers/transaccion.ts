@@ -57,6 +57,7 @@ export const soporteDescuento = async (req: any, res = response) => {
   let id_config: any = null;
   const startedAt = Date.now();
   const traceId = `SUP-${startedAt}-${Math.floor(Math.random() * 100000)}`;
+  console.log(`[perf] POST /api/transaccion/soportedescuento inicio`);
   try {
     console.log("[SOPORTE_UPLOAD] inicio request", {
       traceId,
@@ -162,9 +163,11 @@ export const soporteDescuento = async (req: any, res = response) => {
       });
     }
 
+    const categoriaStartedAt = Date.now();
     let resultCategoria = await getCategoriaPorcentaje(
       porcentajeCategoriaId
     );
+    console.log(`[perf] SQL getCategoriaPorcentaje ${Date.now() - categoriaStartedAt}ms`);
     if (!resultCategoria) {
       return res.status(400).json({
         message: "La categoría de descuento no existe",
@@ -185,7 +188,9 @@ export const soporteDescuento = async (req: any, res = response) => {
     //subir el archivo si existe
     if (req.files && req.files.archivo) {
       const carpeta = `soportedescuento/${estudianteId}-${matriculaId}/`;
+      const uploadStartedAt = Date.now();
       const dataFile: any = await subirArchivo(req.files, ["pdf"], carpeta);
+      console.log(`[perf] subirArchivo ${Date.now() - uploadStartedAt}ms`);
       console.log("[SOPORTE_UPLOAD] archivo guardado", {
         traceId,
         nombre: dataFile?.[0],
@@ -233,6 +238,8 @@ export const soporteDescuento = async (req: any, res = response) => {
         : 1,
     };
 
+    const transformStartedAt = Date.now();
+    console.log(`[perf] transformarDataPorcentaje ${Date.now() - transformStartedAt}ms`);
     let resultInsert = await guardarProcentajeSoporte(dataPorcentaje);
     console.log("[SOPORTE_UPLOAD] soporte insertado", {
       traceId,
@@ -244,6 +251,8 @@ export const soporteDescuento = async (req: any, res = response) => {
       traceId,
       elapsedMs: Date.now() - startedAt,
     });
+    console.log(`[perf] TOTAL REQUEST ${Date.now() - startedAt}ms`);
+    console.log(`[perf] POST /api/transaccion/soportedescuento fin ${Date.now() - startedAt}ms`);
     return res.status(200).json({
       message: "Solicitud enviada exitosamente.",
       error: false,
@@ -251,6 +260,8 @@ export const soporteDescuento = async (req: any, res = response) => {
       dataPorcentaje,
     });
   } catch (error) {
+    console.log(`[perf] TOTAL REQUEST ${Date.now() - startedAt}ms`);
+    console.log(`[perf] POST /api/transaccion/soportedescuento fin ${Date.now() - startedAt}ms`);
     console.log("[SOPORTE_UPLOAD] error soporteDescuento", {
       traceId,
       elapsedMs: Date.now() - startedAt,

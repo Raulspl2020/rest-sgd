@@ -30,6 +30,16 @@ class Server {
   }
 
   async cronJob() {
+    let lastTick = Date.now();
+    setInterval(() => {
+      const now = Date.now();
+      const lagMs = now - lastTick - 1000;
+      if (lagMs > 100) {
+        console.log(`[perf] eventLoopLag ${lagMs}ms`);
+      }
+      lastTick = now;
+    }, 1000);
+
     if (process.env.NODE_ENV === "pro") {
       cron.schedule("*/15 * * * *", () => verificaPagosPendientesOnline());
       cron.schedule("*/10 * * * *", () => verificaPagosPendienteSysApolo());
@@ -39,6 +49,16 @@ class Server {
   middlewares() {
     //Cors
     this.app.use(cors());
+
+    this.app.use((req, res, next) => {
+      const startedAt = Date.now();
+      const processName = `${req.method} ${req.originalUrl}`;
+      console.log(`[perf] ${processName} inicio`);
+      res.on("finish", () => {
+        console.log(`[perf] ${processName} fin ${Date.now() - startedAt}ms status=${res.statusCode}`);
+      });
+      next();
+    });
 
     //File-uploads (must run before body parsers for multipart/form-data)
     this.app.use(

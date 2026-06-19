@@ -59,7 +59,8 @@ const sumDiscountRateWithCap = (currentRate: any, incomingRate: any): number => 
 type ProfileLogger = <T>(label: string, task: () => Promise<T>) => Promise<T>;
 
 const createProfileLogger = (enabled: boolean, scope: string): ProfileLogger => {
-    return async <T>(label: string, task: () => Promise<T>): Promise<T> => {
+    const entries: Array<{ label: string; ms: number }> = [];
+    const profile = async <T>(label: string, task: () => Promise<T>): Promise<T> => {
         if (!enabled) {
             return task();
         }
@@ -68,9 +69,28 @@ const createProfileLogger = (enabled: boolean, scope: string): ProfileLogger => 
         try {
             return await task();
         } finally {
-            console.log(`[profile:${scope}] ${label}: ${Date.now() - start}ms`);
+            const ms = Date.now() - start;
+            entries.push({ label, ms });
+            console.log(`[profile:${scope}] ${label}: ${ms}ms`);
+            console.log(`[perf] ${label} ${ms}ms`);
         }
     };
+
+    (profile as any).entries = entries;
+    return profile;
+};
+
+const logProfileSummary = (profile: ProfileLogger, totalMs: number) => {
+    const entries = ((profile as any).entries || []) as Array<{ label: string; ms: number }>;
+    entries
+        .slice()
+        .sort((a, b) => b.ms - a.ms)
+        .slice(0, 10)
+        .forEach((entry, index) => {
+            const pct = totalMs > 0 ? ((entry.ms * 100) / totalMs).toFixed(1) : "0.0";
+            console.log(`[perf] TOP ${index + 1} ${entry.label} ${entry.ms}ms ${pct}%`);
+        });
+    console.log(`[perf] TOTAL REQUEST ${totalMs}ms`);
 };
 
 const calculateSubtotalWithDiscountCap = (
@@ -723,7 +743,7 @@ export const generarpagoMatricula = async (req: any, res: any) => {
     console.log(`[perf:rest-sgd] GET ${endpoint} start params=${JSON.stringify(req.params)} query=${JSON.stringify(req.query)}`);
 
     try {
-        const enableProfile = req.query.profile === "1";
+        const enableProfile = true;
         const profile = createProfileLogger(enableProfile, `pagomatricula:${idMatricula}`);
         const [result, categorias]: any[] = await Promise.all([
             profile("consultarpagoMatricula", () => consultarpagoMatricula(idMatricula, profile)),
@@ -731,10 +751,13 @@ export const generarpagoMatricula = async (req: any, res: any) => {
         ]);
 
         result.categorias = categorias;
+        logProfileSummary(profile, Date.now() - startedAt);
         console.log(`[perf:rest-sgd] GET ${endpoint} total ${Date.now() - startedAt}ms`);
+        console.log(`[perf] GET ${endpoint} fin ${Date.now() - startedAt}ms`);
         return res.status(200).json(result);
 
     } catch (error) {
+        console.log(`[perf] GET ${endpoint} fin ${Date.now() - startedAt}ms`);
         console.log(`[perf:rest-sgd] GET ${endpoint} failed ${Date.now() - startedAt}ms error=${error?.message}`);
         return res.status(500).json({
             error: true,

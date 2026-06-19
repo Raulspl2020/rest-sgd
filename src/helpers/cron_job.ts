@@ -14,16 +14,22 @@ import { decodePagoToList } from "./decodePagoToList";
 // pendiente borrar los pagos que lleven mas de 7 dias iniciados y no tengan detalle_pago
 
 export const verificaPagosPendientes = async () => {
+  const startedAt = Date.now();
+  console.log(`[perf] cron verificaPagosPendientes inicio`);
   try {
+    const sqlStartedAt = Date.now();
     let result = await obtenerPagosPendientes(7, [29, 32]);
+    console.log(`[perf] SQL obtenerPagosPendientes ${Date.now() - sqlStartedAt}ms`);
 
     if (result != false) {
       result.forEach((row: any) => {
+        const fetchStartedAt = Date.now();
         fetch(
           `${process.env.BASE_URL}/transaccion/estado?id_pago=${row.codigo}`
         )
           .then((response) => response.json())
           .then((responseData) => {
+            console.log(`[perf] HTTP cron.verificaPagosPendientes.estado ${Date.now() - fetchStartedAt}ms`);
             console.log("Ejecutando tarea de verificacion");
             return responseData;
           });
@@ -34,23 +40,31 @@ export const verificaPagosPendientes = async () => {
   } catch (error) {
     console.log(error);
     return false;
+  } finally {
+    console.log(`[perf] cron verificaPagosPendientes fin ${Date.now() - startedAt}ms`);
   }
 };
 export const verificaPagosPendientesOnline = async () => {
+  const startedAt = Date.now();
+  console.log(`[perf] cron verificaPagosPendientesOnline inicio`);
   let minutos = !process.env.TIEMPO_VERIFICACION_MIN
     ? 7
     : parseInt(process.env.TIEMPO_VERIFICACION_MIN.toString());
   try {
+    const sqlStartedAt = Date.now();
     let result = await getPagosOnlinePendientes(minutos);
+    console.log(`[perf] SQL getPagosOnlinePendientes ${Date.now() - sqlStartedAt}ms`);
     if (result != false) {
       result.forEach((row: any) => {
         console.log(`VERIFICANDO FACTURA: ${row.id_factura}`);
 
+        const fetchStartedAt = Date.now();
         fetch(
           `${process.env.BASE_URL}/transaccion/estado?id_pago=${row.id_factura}`
         )
           .then((response) => response.json())
           .then((responseData) => {
+            console.log(`[perf] HTTP cron.verificaPagosPendientesOnline.estado ${Date.now() - fetchStartedAt}ms`);
             console.log("Ejecutando tarea de verificacion");
             return responseData;
           });
@@ -62,13 +76,19 @@ export const verificaPagosPendientesOnline = async () => {
     console.log("Error de SONDA");
     console.log(error);
     return false;
+  } finally {
+    console.log(`[perf] cron verificaPagosPendientesOnline fin ${Date.now() - startedAt}ms`);
   }
 };
 
 // se usa para reconstruir todos los pagos
 export const verificaPagosNpago = async () => {
+  const startedAt = Date.now();
+  console.log(`[perf] cron verificaPagosNpago inicio`);
   try {
+    const sqlStartedAt = Date.now();
     const resultDB = await consultaPagosSINNPAGO();
+    console.log(`[perf] SQL consultaPagosSINNPAGO ${Date.now() - sqlStartedAt}ms`);
 
     console.log("Iniciamos la verificacion");
     for (const row of resultDB) {
@@ -80,6 +100,7 @@ export const verificaPagosNpago = async () => {
         str_id_pago: row.pago_id,
       };
 
+      const fetchStartedAt = Date.now();
       let response = await fetch(
         process.env.ZONAPAGOS_URL + "/VerificacionPago",
         {
@@ -88,7 +109,10 @@ export const verificaPagosNpago = async () => {
           headers: { "Content-Type": "application/json" },
         }
       );
+      console.log(`[perf] HTTP ZonaPagos.VerificacionPago.response ${Date.now() - fetchStartedAt}ms`);
+      const jsonStartedAt = Date.now();
       let responseData = await response.json();
+      console.log(`[perf] HTTP ZonaPagos.VerificacionPago.json ${Date.now() - jsonStartedAt}ms`);
       let detPago: any = [];
       //si encuentra los pagos
       if (responseData.int_error == 0 && responseData.int_cantidad_pagos > 0) {
@@ -138,7 +162,9 @@ export const verificaPagosNpago = async () => {
           });
         });
 
+        const updateStartedAt = Date.now();
         let resDb2 = await actualizarPagoyDetalleVeri(row.pago_id, detPago);
+        console.log(`[perf] SQL actualizarPagoyDetalleVeri ${Date.now() - updateStartedAt}ms`);
 
         console.log("Respuesta de BD");
         console.log(resDb2);
@@ -146,17 +172,25 @@ export const verificaPagosNpago = async () => {
     }
   } catch (error) {
     console.log(error);
+  } finally {
+    console.log(`[perf] cron verificaPagosNpago fin ${Date.now() - startedAt}ms`);
   }
 };
 
 //obtener pagos pendientes por registrar en sysApolo
 export const verificaPagosPendienteSysApolo = async () => {
+  const startedAt = Date.now();
+  console.log(`[perf] cron verificaPagosPendienteSysApolo inicio`);
+  const sqlStartedAt = Date.now();
   const facturasPagadas = await consultaFacturasPagadas();
+  console.log(`[perf] SQL consultaFacturasPagadas ${Date.now() - sqlStartedAt}ms`);
 
   for (let factura of facturasPagadas) {
+    const facturaStartedAt = Date.now();
     const [ok, message] = await registroFacturaSysApolo(
       parseInt(factura.id_factura)
     );
+    console.log(`[perf] registroFacturaSysApolo ${Date.now() - facturaStartedAt}ms`);
 
     if (ok) {
       console.log(
@@ -166,4 +200,5 @@ export const verificaPagosPendienteSysApolo = async () => {
       console.log(message);
     }
   }
+  console.log(`[perf] cron verificaPagosPendienteSysApolo fin ${Date.now() - startedAt}ms`);
 };

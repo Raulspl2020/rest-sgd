@@ -99,6 +99,8 @@ const logZonaPagosError = (error: any, context: { endpoint: string; pagoId?: any
 //   /transaccion/InicioPagoMatricula
 //=================================
 export const inicioPagoMatricula = async (req: any, res: any) => {
+  const requestStartedAt = Date.now();
+  console.log(`[perf] POST /api/transaccion/InicioPagoMatricula inicio`);
   let body = req.body;
   let fechaActualString = format(new Date(), "DD-MM-YYYY hh:mm:ss A");
   let fecha_limite_pago = new Date();
@@ -114,7 +116,9 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
     let responseDataZonaPagos: any = {};
     let str_url = "";
 
+    const consultaStartedAt = Date.now();
     let result: any = await consultarpagoMatricula(body.cod_matricula);
+    console.log(`[perf] consultarpagoMatricula ${Date.now() - consultaStartedAt}ms`);
 
     //console.log(result);
 
@@ -127,7 +131,9 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       matricula.ape2_persona +
       matricula.nom1_persona +
       matricula.nom2_persona;
+    const codigoStartedAt = Date.now();
     let codigoFactura = await generarCodigoFactura(cadenaCodigo.trim());
+    console.log(`[perf] generarCodigoFactura ${Date.now() - codigoStartedAt}ms`);
 
     //verificar si existe pago
     let resultExistePago = await existePago(
@@ -164,7 +170,9 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       });
 
       //preparamos la data para guardar
+      const saveStartedAt = Date.now();
       resultSavePago = await guardarPagoyDetalle(tPago, tDetallePago);
+      console.log(`[perf] SQL guardarPagoyDetalle ${Date.now() - saveStartedAt}ms`);
       //si se guardó exitosamente
       if (resultSavePago != false) {
         id_pago = resultSavePago[0];
@@ -186,11 +194,13 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
         });
       });
 
+      const updateStartedAt = Date.now();
       resultSavePago = await actualizarPagoyDetalleNew(
         tPago,
         tDetallePago,
         id_pago
       );
+      console.log(`[perf] SQL actualizarPagoyDetalleNew ${Date.now() - updateStartedAt}ms`);
       if (resultSavePago != false) {
         id_pago = resultSavePago[0];
       } else {
@@ -238,7 +248,9 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       fecha_limite_pago: format(fecha_limite_pago ?? fechaNueva, "DD-MM-YYYY"),
     };
     infoPagoDB.info_cliente = resultDB;
+    const usuarioStartedAt = Date.now();
     let estudianteDb: any = await getInfoUsuario(matricula.ide_persona);
+    console.log(`[perf] SQL getInfoUsuario ${Date.now() - usuarioStartedAt}ms`);
     if (estudianteDb.length > 0) {
       infoPagoDB.info_cliente.ide_genero = estudianteDb[0].ide_genero || null;
       infoPagoDB.info_cliente.cod_municipio =
@@ -261,18 +273,22 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       { locale: "es-CO" }
     );
 
+    const barcodeStartedAt = Date.now();
     let [codigo1] = await generarCodigoBarrasText(
       resultSavePago[0],
       result.total_a_pagar_int,
       format(periodoInfo.fec_fin_matordinaria, "DD-MM-YYYY")
     );
+    console.log(`[perf] generarCodigoBarrasText ${Date.now() - barcodeStartedAt}ms`);
     //acualizar codigo de barras en la base de datos y el json con la referencia
     let dataPagoUpdate = {
       codigo_barras: codigo1,
       json_response: JSON.stringify(infoPagoDB),
     };
 
+    const updatePagoStartedAt = Date.now();
     let respDB = await updateDataPago(dataPagoUpdate, resultSavePago[0]);
+    console.log(`[perf] SQL updateDataPago ${Date.now() - updatePagoStartedAt}ms`);
 
     //INICAMOS EL PAGO CON ZONAPAGOS
     if (isPagoOnline) {
@@ -303,7 +319,9 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
         0, 70
       );
 
+      const dataConfigStartedAt = Date.now();
       let bodyZonapagos = dataConfigPago(finpago2);
+      console.log(`[perf] dataConfigPago ${Date.now() - dataConfigStartedAt}ms`);
 
       responseDataZonaPagos = await inicarPagoZonaPagos(bodyZonapagos);
     } else {
@@ -322,6 +340,8 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
     }
 
     //si todo esta bien, procedemos a guardar
+    console.log(`[perf] TOTAL REQUEST ${Date.now() - requestStartedAt}ms`);
+    console.log(`[perf] POST /api/transaccion/InicioPagoMatricula fin ${Date.now() - requestStartedAt}ms`);
     return res.status(200).json({
       statusCode: 200,
       message: "Ejecucion correcta",
@@ -331,6 +351,8 @@ export const inicioPagoMatricula = async (req: any, res: any) => {
       new_detalle,
     });
   } catch (error) {
+    console.log(`[perf] TOTAL REQUEST ${Date.now() - requestStartedAt}ms`);
+    console.log(`[perf] POST /api/transaccion/InicioPagoMatricula fin ${Date.now() - requestStartedAt}ms`);
     return res.status(500).json({
       error: true,
       message: error.message,
@@ -540,6 +562,7 @@ const inicarPagoZonaPagos = async (body: any, context: { pagoId?: any } = {}) =>
   //INICAMOS EL PAGO CON ZONAPAGOS
   const startedAt = Date.now();
   const endpoint = `${process.env.ZONAPAGOS_URL}/InicioPago`;
+  console.log(`[perf] HTTP ZonaPagos.InicioPago inicio`);
   try {
     let responseZona = await fetch(endpoint, {
       method: "POST",
@@ -547,6 +570,7 @@ const inicarPagoZonaPagos = async (body: any, context: { pagoId?: any } = {}) =>
       headers: { "Content-Type": "application/json" },
       timeout: getZonaPagosTimeoutMs(),
     });
+    console.log(`[perf] HTTP ZonaPagos.InicioPago.response ${Date.now() - startedAt}ms`);
 
     if (!responseZona.ok) {
       const error: any = new Error(`ZonaPagos respondió HTTP ${responseZona.status}`);
@@ -554,7 +578,9 @@ const inicarPagoZonaPagos = async (body: any, context: { pagoId?: any } = {}) =>
       throw error;
     }
 
+    const jsonStartedAt = Date.now();
     let responseData = await responseZona.json();
+    console.log(`[perf] HTTP ZonaPagos.InicioPago.json ${Date.now() - jsonStartedAt}ms`);
     //si el int_codigo es igual a 1 todo salio bien
     if (responseData.int_codigo != 1) {
       const error: any = new Error("ZonaPagos rechazó los parámetros enviados");
@@ -572,6 +598,8 @@ const inicarPagoZonaPagos = async (body: any, context: { pagoId?: any } = {}) =>
     const controlledError: any = new Error(getZonaPagosUserMessage(error));
     controlledError.originalCode = error?.code;
     throw controlledError;
+  } finally {
+    console.log(`[perf] HTTP ZonaPagos.InicioPago fin ${Date.now() - startedAt}ms`);
   }
 };
 
