@@ -63,6 +63,10 @@
                             </div>
                         </div>
 
+                        <div class="alert alert-info py-2" role="status" v-if="cargandoDatos">
+                            Cargando datos de matrícula...
+                        </div>
+
                         <div class="section-card">
                         <h3 class="section-title">Datos del estudiante</h3>
                         <div class="row">
@@ -262,7 +266,7 @@
                                             </h4> --}}
                                             <button class="btn btn-pay-outline" data-bs-toggle="tooltip"
                                                 @click="continuarPagoEfectivo" data-bs-placement="top"
-                                                :disabled="!activarBotonEf" title="Genera PDF para pago en efectivo">
+                                                :disabled="cargandoDatos || !activarBotonEf" title="Genera PDF para pago en efectivo">
                                                 <i class="fa fa-barcode"></i> {[txtBotonEf]}
                                             </button>
                                         </div>
@@ -273,7 +277,7 @@
                                             {{!-- <h4> Total a pagar: <strong> $ {[ factura.txtTotalPagar ]} </strong>
                                             </h4> --}}
                                             <button class="btn btn-pay-primary" data-bs-toggle="tooltip"
-                                                @click="continuarPago" data-bs-placement="top" :disabled="!activarBoton"
+                                                @click="continuarPago" data-bs-placement="top" :disabled="cargandoDatos || !activarBoton"
                                                 title="Confirma el pago procede al cobro">
                                                 <i class="fa fa-money"></i> {[txtBoton]}
                                             </button>
@@ -565,7 +569,8 @@
                     progresoSoporteTimer: null,
                     showSupportPdfModal: false,
                     supportPdfUrl: '',
-                    supportPdfError: ''
+                    supportPdfError: '',
+                    cargandoDatos: true
                 };
             },
             methods: {
@@ -1022,7 +1027,9 @@
                 },
 
                 consultarPersona() {
-                    console.log("El evento onchange se ejecuta");
+                    this.cargandoDatos = true;
+                    this.mostrarAlert = false;
+                    this.msjResp = '';
 
                     fetch(`{{BASE_URL}}/matricula/generarpagomatricula/{{ID_MATRICULA}}`)
                         .then((response) => response.json())
@@ -1072,8 +1079,16 @@
                                 this.factura.cod_paquete = data.detalle_factura[0].codigo;
 
                             } else {
-                                alert(data.message);
+                                this.msjResp = data.message || 'No fue posible consultar la información de matrícula.';
+                                this.mostrarAlert = true;
                             }
+                        })
+                        .catch((error) => {
+                            this.msjResp = error?.message || 'Servicio no disponible temporalmente para consultar la matrícula.';
+                            this.mostrarAlert = true;
+                        })
+                        .finally(() => {
+                            this.cargandoDatos = false;
                         });
                 },
                 continuarPago(isPagoOnline = true) {

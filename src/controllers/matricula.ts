@@ -1,5 +1,5 @@
 import { getInfoMatricula, getDetPeriodo, insertArrayDescuento, getDataDescuentosByCodigo, getCargaDescuentos, verificaCargueFacturado, eliminaDescuentosCargue } from "../provider/matricula_provider";
-import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago, getFactura, getPagoFactura, getFacturaByMatricula } from "../provider/pago_provider";
+import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago, getFactura, getPagoFactura, getFacturaByMatricula, getPagoFacturaByFacturaIds } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 import xlsx from 'node-xlsx';
@@ -54,6 +54,23 @@ const sumDiscountRateWithCap = (currentRate: any, incomingRate: any): number => 
     const current = clampDiscountRate(currentRate);
     const incoming = clampDiscountRate(incomingRate);
     return clampDiscountRate(current + incoming);
+};
+
+type ProfileLogger = <T>(label: string, task: () => Promise<T>) => Promise<T>;
+
+const createProfileLogger = (enabled: boolean, scope: string): ProfileLogger => {
+    return async <T>(label: string, task: () => Promise<T>): Promise<T> => {
+        if (!enabled) {
+            return task();
+        }
+
+        const start = Date.now();
+        try {
+            return await task();
+        } finally {
+            console.log(`[profile:${scope}] ${label}: ${Date.now() - start}ms`);
+        }
+    };
 };
 
 const calculateSubtotalWithDiscountCap = (
@@ -240,7 +257,7 @@ export const consultarPagoInscripcion = async (req: any, res: any) => {
 
 
 
-export const consultarpagoMatricula = async (id_matricula: any) => {
+export const consultarpagoMatricula = async (id_matricula: any, profile: ProfileLogger = createProfileLogger(false, "matricula")) => {
     let fechaActual = format(new Date(), 'YYYY-MM-DD');
     //let token = req.body.token;
     let resultDB: any;
@@ -260,17 +277,17 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
     id_matricula = id_matricula.trim();
     let resultDescuentos: any = [];
     try {
-        let result = await getInfoMatricula(id_matricula);
-        console.log(result[0]);
+        let result = await profile("getInfoMatricula", () => getInfoMatricula(id_matricula));
         if (result[0].length > 0) {
             resultDB = result[0][0];
-            let resultConfig = await getConfigPeriodo();
+            const resultConfigPromise = profile("getConfigPeriodo", () => getConfigPeriodo());
+            const resultDtoPromise = profile("getDescuento", () => getDescuento("1", resultDB.cod_periodo, resultDB.ide_persona));
 
             // TODO: para consultar las fechas de matriculas 
             // periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
 
            const studentTypeUrl = getStudentTypeUrl();
-           const response = await fetch(`${studentTypeUrl}?matriculaId=${id_matricula}`);
+           const response = await profile("getStudentType", () => fetch(`${studentTypeUrl}?matriculaId=${id_matricula}`));
            const studentType: IStudentType =  await response.json();
            const currenDate =  new Date();
 
@@ -294,7 +311,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
 
             //consular los descuentos y multas que un estudiante tiene asignados
-            let resultDto = await getDescuento("1", resultDB.cod_periodo, resultDB.ide_persona);
+            const [resultConfig, resultDto] = await Promise.all([resultConfigPromise, resultDtoPromise]);
 
 
             resultDto.forEach((row: any) => {
@@ -319,30 +336,19 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 }
             });
 
-            console.log(resultDto);
-            console.log(auxDescripcion);
-
-
-
-
-
-
-
             //configurar deacuerdo a la configuracion del periodo
             if (resultDB.nro_creditos <= resultConfig.min_creditos && resultDB.nro_creditos > 0) {
 
                 //se debe cobrar por credito individual
-                console.log("Se cobra por creditos");
-
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete(1);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(1));
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete(4);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(4));
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete(5);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(5));
                 }else if(resultDB.cod_nivel_edu == 11){
-                    resultPaquete = await getPaquete(33);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(33));
                 }
 
 
@@ -356,17 +362,12 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                     descripcionFactura = " " + resultPaquete[0].paquete + " + " + auxDescripcion
 
                     precios = resultPaquete;
-                    console.log(precios);
                     //recorrer los detalles de paquete
                     precios.forEach((element: any, index: number) => {
 
 
                         //si se puede aplicar descuento externo
                         if (element.descuento_ext == '1') {
-
-                            console.log("Se va a aplicar descuento");
-
-
 
                             //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
                             resultDto.forEach((row: any) => {
@@ -416,9 +417,6 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                                 }
 
                             }
-                            console.log(precios[index].aumento);
-
-
                             let totaAPagar = 0;
                             if (element.cantidad > 0) {
                                 totaAPagar = totaAPagar + (element.subtotal * element.cantidad);
@@ -482,24 +480,16 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 
             } else {
                 //se cobra el valor total de la matricula
-                console.log("Se cobra matricula completa");
-
                 //ciclo tecnologico
                 if (resultDB.cod_nivel_edu == 6) {
-                    resultPaquete = await getPaquete(2);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(2));
                 } else if (resultDB.cod_nivel_edu == 7) {
-                    resultPaquete = await getPaquete(3);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(3));
                 } else if (resultDB.cod_nivel_edu == 16) {
-                    resultPaquete = await getPaquete(5);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(5));
                 }else if(resultDB.cod_nivel_edu == 11){
-                    resultPaquete = await getPaquete(33);
+                    resultPaquete = await profile("getPaquete", () => getPaquete(33));
                 }
-                
-
-                console.log("se obtuvo el paquete");
-                console.log(resultPaquete);
-
-                console.log(resultDB.cod_nivel_edu );
 
                 if (resultPaquete != false && resultPaquete !=undefined) {
 
@@ -640,16 +630,9 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
             //verifica si ya existe una factura creada con esa matricula y con ese paquete
             // let estadoPago = await existePago(resultPaquete[0].codigo, id_matricula);
             const pagoFactura: any[] = [];
-            const resFactura: any[] = await getFacturaByMatricula(id_matricula, resultPaquete[0].codigo);
-
-
-        const facturaPagada = await resFactura.find( async (factura) => {
-              const  pago = await getPagoFactura(factura._id);
-              if(pago.length > 0){
-                pagoFactura.push(...pago);
-              }
-                return pago.length > 0;
-            } );
+            const resFactura: any[] = await profile("getFacturaByMatricula", () => getFacturaByMatricula(id_matricula, resultPaquete[0].codigo));
+            const facturaIds = Array.from(new Set(resFactura.map((factura) => factura._id)));
+            pagoFactura.push(...await profile("getPagoFacturaByFacturaIds", () => getPagoFacturaByFacturaIds(facturaIds)));
 
 
 
@@ -707,7 +690,7 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
                 message: "Ejecución correcta",
                 matricula: resultDB,
                 estadopago: pagoFactura,
-                soportes: await getCategoriaPorcentajeByMatricula('1', resultDB.ide_persona, resultDB.cod_periodo),
+                soportes: await profile("getCategoriaPorcentajeByMatricula", () => getCategoriaPorcentajeByMatricula('1', resultDB.ide_persona, resultDB.cod_periodo)),
                 descuentos: resultDescuentos,
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(safeTotalToPay, { locale: 'es-CO' }).replace('$', '').trim(),
@@ -736,14 +719,15 @@ export const consultarpagoMatricula = async (id_matricula: any) => {
 export const generarpagoMatricula = async (req: any, res: any) => {
 
     try {
-        let result: any = await consultarpagoMatricula(req.params.id_matricula.trim());
-        console.log("Hasta aqui todo bien");
+        const nodeEnv = String(process.env.NODE_ENV || "").toLowerCase();
+        const enableProfile = req.query.profile === "1" && nodeEnv !== "pro" && nodeEnv !== "production";
+        const profile = createProfileLogger(enableProfile, `pagomatricula:${req.params.id_matricula}`);
+        const [result, categorias]: any[] = await Promise.all([
+            profile("consultarpagoMatricula", () => consultarpagoMatricula(req.params.id_matricula.trim(), profile)),
+            profile("getCategriaDescuento", () => getCategriaDescuento(1)),
+        ]);
 
-        // let resFactura =  await getFactura();
-
-
-        console.log(JSON.stringify(result));
-        result.categorias = await getCategriaDescuento(1);
+        result.categorias = categorias;
         return res.status(200).json(result);
 
     } catch (error) {

@@ -743,6 +743,53 @@ export const getPagoFactura = async (id_factura: any): Promise<any[]> => {
   }
 };
 
+export const getPagoFacturaByFacturaIds = async (ids_factura: any[]): Promise<any[]> => {
+  const invoiceIds = Array.from(new Set(ids_factura.filter((id) => id !== undefined && id !== null)));
+  if (invoiceIds.length === 0) {
+    return [];
+  }
+
+  const result = await conDB
+    .select(
+      "fin_detalle_pago._id",
+      "fin_detalle_pago.pago_id",
+      "fin_detalle_pago.valor_pago",
+      "fin_detalle_pago.total_pago",
+      "fin_detalle_pago.estado_pago_id",
+      "fin_estado_pago.descripcion AS estado",
+      "fin_detalle_pago.forma_pago_id",
+      "fin_forma_pago.descripcion AS forma_pago",
+      `fin_detalle_pago.fecha`,
+      "fin_detalle_pago.nombre_banco",
+      "fin_detalle_pago.codigo_transaccion",
+      "fin_detalle_pago.ticketID",
+      "fin_detalle_pago.numero_tarjeta",
+      "fin_detalle_pago.franquicia",
+      "fin_detalle_pago.cod_aprobacion",
+      "fin_detalle_pago.num_recibido",
+      "fin_detalle_pago.int_n_pago"
+    )
+    .from("fin_detalle_pago")
+    .join(
+      "fin_estado_pago",
+      "fin_detalle_pago.estado_pago_id",
+      "=",
+      "fin_estado_pago._id"
+    )
+    .join(
+      "fin_forma_pago",
+      "fin_detalle_pago.forma_pago_id",
+      "=",
+      "fin_forma_pago._id"
+    )
+    .whereIn("fin_detalle_pago.pago_id", invoiceIds)
+    .where({
+      "fin_detalle_pago.estado_pago_id": 1,
+    });
+
+  return result.length > 0 ? result : [];
+};
+
 //obtiene los descuentos aplicados a una factura  con su respectivo estado
 export const getDescuentoFactura = async (id_factura: any) => {
   let result = await conDB
