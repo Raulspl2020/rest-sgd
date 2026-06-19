@@ -699,33 +699,38 @@ export const getFacturaByMatricula = async (
   try {
     let result = await conDB
       .select(
-      "fin_pago._id",
-      "fin_pago.codigo",
-      "fin_pago.descripcion AS desc_factura",
-      "fin_pago.fecha",
-      "fin_pago.estudiante_id",
-      "fin_pago.valor",
-      "fin_detalle_factura.concepto_id",
-      "fin_concepto.codigo AS codigo_concepto",
-      "fin_concepto.descripcion AS concepto",
-      "fin_detalle_factura.descuento",
-      "fin_detalle_factura.aumento",
-      "fin_detalle_factura.valor_unidad",
-      "fin_detalle_factura.cantidad"
-    )
-    .from("fin_detalle_factura")
-    .join("fin_pago", "fin_detalle_factura.pago_id", "=", " fin_pago._id")
-    .join(
-      "fin_concepto",
-      "fin_detalle_factura.concepto_id",
-      "=",
-      " fin_concepto._id"
-    )
-    .where({
-      "fin_pago.cod_paquete": cod_paquete,
-      "fin_pago.matricula_id": matricula_id,
-    })
-    .orderBy([{ column: "fin_pago.fecha", order: "desc" }]);
+        "fin_pago._id",
+        "fin_pago.codigo",
+        "fin_pago.descripcion AS desc_factura",
+        "fin_pago.fecha",
+        "fin_pago.estudiante_id",
+        "fin_pago.valor",
+        "fin_detalle_factura.concepto_id",
+        "fin_concepto.codigo AS codigo_concepto",
+        "fin_concepto.descripcion AS concepto",
+        "fin_detalle_factura.descuento",
+        "fin_detalle_factura.aumento",
+        "fin_detalle_factura.valor_unidad",
+        "fin_detalle_factura.cantidad"
+      )
+      .from("fin_pago")
+      .join(
+        "fin_detalle_factura",
+        "fin_detalle_factura.pago_id",
+        "=",
+        "fin_pago._id"
+      )
+      .join(
+        "fin_concepto",
+        "fin_detalle_factura.concepto_id",
+        "=",
+        "fin_concepto._id"
+      )
+      .where({
+        "fin_pago.cod_paquete": cod_paquete,
+        "fin_pago.matricula_id": matricula_id,
+      })
+      .orderBy([{ column: "fin_pago.fecha", order: "desc" }]);
 
     if (result.length > 0) {
       return result;
