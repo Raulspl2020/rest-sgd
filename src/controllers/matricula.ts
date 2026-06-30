@@ -93,6 +93,32 @@ const logProfileSummary = (profile: ProfileLogger, totalMs: number) => {
     console.log(`[perf] TOTAL REQUEST ${totalMs}ms`);
 };
 
+class UploadValidationError extends Error { }
+
+const obtenerBufferArchivoCargado = (archivo: any): Buffer => {
+    if (!archivo) {
+        throw new UploadValidationError("No se recibió archivo.");
+    }
+
+    if (archivo.data && archivo.data.length > 0) {
+        console.log("[CargaPlantillaDescuento] lectura desde memoria");
+        return Buffer.from(archivo.data);
+    }
+
+    if (archivo.tempFilePath && fs.existsSync(archivo.tempFilePath)) {
+        console.log("[CargaPlantillaDescuento] lectura desde tempFilePath");
+        return fs.readFileSync(archivo.tempFilePath);
+    }
+
+    console.error("[CargaPlantillaDescuento] error leyendo archivo", {
+        tieneData: Boolean(archivo.data),
+        dataLength: archivo.data?.length || 0,
+        tieneTempFilePath: Boolean(archivo.tempFilePath),
+        tempFilePathExiste: archivo.tempFilePath ? fs.existsSync(archivo.tempFilePath) : false,
+    });
+    throw new UploadValidationError("El archivo fue recibido, pero no se pudo leer desde memoria ni desde ruta temporal.");
+};
+
 const calculateSubtotalWithDiscountCap = (
     unitValue: any,
     quantity: any,
@@ -1004,19 +1030,52 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
 
     try {
 
-        //subir el archivo si existe
-        if (req.files && req.files.archivo) {
-            const { archivo } = req.files;
-            //  const uploadPath = path.join(__dirname, '../../public/format/plantilla-descuentos.xlsx');
-            
-            const fileBuffer = fs.readFileSync(archivo.tempFilePath);
-            const workSheetsFromBuffer = xlsx.parse(fileBuffer.buffer as ArrayBuffer)
-            //  console.log(fs.readFileSync(uploadPath));
-            console.log(archivo.data.length);
+        if (!req.files) {
+            throw new UploadValidationError("No se ha seleccionado un archivo");
+        }
 
-            console.log(archivo);
-            //const workSheetsFromBuffer = xlsx.parse(Buffer.from(archivo.data));
-            console.log(workSheetsFromBuffer);
+        if (!req.files.archivo) {
+            throw new UploadValidationError("No se recibió el campo de archivo esperado");
+        }
+
+        const archivo = Array.isArray(req.files.archivo) ? req.files.archivo[0] : req.files.archivo;
+        const extension = path.extname(archivo.name || "").toLowerCase();
+
+        console.log("[CargaPlantillaDescuento] archivo recibido", {
+            nombre: archivo.name,
+            extension,
+            size: archivo.size,
+            tieneData: Boolean(archivo.data && archivo.data.length > 0),
+            tieneTempFilePath: Boolean(archivo.tempFilePath),
+        });
+
+        if (![".xlsx", ".xls"].includes(extension)) {
+            throw new UploadValidationError("Formato de archivo no permitido. Cargue un archivo .xlsx o .xls");
+        }
+
+        if (!archivo.size || archivo.size <= 0) {
+            throw new UploadValidationError("El archivo recibido está vacío");
+        }
+
+        const fileBuffer = obtenerBufferArchivoCargado(archivo);
+        if (!fileBuffer.length) {
+            throw new UploadValidationError("El archivo recibido está vacío");
+        }
+
+        let workSheetsFromBuffer: any[];
+        try {
+            workSheetsFromBuffer = xlsx.parse(fileBuffer as any);
+        } catch (parseError) {
+            console.error("[CargaPlantillaDescuento] error leyendo contenido Excel", {
+                message: parseError.message,
+            });
+            throw new UploadValidationError("No se pudo leer la plantilla. Verifique que sea un archivo Excel válido.");
+        }
+
+        if (!workSheetsFromBuffer[0] || !workSheetsFromBuffer[0].data) {
+            throw new UploadValidationError("La plantilla no contiene hojas válidas para procesar.");
+        }
+
             const primeraHoja = workSheetsFromBuffer[0].data;
 
             let dataInsert: any = [];
@@ -1070,14 +1129,22 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
             }
 
 
-        } else {
-            throw new Error("No se ha seleccionado un archivo");
+    } catch (error) {
+        console.error("[CargaPlantillaDescuento] error procesando archivo", {
+            message: error.message,
+            stack: error.stack,
+        });
+
+        if (error instanceof UploadValidationError) {
+            return res.status(400).json({
+                error: true,
+                message: error.message
+            });
         }
 
-    } catch (error) {
         return res.status(500).json({
             error: true,
-            message: error.message
+            message: "Ocurrió un error al procesar la plantilla de descuentos"
         });
 
     }
