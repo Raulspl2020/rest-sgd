@@ -35,6 +35,8 @@ const INSCRIPTION_PACKAGE_TECHNOLOGY = 6;
 const INSCRIPTION_PACKAGE_SPECIALIZATION = 34;
 const SPECIALIZATION_LEVEL_CODES = new Set([11, 16]);
 const MAX_DISCOUNT_RATE = 1;
+const TUITION_DISCOUNT_CONCEPT_IDS = [1, 2, 5, 6, 7, 52];
+const FULL_TUITION_DISCOUNT_CONCEPT_IDS = [5, 6, 7, 52];
 
 const toNumber = (value: any): number => {
     const parsed = Number(value);
@@ -54,6 +56,16 @@ const sumDiscountRateWithCap = (currentRate: any, incomingRate: any): number => 
     const current = clampDiscountRate(currentRate);
     const incoming = clampDiscountRate(incomingRate);
     return clampDiscountRate(current + incoming);
+};
+
+const isGratuityDiscount = (discount: any): boolean => {
+    return String(discount?.descripcion || "").trim().toUpperCase() === "POLITICA DE GRATUIDAD";
+};
+
+const getDiscountableTuitionConceptIds = (discount: any, conceptIds: number[]): number[] => {
+    return isGratuityDiscount(discount)
+        ? [...conceptIds, 33]
+        : conceptIds;
 };
 
 type ProfileLogger = <T>(label: string, task: () => Promise<T>) => Promise<T>;
@@ -426,7 +438,7 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                                         precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                     } else {
 
-                                        if( [ 5,6,7,1,2,52 ].includes(precios[index].concepto_id) ){   
+                                        if( getDiscountableTuitionConceptIds(row, TUITION_DISCOUNT_CONCEPT_IDS).includes(precios[index].concepto_id) ){   
                                               precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                          }
                                  
@@ -563,7 +575,7 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                                         precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                     } else {
 
-                                        if( [ 5,6,7,52 ].includes(precios[index].concepto_id) ){
+                                        if( getDiscountableTuitionConceptIds(row, FULL_TUITION_DISCOUNT_CONCEPT_IDS).includes(precios[index].concepto_id) ){
                                             precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                         } 
 
