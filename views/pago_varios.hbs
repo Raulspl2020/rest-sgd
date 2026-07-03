@@ -222,7 +222,7 @@
                                             </button>
                                             <button type="button" :disabled="cargandoPersona || cargandoConceptos || procesandoPago || !formpago.activarBoton"
                                                 class="btn btn-pay-primary" @click="inicarPago(true)">
-                                                <i id="icon" v-if="!formpago.activarBoton"
+                                                <i id="icon" v-if="isOnlineLoading"
                                                     class="fa fa-spinner fa-pulse"></i>
 
                                                 {[ formpago.txtBoton ]} <i class="fa fa-credit-card"></i>
@@ -290,17 +290,27 @@
                     cantidad: 1,
                     conceptos: [],
                     sel_concepto: "",
+                    sel_concepto_id: "",
                     sel_programa: "",
                     programas: [],
                     valor_unidad: 0,
+                    conceptoValorManual: false,
                     numeroLetras: "CERO PESOS",
                     activarBotonEf: true,
                     txtBotonEf: "Pagar en efectivo",
                     txtBoton: "Pago en linea",
                     cargandoPersona: false,
                     cargandoConceptos: false,
-                    procesandoPago: false
+                    procesandoPago: false,
+                    isCashLoading: false,
+                    isOnlineLoading: false
                 };
+            },
+            mounted() {
+                window.addEventListener('pageshow', this.resetPaymentButtons);
+            },
+            beforeDestroy() {
+                window.removeEventListener('pageshow', this.resetPaymentButtons);
             },
             computed: {
                 programaSeleccionadoNombre() {
@@ -387,8 +397,32 @@
                     if (this.cantidad < 1) {
                         this.cantidad = 1;
                     }
+
+                    if (this.conceptoValorManual) {
+                        this.total_a_pagar = Number(this.total_a_pagar) || 0;
+                        this.numeroALetras(this.total_a_pagar);
+                        return;
+                    }
+
                     this.total_a_pagar = this.cantidad * this.valor_unidad;
                     this.numeroALetras(this.total_a_pagar);
+                },
+
+                obtenerTotalFinal() {
+                    const selectedValue = Number(this.valor_unidad || 0);
+                    const totalDigitado = Number(this.total_a_pagar);
+
+                    if (selectedValue === 0) {
+                        if (!Number.isFinite(totalDigitado) || totalDigitado <= 0 || !Number.isInteger(totalDigitado)) {
+                            this.formpago.colorTextoAlert = "text-danger";
+                            this.numeroLetras = "Debe ingresar un valor válido mayor a cero para este concepto.";
+                            return null;
+                        }
+
+                        return totalDigitado;
+                    }
+
+                    return selectedValue * Number(this.cantidad || 1);
                 },
 
 
@@ -399,27 +433,39 @@
                     }
 
 
-                    if (this.total_a_pagar < 100) {
+                    const totalFinal = this.obtenerTotalFinal();
+
+                    if (totalFinal === null) {
+                        return;
+                    }
+
+                    if (totalFinal < 100) {
                         this.numeroLetras = "Ingrese un valor mayor o igual que 100";
                         this.formpago.colorTextoAlert = "text-danger";
                     } else {
+                        this.total_a_pagar = totalFinal;
+                        this.numeroALetras(totalFinal);
                         this.procesandoPago = true;
                         this.activarBotonEf = false;
                         this.formpago.activarBoton = false;
+                        this.isCashLoading = !isPagoOnline;
+                        this.isOnlineLoading = isPagoOnline;
 
                         if (isPagoOnline) {
                             this.formpago.activarBoton = false;
                             this.formpago.txtBoton = "Procesando...";
+                            this.txtBotonEf = "Pagar en efectivo";
                         } else {
                             this.activarBotonEf = false;
                             this.txtBotonEf = "Procesando...";
+                            this.formpago.txtBoton = "Pago en linea";
                         }
 
 
 
                         const dataOnline = {
                             "isPagoOnline": isPagoOnline,
-                            "total": this.total_a_pagar,
+                            "total": totalFinal,
                             "des_concepto": this.des_concepto,
                             "email_persona": this.formpago.txtEmail,
                             "id_persona": this.formpago.txtId,
@@ -433,6 +479,7 @@
                             "str_opcional2": this.numeroLetras,
                             "id_programa_persona": this.sel_programa,
                             "id_paquete": this.sel_concepto,
+                            "concepto_id": this.sel_concepto_id,
                             "cantidad": this.cantidad
 
                         };
@@ -442,9 +489,11 @@
                             "isPagoOnline": false,
                             "codPaquete": this.sel_concepto,
                             "programaPersonaId": this.sel_programa,
-                            "total": this.total_a_pagar,
+                            "total": totalFinal,
                             "personaId": this.formpago.txtId,
-                            "cantidad": this.cantidad
+                            "cantidad": this.cantidad,
+                            "conceptoId": this.sel_concepto_id,
+                            "descripcion": this.des_concepto
                         };
 
                         const finalData = isPagoOnline ? dataOnline : dataCaja;
@@ -482,20 +531,27 @@
                                 this.numeroLetras = 'Servicio no disponible temporalmente. Intente nuevamente en unos minutos.';
                             }).finally(() => {
                                 if (this.formpago.txtBoton !== "Redireccionando..." && this.txtBotonEf !== "Redireccionando...") {
-                                    this.formpago.activarBoton = true;
-                                    this.formpago.txtBoton = "Pago en linea";
-                                    this.activarBotonEf = true;
-                                    this.txtBotonEf = "Pagar en efectivo";
-                                    this.procesandoPago = false;
+                                    this.resetPaymentButtons();
                                 }
                             });
                     }
                 },
 
+                resetPaymentButtons() {
+                    this.procesandoPago = false;
+                    this.isCashLoading = false;
+                    this.isOnlineLoading = false;
+                    this.formpago.activarBoton = true;
+                    this.formpago.txtBoton = "Pago en linea";
+                    this.activarBotonEf = true;
+                    this.txtBotonEf = "Pagar en efectivo";
+                },
+
                 numeroALetras(numero) {
 
                     this.formpago.colorTextoAlert = "text-success";
-                    this.numeroLetras = numeroALetras(this.total_a_pagar, {
+                    const valor = Number(numero ?? this.total_a_pagar) || 0;
+                    this.numeroLetras = numeroALetras(valor, {
                         plural: "PESOS",
                         singular: "PESO",
                         centPlural: "CENTAVOS",
@@ -508,30 +564,34 @@
                 },
 
                 onChange2(paquete_id, id_concepto, event) {
-
-                    if (paquete_id == '0') {
-                        this.desactivarTotal = false;
-                        this.desactivarCantidad = true;
-                        this.cantidad = 1;
-                    } else {
-                        this.desactivarTotal = true;
-                        this.desactivarCantidad = false;
-                    }
-
+                    let selectedConcept = null;
                     for (const rr of this.conceptos) {
 
                         if (rr.paquete_id == paquete_id && rr.concepto_id == id_concepto) {
-                            this.valor_unidad = rr.valor_unidad;
+                            selectedConcept = rr;
                         }
 
                     }
 
+                    this.valor_unidad = Number(selectedConcept?.valor_unidad || 0);
+                    this.conceptoValorManual = this.valor_unidad === 0;
 
-                    this.calculaValor();
+                    if (this.conceptoValorManual) {
+                        this.desactivarTotal = false;
+                        this.desactivarCantidad = true;
+                        this.cantidad = 1;
+                        this.total_a_pagar = 0;
+                        this.numeroALetras(0);
+                    } else {
+                        this.desactivarTotal = true;
+                        this.desactivarCantidad = false;
+                        this.calculaValor();
+                    }
 
                     var optionText = event.target.options[event.target.options.selectedIndex].text;
                     this.des_concepto = optionText;
                     this.sel_concepto = paquete_id;
+                    this.sel_concepto_id = id_concepto;
 
                 },
 

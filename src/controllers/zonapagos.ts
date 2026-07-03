@@ -823,8 +823,9 @@ export const inicioPagosVarios = async (req: any, res: any) => {
   let id_pago: string | null = null;
   let str_url = "";
   let info_cliente: any = {};
-  const totalRequest: number = body.total;
+  const totalRequest: number = Number(body.total);
   let cantidad = parseInt(body.cantidad);
+  const selectedConceptId = Number(body.concepto_id);
 
   try {
     let cadenaCodigo =
@@ -833,22 +834,35 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       body.apellido1 +
       body.apellido2 +
       body.id_cliente;
-    const [codigoFactura, resultPaquete, programa, estudianteDb] = await Promise.all([
+    const [codigoFactura, resultPaqueteDb, programa, estudianteDb] = await Promise.all([
       profile("generarCodigoFactura", () => generarCodigoFactura(cadenaCodigo.toUpperCase().trim())),
       profile("getPaquete", () => getPaquete(body.id_paquete)),
       profile("getProgramaByIdProPersona", () => getProgramaByIdProPersona(String(body.id_programa_persona).trim())),
       profile("getInfoUsuario", () => getInfoUsuario(body.id_persona)),
     ]);
+    let resultPaquete = resultPaqueteDb;
 
     if (resultPaquete == false || resultPaquete.length === 0) {
       throw new Error("No se encontraron conceptos configurados para el pago seleccionado");
+    }
+
+    if (Number.isFinite(selectedConceptId) && selectedConceptId > 0) {
+      resultPaquete = resultPaquete.filter((concepto: any) => Number(concepto.concepto_id) === selectedConceptId);
+      if (resultPaquete.length === 0) {
+        throw new Error("El concepto seleccionado no pertenece al paquete enviado");
+      }
+    }
+
+    if (!Number.isFinite(totalRequest) || totalRequest <= 0) {
+      throw new Error("Debe ingresar un valor válido mayor a cero para este concepto.");
     }
 
     if (Number(body.id_paquete) !== 0 && !resultPaquete.some((concepto: any) => Number(concepto.concepto_id) === 0)) {
       const expectedTotal = resultPaquete.reduce((sum: number, concepto: any) => {
         return sum + (Number(concepto.valor_unidad) * cantidad);
       }, 0);
-      if (Math.round(expectedTotal) !== Math.round(totalRequest)) {
+
+      if (expectedTotal > 0 && Math.round(expectedTotal) !== Math.round(totalRequest)) {
         throw new Error("El total enviado no coincide con el concepto seleccionado");
       }
     }
@@ -934,13 +948,13 @@ export const inicioPagosVarios = async (req: any, res: any) => {
         descuento: concepto.descuento,
         aumento: concepto.aumento,
         valor_unidad:
-          concepto.concepto_id == 0
+          Number(concepto.valor_unidad) === 0
             ? parseInt(Math.round(body.total).toString())
             : concepto.valor_unidad,
         //cantidad: concepto.cantidad,
         cantidad: cantidad,
       });
-      if (concepto.concepto_id == 0) {
+      if (Number(concepto.valor_unidad) === 0) {
         concepto.valor_unidad = parseInt(Math.round(body.total).toString());
       }
     });
