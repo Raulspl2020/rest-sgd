@@ -857,14 +857,12 @@ export const inicioPagosVarios = async (req: any, res: any) => {
       throw new Error("Debe ingresar un valor válido mayor a cero para este concepto.");
     }
 
-    if (Number(body.id_paquete) !== 0 && !resultPaquete.some((concepto: any) => Number(concepto.concepto_id) === 0)) {
-      const expectedTotal = resultPaquete.reduce((sum: number, concepto: any) => {
-        return sum + (Number(concepto.valor_unidad) * cantidad);
-      }, 0);
+    const expectedTotal = resultPaquete.reduce((sum: number, concepto: any) => {
+      return sum + (Number(concepto.valor_unidad) * cantidad);
+    }, 0);
 
-      if (expectedTotal > 0 && Math.round(expectedTotal) !== Math.round(totalRequest)) {
-        throw new Error("El total enviado no coincide con el concepto seleccionado");
-      }
+    if (expectedTotal > 0 && Math.round(expectedTotal) !== Math.round(totalRequest)) {
+      throw new Error("El total enviado no coincide con el concepto seleccionado");
     }
 
     info_cliente = {
