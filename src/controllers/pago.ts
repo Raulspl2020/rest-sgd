@@ -6,8 +6,20 @@ import { generarHTMLPDF } from "../helpers/global";
 import { generarCodigoBarras, limpiarCampos } from "../helpers/pago";
 import cryptoRandomString from "crypto-random-string";
 import * as moneda from 'currency-formatter';
+import { deduplicateDiscountsByCategory } from '../helpers/discountEligibility.util';
 
 let Validator = require("validatorjs");
+
+const filterDiscountsByMatriculaId = (discounts: any[], matriculaId: any): any[] => {
+  return (discounts || []).filter((discount) => {
+    const discountMatriculaId = discount?.matricula_id;
+    if (discountMatriculaId === null || discountMatriculaId === undefined || String(discountMatriculaId).trim() === "") {
+      return true;
+    }
+
+    return String(discountMatriculaId).trim() === String(matriculaId).trim();
+  });
+};
 
 
 //====================
@@ -103,7 +115,8 @@ export const consultaDatosInscripcion = async (id_matricula: string, id_paquete:
       //obtenemos el paquete a facturar
       let resultPaquete: any = null;
       //consular los descuentos y multas que un estudiante tiene asignados
-      let resultDto = await getDescuento(5, resultDB.matricula.cod_periodo,resultDB.matricula.ide_persona);
+      const resultDtoRaw = await getDescuento(5, resultDB.matricula.cod_periodo, resultDB.matricula.ide_persona, resultDB.matricula.cod_matricula);
+      let resultDto = deduplicateDiscountsByCategory(filterDiscountsByMatriculaId(resultDtoRaw, resultDB.matricula.cod_matricula));
 
 
 

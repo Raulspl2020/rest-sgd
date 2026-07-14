@@ -12,6 +12,16 @@ import { calcularSubTotal } from "../helpers/factura.util";
 import { IStudentType } from "../interfaces/clientes.interface";
 import fetch from "node-fetch";
 import moment from 'moment';
+import {
+    FULL_TUITION_DISCOUNT_CONCEPT_IDS,
+    TUITION_DISCOUNT_CONCEPT_IDS,
+    clampDiscountRate,
+    deduplicateDiscountsByCategory,
+    filterDiscountsForEnrollment,
+    getDiscountableTuitionConceptIds,
+    sumDiscountRateWithCap,
+    toNumber,
+} from "../helpers/discountEligibility.util";
 
 const getFinancieroApiUrl = (): string => {
     const baseUrl = (process.env.FINANCIERO_API_URL || "").trim();
@@ -34,39 +44,6 @@ const getStudentTypeUrl = (): string => {
 const INSCRIPTION_PACKAGE_TECHNOLOGY = 6;
 const INSCRIPTION_PACKAGE_SPECIALIZATION = 34;
 const SPECIALIZATION_LEVEL_CODES = new Set([11, 16]);
-const MAX_DISCOUNT_RATE = 1;
-const TUITION_DISCOUNT_CONCEPT_IDS = [1, 2, 5, 6, 7, 52];
-const FULL_TUITION_DISCOUNT_CONCEPT_IDS = [5, 6, 7, 52];
-
-const toNumber = (value: any): number => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const clampDiscountRate = (value: any): number => {
-    const discountRate = toNumber(value);
-    if (discountRate <= 0) {
-        return 0;
-    }
-
-    return discountRate > MAX_DISCOUNT_RATE ? MAX_DISCOUNT_RATE : discountRate;
-};
-
-const sumDiscountRateWithCap = (currentRate: any, incomingRate: any): number => {
-    const current = clampDiscountRate(currentRate);
-    const incoming = clampDiscountRate(incomingRate);
-    return clampDiscountRate(current + incoming);
-};
-
-const isGratuityDiscount = (discount: any): boolean => {
-    return String(discount?.descripcion || "").trim().toUpperCase() === "POLITICA DE GRATUIDAD";
-};
-
-const getDiscountableTuitionConceptIds = (discount: any, conceptIds: number[]): number[] => {
-    return isGratuityDiscount(discount)
-        ? [...conceptIds, 33]
-        : conceptIds;
-};
 
 type ProfileLogger = <T>(label: string, task: () => Promise<T>) => Promise<T>;
 
@@ -339,7 +316,7 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
         if (result[0].length > 0) {
             resultDB = result[0][0];
             const resultConfigPromise = profile("getConfigPeriodo", () => getConfigPeriodo());
-            const resultDtoPromise = profile("getDescuento", () => getDescuento("1", resultDB.cod_periodo, resultDB.ide_persona));
+            const resultDtoPromise = profile("getDescuento", () => getDescuento("1", resultDB.cod_periodo, resultDB.ide_persona, id_matricula));
 
             // TODO: para consultar las fechas de matriculas 
             // periodo = await getDetPeriodo(resultDB.cod_colegio, resultDB.cod_periodo, fechaActual);
@@ -369,7 +346,8 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
 
 
             //consular los descuentos y multas que un estudiante tiene asignados
-            const [resultConfig, resultDto] = await Promise.all([resultConfigPromise, resultDtoPromise]);
+            const [resultConfig, resultDtoRaw] = await Promise.all([resultConfigPromise, resultDtoPromise]);
+            const resultDto = deduplicateDiscountsByCategory(filterDiscountsForEnrollment(resultDtoRaw, resultDB));
 
 
             resultDto.forEach((row: any) => {
@@ -743,12 +721,17 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
             // This protects payment flows even if upstream data is inconsistent.
             const safeTotalToPay = Math.max(toNumber(total_a_pagar), 0);
 
+            const soportes = deduplicateDiscountsByCategory(filterDiscountsForEnrollment(
+                await profile("getCategoriaPorcentajeByMatricula", () => getCategoriaPorcentajeByMatricula('1', resultDB.ide_persona, resultDB.cod_periodo, id_matricula)),
+                resultDB,
+            ));
+
             return {
                 error: false,
                 message: "Ejecución correcta",
                 matricula: resultDB,
                 estadopago: pagoFactura,
-                soportes: await profile("getCategoriaPorcentajeByMatricula", () => getCategoriaPorcentajeByMatricula('1', resultDB.ide_persona, resultDB.cod_periodo)),
+                soportes,
                 descuentos: resultDescuentos,
                 detalle_factura: resultPaquete,
                 total_a_pagar: moneda.format(safeTotalToPay, { locale: 'es-CO' }).replace('$', '').trim(),

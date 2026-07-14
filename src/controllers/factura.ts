@@ -41,6 +41,7 @@ import { subirArchivo } from "../helpers/subir-archivo";
 import { DetallePago } from "../interfaces/facturas.interface";
 import Cargue from "../models/Mongo/Cargue";
 import { updateDataPagoWebService } from "../helpers/updateDataPago";
+import { deduplicateDiscountsByCategory, filterDiscountsForEnrollment } from "../helpers/discountEligibility.util";
 
 const syncSysApoloInBackground = (invoiceId: number, source: string) => {
   console.log(
@@ -342,11 +343,13 @@ export const registrarPagoService = async (req: any, res: any) => {
         let resultMatricula = await getInfoMatricula(matricula_id);
         let resultDB = resultMatricula[0][0];
         //consular los descuentos y multas que un estudiante tiene asignados
-        let resultDto = await getDescuento(
+        const resultDtoRaw = await getDescuento(
           categoria_id,
           resultDB.cod_periodo,
-          resultDB.ide_persona
+          resultDB.ide_persona,
+          matricula_id
         );
+        let resultDto = deduplicateDiscountsByCategory(filterDiscountsForEnrollment(resultDtoRaw, resultDB));
 
         if (resultDto.length > 0) {
           let idsDescuento: any = [];
@@ -421,11 +424,13 @@ export const registrarPagoService = async (req: any, res: any) => {
           let resultMatricula = await getInfoMatricula(matricula_id);
           let resultDB = resultMatricula[0][0];
           //consular los descuentos y multas que un estudiante tiene asignados
-          let resultDto = await getDescuento(
+          const resultDtoRaw = await getDescuento(
             categoria_id,
             resultDB.cod_periodo,
-            resultDB.ide_persona
+            resultDB.ide_persona,
+            matricula_id
           );
+          let resultDto = deduplicateDiscountsByCategory(filterDiscountsForEnrollment(resultDtoRaw, resultDB));
 
           if (resultDto.length > 0) {
             let idsDescuento: any = [];

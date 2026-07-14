@@ -30,6 +30,7 @@ import { complileTemplateReciboPago } from "./template";
 import { registroFacturaSysApolo } from "./sysapolo/factura";
 import { EDataInsertPago } from "../interfaces/facturas.interface";
 import { decodePagoToList } from "../helpers/decodePagoToList";
+import { deduplicateDiscountsByCategory, filterDiscountsForEnrollment } from "../helpers/discountEligibility.util";
 let Validator = require("validatorjs");
 
 const syncSysApoloInBackground = (invoiceId: number, source: string) => {
@@ -563,11 +564,13 @@ export const actualizarTransaccion = async (req: any, res = response) => {
             let resultMatricula = await getInfoMatricula(matricula_id);
             let resultDB = resultMatricula[0][0];
             //consular los descuentos y multas que un estudiante tiene asignados
-            let resultDto = await getDescuento(
+            const resultDtoRaw = await getDescuento(
               categoria_id,
               resultDB.cod_periodo,
-              resultDB.ide_persona
+              resultDB.ide_persona,
+              matricula_id
             );
+            let resultDto = deduplicateDiscountsByCategory(filterDiscountsForEnrollment(resultDtoRaw, resultDB));
 
             if (resultDto.length > 0) {
               let idsDescuento: any = [];

@@ -2,6 +2,7 @@ import { conDB } from "../config/database";
 import { parse, format } from "date-format-parse";
 import { ECategoryInvoice, EDataInsertPago } from "../interfaces/facturas.interface";
 import { guardarLog } from "./log_provider";
+import { deduplicateDiscountsByCategory } from "../helpers/discountEligibility.util";
 
 export const getInfoPago = async (codigoPago: string) => {
   const sql = `SELECT
@@ -336,7 +337,8 @@ export const getCategoriaPorcentaje = async (id: any) => {
 export const getCategoriaPorcentajeByMatricula = async (
   cat_pago: any,
   estudiante_id: any,
-  periodo_id: any
+  periodo_id: any,
+  matricula_id?: any
 ) => {
   const startedAt = Date.now();
   try {
@@ -344,9 +346,14 @@ export const getCategoriaPorcentajeByMatricula = async (
       .select(
       "fin_porcentaje_soporte._id",
       "fin_porcentaje_soporte.fecha",
+      "fin_porcentaje_soporte.fecha_update",
       "fin_porcentaje_soporte.porcentaje",
       "fin_porcentaje_soporte.observacion",
       "fin_porcentaje_soporte.json_file",
+      "fin_porcentaje_soporte.matricula_id",
+      "fin_porcentaje_soporte.periodo_id",
+      "fin_porcentaje_soporte.categoria_pago_id",
+      "fin_porcentaje_soporte.porcentaje_categoria_id",
       "fin_porcetaje_categoria.descripcion",
       "fin_porcentaje_estado.descripcion as estado"
     )
@@ -364,11 +371,19 @@ export const getCategoriaPorcentajeByMatricula = async (
       "fin_porcentaje_soporte.porcentaje_estado_id"
     )
 
-    // .where("fin_porcentaje_soporte.matricula_id", cod_matricula);
     .where({
       "fin_porcentaje_soporte.categoria_pago_id": cat_pago,
       "fin_porcentaje_soporte.estudiante_id": estudiante_id,
       "fin_porcentaje_soporte.periodo_id": periodo_id,
+    })
+    .modify((queryBuilder: any) => {
+      if (matricula_id !== undefined && matricula_id !== null && String(matricula_id).trim() !== "") {
+        queryBuilder.andWhere((builder: any) => {
+          builder
+            .where("fin_porcentaje_soporte.matricula_id", matricula_id)
+            .orWhereNull("fin_porcentaje_soporte.matricula_id");
+        });
+      }
     })
     .orderBy([
       { column: "fin_porcentaje_soporte.accion" },
@@ -447,18 +462,25 @@ FROM
 export const getDescuento = async (
   cat_pago: any,
   periodo_id: any,
-  estudiante_id: any
+  estudiante_id: any,
+  matricula_id?: any
 ) => {
   const startedAt = Date.now();
   try {
     let result = await conDB
       .select(
       "fin_porcentaje_soporte._id",
+      "fin_porcentaje_soporte.fecha",
+      "fin_porcentaje_soporte.fecha_update",
       "fin_porcentaje_soporte.porcentaje",
       "fin_porcentaje_soporte.accion",
       "fin_porcentaje_soporte.observacion",
       "fin_porcentaje_soporte.tipo",
       "fin_porcentaje_soporte.json_file",
+      "fin_porcentaje_soporte.matricula_id",
+      "fin_porcentaje_soporte.periodo_id",
+      "fin_porcentaje_soporte.categoria_pago_id",
+      "fin_porcentaje_soporte.porcentaje_categoria_id",
       "fin_porcetaje_categoria.descripcion"
     )
     .from("fin_porcentaje_soporte")
@@ -469,10 +491,19 @@ export const getDescuento = async (
       "fin_porcetaje_categoria._id"
     )
     .where({
-      categoria_pago_id: cat_pago,
-      estudiante_id: estudiante_id,
-      periodo_id: periodo_id,
-      porcentaje_estado_id: 2,
+      "fin_porcentaje_soporte.categoria_pago_id": cat_pago,
+      "fin_porcentaje_soporte.estudiante_id": estudiante_id,
+      "fin_porcentaje_soporte.periodo_id": periodo_id,
+      "fin_porcentaje_soporte.porcentaje_estado_id": 2,
+    })
+    .modify((queryBuilder: any) => {
+      if (matricula_id !== undefined && matricula_id !== null && String(matricula_id).trim() !== "") {
+        queryBuilder.andWhere((builder: any) => {
+          builder
+            .where("fin_porcentaje_soporte.matricula_id", matricula_id)
+            .orWhereNull("fin_porcentaje_soporte.matricula_id");
+        });
+      }
     })
     .orderBy([
       { column: "fin_porcentaje_soporte.accion" },
@@ -488,32 +519,81 @@ export const getDescuento = async (
 export const updateEstadoDescuentoFac = async (ids: any, pago_id: any) => {
   const trx = await conDB.transaction();
 
-  let dataInsert: any = [];
-  ids.forEach((row: any) => {
-    let rowDB = {
+  try {
+    const discountIds = Array.from(new Set((Array.isArray(ids) ? ids : [ids]).filter((id: any) => id !== null && id !== undefined)));
+    if (discountIds.length === 0) {
+      await trx.rollback();
+      return false;
+    }
+
+    const pago = await trx("fin_pago")
+      .select("_id", "matricula_id")
+      .where("_id", pago_id)
+      .first();
+
+    if (!pago) {
+      throw new Error(`No se encontro el pago ${pago_id} para facturar descuentos`);
+    }
+
+    const descuentos = await trx("fin_porcentaje_soporte")
+      .select("_id", "fecha", "fecha_update", "matricula_id", "porcentaje_categoria_id")
+      .whereIn("_id", discountIds);
+
+    const foundIds = new Set(descuentos.map((discount: any) => String(discount._id)));
+    const missingIds = discountIds.filter((id: any) => !foundIds.has(String(id)));
+    if (missingIds.length > 0) {
+      console.warn("[updateEstadoDescuentoFac] descuentos no encontrados", { pago_id, missingIds });
+    }
+
+    const validDiscounts: any[] = [];
+    const rejectedDiscounts: any[] = [];
+    descuentos.forEach((discount: any) => {
+      const discountMatriculaId = discount.matricula_id;
+      const hasSpecificDiscountEnrollment = discountMatriculaId !== null && discountMatriculaId !== undefined && String(discountMatriculaId).trim() !== "";
+      const sameEnrollment = String(discountMatriculaId).trim() === String(pago.matricula_id).trim();
+
+      if (hasSpecificDiscountEnrollment && !sameEnrollment) {
+        rejectedDiscounts.push({
+          porcentaje_soporte_id: discount._id,
+          descuento_matricula_id: discountMatriculaId,
+          pago_matricula_id: pago.matricula_id,
+          reason: "MATRICULA_MISMATCH",
+        });
+        return;
+      }
+
+      validDiscounts.push(discount);
+    });
+
+    const validDiscountIds = deduplicateDiscountsByCategory(validDiscounts).map((discount: any) => discount._id);
+
+    if (rejectedDiscounts.length > 0) {
+      console.warn("[updateEstadoDescuentoFac] descuentos rechazados por matricula", { pago_id, rejectedDiscounts });
+    }
+
+    if (validDiscountIds.length === 0) {
+      await trx.rollback();
+      return false;
+    }
+
+    await trx("fin_porcentaje_soporte")
+      .whereIn("_id", validDiscountIds)
+      .update({ porcentaje_estado_id: 4 });
+
+    const dataInsert = validDiscountIds.map((row: any) => ({
       pago_id: pago_id,
       porcentaje_soporte_id: row,
-    };
-    dataInsert.push(rowDB);
-  });
+    }));
 
-  return conDB("fin_porcentaje_soporte")
-    .whereIn("_id", ids)
-    .update({ porcentaje_estado_id: 4 })
-
-    .then((ress: any) => {
-      return trx("fin_factura_descuento").insert(dataInsert);
-    })
-    .then((result: any) => {
-      trx.commit();
-      console.log(result);
-      return true;
-    })
-    .catch((result: any) => {
-      console.log(result);
-      trx.rollback();
-      return false;
-    });
+    const result = await trx("fin_factura_descuento").insert(dataInsert);
+    await trx.commit();
+    console.log(result);
+    return true;
+  } catch (result) {
+    console.log(result);
+    await trx.rollback();
+    return false;
+  }
 };
 
 //consulta las categorias de descuento disponibles

@@ -40,6 +40,7 @@ import { v4 as uuidv4 } from "uuid";
 import { parse, format } from "date-format-parse";
 import { getInfoUsuario } from "../provider/usuario_provider";
 import { calcularTotales } from "../helpers/factura.util";
+import { deduplicateDiscountsByCategory } from "../helpers/discountEligibility.util";
 import { IParamsOnline } from "../interfaces/zonapagos.interface";
 import { decodePagoToList } from "../helpers/decodePagoToList";
 
@@ -81,6 +82,17 @@ const getZonaPagosUserMessage = (error: any): string => {
   }
 
   return "La pasarela de pagos no está disponible temporalmente. Intente nuevamente en unos minutos.";
+};
+
+const filterDiscountsByMatriculaId = (discounts: any[], matriculaId: any): any[] => {
+  return (discounts || []).filter((discount) => {
+    const discountMatriculaId = discount?.matricula_id;
+    if (discountMatriculaId === null || discountMatriculaId === undefined || String(discountMatriculaId).trim() === "") {
+      return true;
+    }
+
+    return String(discountMatriculaId).trim() === String(matriculaId).trim();
+  });
 };
 
 const logZonaPagosError = (error: any, context: { endpoint: string; pagoId?: any; elapsedMs?: number }) => {
@@ -1297,11 +1309,13 @@ export const consultarDatosInscripcion = async (
         throw new Error("No se encontraron precios configurados");
       }
       //consular los descuentos y multas que un estudiante tiene asignados
-      let resultDto = await getDescuento(
+      const resultDtoRaw = await getDescuento(
         resultPaquete[0].categoria_id,
         resultDB.cod_periodo,
-        resultDB.ide_persona
+        resultDB.ide_persona,
+        id_matricula
       );
+      let resultDto = deduplicateDiscountsByCategory(filterDiscountsByMatriculaId(resultDtoRaw, id_matricula));
       console.log(resultDto);
 
       resultDto.forEach((row: any) => {
