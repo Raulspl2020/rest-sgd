@@ -19,6 +19,7 @@ import {
     deduplicateDiscountsByCategory,
     filterDiscountsForEnrollment,
     getDiscountableTuitionConceptIds,
+    isGratuityDiscount,
     sumDiscountRateWithCap,
     toNumber,
 } from "../helpers/discountEligibility.util";
@@ -121,6 +122,35 @@ const calculateSubtotalWithDiscountCap = (
 
     // Defensive floor: billing totals must never be negative.
     return total < 0 ? 0 : total;
+};
+
+const traceDiscounts = (label: string, discounts: any[]) => {
+    console.log(`[DISCOUNT-TRACE] ${label}=${JSON.stringify((discounts || []).map((discount) => ({
+        discountId: discount?._id,
+        categoryId: discount?.porcentaje_categoria_id,
+        description: discount?.descripcion,
+        status: discount?.estado || discount?.porcentaje_estado_id,
+        rate: discount?.porcentaje,
+        isGratuity: isGratuityDiscount(discount),
+    })))}`);
+};
+
+const traceConceptDiscount = (concept: any) => {
+    const quantity = toNumber(concept?.cantidad);
+    const unitValue = toNumber(concept?.valor_unidad);
+    const discountRate = clampDiscountRate(concept?.descuento);
+    const originalSubtotal = quantity * unitValue;
+    const discountAmount = originalSubtotal * discountRate;
+    console.log(`[DISCOUNT-TRACE] concept=${JSON.stringify({
+        conceptId: concept?.concepto_id,
+        quantity,
+        unitValue,
+        originalSubtotal,
+        discountRate,
+        discountAmount,
+        finalSubtotal: Math.max(originalSubtotal - discountAmount, 0),
+        reason: discountRate > 0 ? 'DISCOUNT_APPLIED' : 'CONCEPT_NOT_DISCOUNTABLE_OR_NO_APPROVED_RATE',
+    })}`);
 };
 
 const normalizeLevelName = (value: any): string => {
@@ -347,7 +377,16 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
 
             //consular los descuentos y multas que un estudiante tiene asignados
             const [resultConfig, resultDtoRaw] = await Promise.all([resultConfigPromise, resultDtoPromise]);
+            const invoiceMode = resultDB.nro_creditos <= resultConfig.min_creditos && resultDB.nro_creditos > 0
+                ? 'INDIVIDUAL_CREDIT_PAYMENT'
+                : 'FULL_ENROLLMENT_PAYMENT';
+            console.log(`[DISCOUNT-TRACE] enrollment=${id_matricula}`);
+            console.log(`[DISCOUNT-TRACE] credits=${resultDB.nro_creditos}`);
+            console.log(`[DISCOUNT-TRACE] invoiceMode=${invoiceMode}`);
+            console.log(`[DISCOUNT-TRACE] academicLevelCode=${resultDB.cod_nivel_edu}`);
+            traceDiscounts('discountsBeforeFilter', resultDtoRaw);
             const resultDto = deduplicateDiscountsByCategory(filterDiscountsForEnrollment(resultDtoRaw, resultDB));
+            traceDiscounts('discountsAfterFilter', resultDto);
 
 
             resultDto.forEach((row: any) => {
@@ -503,6 +542,7 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                             element.aumento,
                             element.descuento,
                         );
+                        traceConceptDiscount(precios[index]);
                         total_a_pagar = element.subtotal + total_a_pagar;
                     });
 

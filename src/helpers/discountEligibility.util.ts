@@ -2,7 +2,8 @@ const MAX_DISCOUNT_RATE = 1;
 const GRATUITY_DISCOUNT_CATEGORY_ID = 13;
 const GRATUITY_INELIGIBLE_LEVEL_CODES = new Set([11, 16]);
 
-export const TUITION_DISCOUNT_CONCEPT_IDS = [1, 2, 5, 6, 7, 52];
+export const INDIVIDUAL_CREDIT_DISCOUNT_CONCEPT_IDS = [33, 35];
+export const TUITION_DISCOUNT_CONCEPT_IDS = [1, 2, 5, 6, 7, 52, ...INDIVIDUAL_CREDIT_DISCOUNT_CONCEPT_IDS];
 export const FULL_TUITION_DISCOUNT_CONCEPT_IDS = [5, 6, 7, 52];
 
 export const toNumber = (value: any): number => {
@@ -112,6 +113,6 @@ export const deduplicateDiscountsByCategory = (discounts: any[]): any[] => {
 
 export const getDiscountableTuitionConceptIds = (discount: any, conceptIds: number[]): number[] => {
   return isGratuityDiscount(discount)
-    ? [...conceptIds, 33]
+    ? Array.from(new Set([...conceptIds, ...INDIVIDUAL_CREDIT_DISCOUNT_CONCEPT_IDS]))
     : conceptIds;
 };
