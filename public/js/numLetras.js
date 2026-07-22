@@ -150,11 +150,14 @@ var numeroALetras = (function() {
         let cientos = Math.floor(num / divisor)
         let resto = num - (cientos * divisor)
 
-        let strMillones = Seccion(num, divisor, 'UN MILLON DE', 'MILLONES DE');
+        let strMillones = Seccion(num, divisor, 'UN MILLÓN', 'MILLONES');
         let strMiles = Miles(resto);
 
         if (strMillones == '')
             return strMiles;
+
+        if (resto == 0)
+            return strMillones + ' DE';
 
         return strMillones + ' ' + strMiles;
     } //Millones()
@@ -182,11 +185,11 @@ var numeroALetras = (function() {
         };
 
         if (data.enteros == 0)
-            return 'CERO ' + data.letrasMonedaPlural + ' ' + data.letrasCentavos;
+            return ('CERO ' + data.letrasMonedaPlural + ' ' + data.letrasCentavos).replace(/\s+/g, ' ').trim();
         if (data.enteros == 1)
-            return Millones(data.enteros) + ' ' + data.letrasMonedaSingular + ' ' + data.letrasCentavos;
+            return (Millones(data.enteros) + ' ' + data.letrasMonedaSingular + ' ' + data.letrasCentavos).replace(/\s+/g, ' ').trim();
         else
-            return Millones(data.enteros) + ' ' + data.letrasMonedaPlural + ' ' + data.letrasCentavos;
+            return (Millones(data.enteros) + ' ' + data.letrasMonedaPlural + ' ' + data.letrasCentavos).replace(/\s+/g, ' ').trim();
     };
 
 })();

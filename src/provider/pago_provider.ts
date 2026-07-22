@@ -458,6 +458,68 @@ FROM
   }
 };
 
+export const getPaqueteByProgramName = async (programName: any, categoryId = 1) => {
+  const startedAt = Date.now();
+  let packageSql = `SELECT
+    fin_paquete._id
+    , fin_paquete.codigo
+  FROM
+    fin_paquete
+    INNER JOIN fin_config
+        ON (fin_paquete.config_id = fin_config._id)
+  WHERE fin_paquete.categoria_id = ?
+    AND UPPER(TRIM(fin_paquete.descripcion)) = UPPER(TRIM(?))
+  GROUP BY fin_paquete._id, fin_paquete.codigo
+  ORDER BY fin_paquete._id
+  `;
+
+  let detailSql = `SELECT
+    fin_paquete.codigo
+    , fin_paquete.descripcion AS paquete
+    , fin_paquete.categoria_id
+    , fin_concepto.descripcion AS concepto
+    , fin_detalle_paquete.valor_unidad
+    , fin_detalle_paquete.cantidad
+    , fin_detalle_paquete.aumento
+    , IF(fin_detalle_paquete.cantidad > 0, SUM( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) + ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.aumento) -   ( (fin_detalle_paquete.cantidad * fin_detalle_paquete.valor_unidad) * fin_detalle_paquete.descuento) ), fin_detalle_paquete.valor_unidad ) AS subtotal
+    , fin_detalle_paquete.descuento
+    , fin_concepto.fecha_actualizacion
+    , fin_detalle_paquete.descuento_ext
+    , fin_detalle_paquete.concepto_id
+  FROM
+    fin_paquete
+    INNER JOIN fin_config
+        ON (fin_paquete.config_id = fin_config._id)
+    INNER JOIN fin_detalle_paquete
+        ON (fin_detalle_paquete.paquete_id = fin_paquete._id)
+    INNER JOIN fin_concepto
+        ON (fin_detalle_paquete.concepto_id = fin_concepto._id)
+  WHERE fin_paquete.categoria_id = ?
+    AND UPPER(TRIM(fin_paquete.descripcion)) = UPPER(TRIM(?))
+  GROUP BY fin_detalle_paquete._id
+  ORDER BY fin_paquete._id, fin_detalle_paquete._id
+  `;
+
+  try {
+    let packages = await conDB.raw(packageSql, [categoryId, programName]);
+    const packageRows = packages[0];
+    let details: any[] = [];
+
+    if (packageRows.length === 1) {
+      let result = await conDB.raw(detailSql, [categoryId, programName]);
+      details = result[0];
+    }
+
+    return {
+      packageCount: packageRows.length,
+      packages: packageRows,
+      details,
+    };
+  } finally {
+    console.log(`[perf] SQL getPaqueteByProgramName ${Date.now() - startedAt}ms`);
+  }
+};
+
 //consulta descuentos a un estudiante
 export const getDescuento = async (
   cat_pago: any,
