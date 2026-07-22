@@ -1,5 +1,5 @@
 import { getInfoMatricula, getDetPeriodo, insertArrayDescuento, getDataDescuentosByCodigo, getCargaDescuentos, verificaCargueFacturado, eliminaDescuentosCargue } from "../provider/matricula_provider";
-import { getConfigPeriodo, getPaquete, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago, getFactura, getPagoFactura, getFacturaByMatricula, getPagoFacturaByFacturaIds } from "../provider/pago_provider";
+import { getConfigPeriodo, getPaquete, getPaqueteByProgramName, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago, getFactura, getPagoFactura, getFacturaByMatricula, getPagoFacturaByFacturaIds } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
 import xlsx from 'node-xlsx';
@@ -85,6 +85,22 @@ const logProfileSummary = (profile: ProfileLogger, totalMs: number) => {
 
 class UploadValidationError extends Error { }
 
+class PackageConfigurationError extends Error {
+    statusCode = 422;
+}
+
+export const validateSpecializationPackageResult = (packageResult: any) => {
+    if (!packageResult || packageResult.packageCount !== 1) {
+        throw new PackageConfigurationError("No existe una configuración financiera única para el programa académico de la matrícula. Verifique la parametrización programa-paquete.");
+    }
+
+    if (!Array.isArray(packageResult.details) || packageResult.details.length === 0) {
+        throw new PackageConfigurationError("No existe una configuración financiera única para el programa académico de la matrícula. Verifique la parametrización programa-paquete.");
+    }
+
+    return packageResult.details;
+};
+
 const obtenerBufferArchivoCargado = (archivo: any): Buffer => {
     if (!archivo) {
         throw new UploadValidationError("No se recibió archivo.");
@@ -158,6 +174,18 @@ const normalizeLevelName = (value: any): string => {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toUpperCase();
+};
+
+const resolveSpecializationPackage = async (
+    enrollment: any,
+    profile: ProfileLogger,
+) => {
+    const packageResult = await profile(
+        "getPaqueteByProgramName",
+        () => getPaqueteByProgramName(enrollment?.nom_nivel_educativo),
+    );
+
+    return validateSpecializationPackageResult(packageResult);
 };
 
 export const resolverCodigoPaqueteInscripcion = (matricula: any, packageParam?: any): number => {
@@ -423,7 +451,7 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await profile("getPaquete", () => getPaquete(5));
                 }else if(resultDB.cod_nivel_edu == 11){
-                    resultPaquete = await profile("getPaquete", () => getPaquete(33));
+                    resultPaquete = await resolveSpecializationPackage(resultDB, profile);
                 }
 
 
@@ -564,7 +592,7 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await profile("getPaquete", () => getPaquete(5));
                 }else if(resultDB.cod_nivel_edu == 11){
-                    resultPaquete = await profile("getPaquete", () => getPaquete(33));
+                    resultPaquete = await resolveSpecializationPackage(resultDB, profile);
                 }
 
                 if (resultPaquete != false && resultPaquete !=undefined) {
@@ -820,7 +848,7 @@ export const generarpagoMatricula = async (req: any, res: any) => {
     } catch (error) {
         console.log(`[perf] GET ${endpoint} fin ${Date.now() - startedAt}ms`);
         console.log(`[perf:rest-sgd] GET ${endpoint} failed ${Date.now() - startedAt}ms error=${error?.message}`);
-        return res.status(500).json({
+        return res.status(error?.statusCode || 500).json({
             error: true,
             message: error.message
         });
@@ -876,7 +904,7 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await getPaquete(5);
                 }else if(resultDB.cod_nivel_edu == 11){
-                    resultPaquete = await getPaquete(33);
+                    resultPaquete = await resolveSpecializationPackage(resultDB, createProfileLogger(false, "matricula"));
                 }
 
 
@@ -964,7 +992,7 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
                 } else if (resultDB.cod_nivel_edu == 16) {
                     resultPaquete = await getPaquete(5);
                 }else if(resultDB.cod_nivel_edu == 11){
-                    resultPaquete = await getPaquete(33);
+                    resultPaquete = await resolveSpecializationPackage(resultDB, createProfileLogger(false, "matricula"));
                 }
 
                 if (resultPaquete != false) {
@@ -1045,7 +1073,7 @@ export const generarpagoMatricula2 = async (req: any, res: any) => {
 
 
     } catch (error) {
-        return res.status(500).json({
+        return res.status(error?.statusCode || 500).json({
             error: true,
             message: error.message
         });
