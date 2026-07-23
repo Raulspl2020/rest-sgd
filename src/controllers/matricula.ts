@@ -44,7 +44,12 @@ const getStudentTypeUrl = (): string => {
 
 const INSCRIPTION_PACKAGE_TECHNOLOGY = 6;
 const INSCRIPTION_PACKAGE_SPECIALIZATION = 34;
-const SPECIALIZATION_LEVEL_CODES = new Set([11, 16]);
+// col_nivel_educacion.cod_nivel_edu: 11 = programas de especializacion.
+const SPECIALIZATION_LEVEL_CODES = new Set([11]);
+// fin_porcetaje_categoria._id: 2 = votacion, 15 = egresado, 16 = COOTEP.
+const SPECIALIZATION_ALLOWED_DISCOUNT_CATEGORY_IDS = new Set([2, 15, 16]);
+// fin_detalle_paquete.concepto_id: 52 = Talento Humano, 64 = Gestion Ambiental.
+const SPECIALIZATION_TUITION_CONCEPT_IDS = new Set([52, 64]);
 
 type ProfileLogger = <T>(label: string, task: () => Promise<T>) => Promise<T>;
 
@@ -141,6 +146,10 @@ const calculateSubtotalWithDiscountCap = (
 };
 
 const traceDiscounts = (label: string, discounts: any[]) => {
+    if (process.env.DISCOUNT_TRACE !== 'true') {
+        return;
+    }
+
     console.log(`[DISCOUNT-TRACE] ${label}=${JSON.stringify((discounts || []).map((discount) => ({
         discountId: discount?._id,
         categoryId: discount?.porcentaje_categoria_id,
@@ -152,6 +161,10 @@ const traceDiscounts = (label: string, discounts: any[]) => {
 };
 
 const traceConceptDiscount = (concept: any) => {
+    if (process.env.DISCOUNT_TRACE !== 'true') {
+        return;
+    }
+
     const quantity = toNumber(concept?.cantidad);
     const unitValue = toNumber(concept?.valor_unidad);
     const discountRate = clampDiscountRate(concept?.descuento);
@@ -174,6 +187,86 @@ const normalizeLevelName = (value: any): string => {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toUpperCase();
+};
+
+const isSpecializationEnrollment = (enrollment: any): boolean => {
+    return SPECIALIZATION_LEVEL_CODES.has(Number(enrollment?.cod_nivel_edu));
+};
+
+const hasRequiredSameFiniteNumber = (currentValue: any, discountValue: any): boolean => {
+    const current = Number(currentValue);
+    const discount = Number(discountValue);
+    return Number.isFinite(current) && current > 0 && Number.isFinite(discount) && discount > 0 && current === discount;
+};
+
+const isApprovedDiscount = (discount: any): boolean => {
+    const statusId = Number(discount?.porcentaje_estado_id ?? discount?.porcentajeEstadoId);
+    if (Number.isFinite(statusId) && statusId > 0) {
+        return statusId === 2;
+    }
+
+    const status = String(discount?.estado || discount?.status || '').trim().toUpperCase();
+    return status === 'APROBADO';
+};
+
+const isSpecializationOrdinaryDiscount = (discount: any): boolean => {
+    return Number(discount?.accion) === 1
+        && SPECIALIZATION_ALLOWED_DISCOUNT_CATEGORY_IDS.has(Number(discount?.porcentaje_categoria_id ?? discount?.porcentajeCategoriaId))
+        && !isGratuityDiscount(discount)
+        && isApprovedDiscount(discount);
+};
+
+export const isSpecializationDiscountForCurrentEnrollment = (discount: any, enrollment: any): boolean => {
+    return isApprovedDiscount(discount)
+        && hasRequiredSameFiniteNumber(enrollment?.cod_matricula, discount?.matricula_id ?? discount?.matriculaId)
+        && hasRequiredSameFiniteNumber(enrollment?.cod_periodo, discount?.periodo_id ?? discount?.periodoId)
+        && hasRequiredSameFiniteNumber(enrollment?.ide_persona, discount?.estudiante_id ?? discount?.estudianteId)
+        && hasRequiredSameFiniteNumber(1, discount?.categoria_pago_id ?? discount?.categoriaPagoId);
+};
+
+export const filterDiscountsForCurrentEnrollment = (discounts: any[], enrollment: any): any[] => {
+    const filteredDiscounts = filterDiscountsForEnrollment(discounts, enrollment);
+
+    if (!isSpecializationEnrollment(enrollment)) {
+        return filteredDiscounts.filter((discount) => isApprovedDiscount(discount));
+    }
+
+    return filteredDiscounts.filter((discount) => isSpecializationDiscountForCurrentEnrollment(discount, enrollment));
+};
+
+const isSpecializationTuitionConcept = (concept: any): boolean => {
+    return SPECIALIZATION_TUITION_CONCEPT_IDS.has(Number(concept?.concepto_id));
+};
+
+export const canApplyTuitionDiscount = (
+    enrollment: any,
+    concept: any,
+    discount: any,
+    conceptIds: number[],
+): boolean => {
+    if (isSpecializationEnrollment(enrollment)) {
+        return isSpecializationOrdinaryDiscount(discount) && isSpecializationTuitionConcept(concept);
+    }
+
+    return concept?.descuento_ext == '1'
+        && Number(discount?.accion) === 1
+        && getDiscountableTuitionConceptIds(discount, conceptIds).includes(concept?.concepto_id);
+};
+
+const canApplyIncrease = (
+    concept: any,
+    discount: any,
+    conceptIds: number[],
+): boolean => {
+    if (concept?.descuento_ext != '1' || Number(discount?.accion) === 1) {
+        return false;
+    }
+
+    if (Number(discount?.tipo) === 1) {
+        return true;
+    }
+
+    return conceptIds.includes(Number(concept?.concepto_id));
 };
 
 const resolveSpecializationPackage = async (
@@ -408,12 +501,14 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
             const invoiceMode = resultDB.nro_creditos <= resultConfig.min_creditos && resultDB.nro_creditos > 0
                 ? 'INDIVIDUAL_CREDIT_PAYMENT'
                 : 'FULL_ENROLLMENT_PAYMENT';
-            console.log(`[DISCOUNT-TRACE] enrollment=${id_matricula}`);
-            console.log(`[DISCOUNT-TRACE] credits=${resultDB.nro_creditos}`);
-            console.log(`[DISCOUNT-TRACE] invoiceMode=${invoiceMode}`);
-            console.log(`[DISCOUNT-TRACE] academicLevelCode=${resultDB.cod_nivel_edu}`);
+            if (process.env.DISCOUNT_TRACE === 'true') {
+                console.log(`[DISCOUNT-TRACE] enrollment=${id_matricula}`);
+                console.log(`[DISCOUNT-TRACE] credits=${resultDB.nro_creditos}`);
+                console.log(`[DISCOUNT-TRACE] invoiceMode=${invoiceMode}`);
+                console.log(`[DISCOUNT-TRACE] academicLevelCode=${resultDB.cod_nivel_edu}`);
+            }
             traceDiscounts('discountsBeforeFilter', resultDtoRaw);
-            const resultDto = deduplicateDiscountsByCategory(filterDiscountsForEnrollment(resultDtoRaw, resultDB));
+            const resultDto = deduplicateDiscountsByCategory(filterDiscountsForCurrentEnrollment(resultDtoRaw, resultDB));
             traceDiscounts('discountsAfterFilter', resultDto);
 
 
@@ -469,43 +564,17 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                     precios.forEach((element: any, index: number) => {
 
 
-                        //si se puede aplicar descuento externo
-                        if (element.descuento_ext == '1') {
-
-                            //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
-                            resultDto.forEach((row: any) => {
-                                //si aplica descuento sino aplica aumento
-
-                                //si es un descuento
-                                if (row.accion == 1) {
-                                    //si el soporte permite aplicar en todos los conceptos
-                                    if (row.tipo == 1) {
-                                        precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
-                                    } else {
-
-                                        if( getDiscountableTuitionConceptIds(row, TUITION_DISCOUNT_CONCEPT_IDS).includes(precios[index].concepto_id) ){   
-                                              precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
-                                         }
-                                 
-                                    }
-
-                                    //si es un aumento
-                                } else {
-                                    //si el soporte permite aplicar en todos los conceptos
-                                    if (row.tipo == 1) {
-                                        precios[index].aumento = precios[index].aumento + row.porcentaje;
-                                    } else {
-
-                                     
-                                        if( [ 5,6,7,52 ].includes(precios[index].concepto_id) ){   
-                                              precios[index].aumento = precios[index].aumento + row.porcentaje;
-                                         }
-
-                                    }
+                        resultDto.forEach((row: any) => {
+                            if (row.accion == 1) {
+                                if (row.tipo == 1 && !isSpecializationEnrollment(resultDB) && element.descuento_ext == '1') {
+                                    precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
+                                } else if (canApplyTuitionDiscount(resultDB, precios[index], row, TUITION_DISCOUNT_CONCEPT_IDS)) {
+                                    precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                 }
-
-
-                            });
+                            } else if (canApplyIncrease(precios[index], row, [5, 6, 7, 52])) {
+                                precios[index].aumento = precios[index].aumento + row.porcentaje;
+                            }
+                        });
 
 
 
@@ -532,19 +601,7 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                                 total = element.subtotal * Number(resultDB.nro_creditos);
                                 totaAPagar = totaAPagar + total;
                             }
-                            total_con_descuento = totaAPagar - (totaAPagar * porcentaje_descuento);
-
-                        } else {
-                            let totaAPagar = 0;
-                            if (element.cantidad > 0) {
-                                totaAPagar = totaAPagar + (element.subtotal * element.cantidad);
-                            } else {
-                                total = element.subtotal * Number(resultDB.nro_creditos);
-                                totaAPagar = totaAPagar + total;
-                                precios[index].cantidad = resultDB.nro_creditos;
-                            }
-                            total_sin_descuento = totaAPagar;
-                        }
+                        total_con_descuento = totaAPagar - (totaAPagar * porcentaje_descuento);
 
 
                         //calcula el total sin descuento
@@ -605,45 +662,17 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
                     precios.forEach((element: any, index: number) => {
 
 
-                        //si se puede aplicar descuento externo
-                        if (element.descuento_ext == '1') {
-
-
-
-                            //APLICA DESCUENTO A TODOS LOS CONCEPTOS SI ESTA CONFIGURADO
-                            resultDto.forEach((row: any) => {
-                                //si aplica descuento sino aplica aumento
-
-                                //si es un descuento
-                                if (row.accion == 1) {
-                                    //si el soporte permite aplicar en todos los conceptos
-                                    if (row.tipo == 1) {
-                                        precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
-                                    } else {
-
-                                        if( getDiscountableTuitionConceptIds(row, FULL_TUITION_DISCOUNT_CONCEPT_IDS).includes(precios[index].concepto_id) ){
-                                            precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
-                                        } 
-
-                                    }
-
-                                    //si es un aumento
-                                } else {
-                                    //si el soporte permite aplicar en todos los conceptos
-                                    if (row.tipo == 1) {
-                                        precios[index].aumento = precios[index].aumento + row.porcentaje;
-                                    } else {
-
-                                        //si es un aumento y el concepto es de matricula    
-                                        if( [ 5,6,7,1,2,52 ].includes(precios[index].concepto_id) ){   
-                                            precios[index].descuento = precios[index].descuento + row.porcentaje;
-                                         }
-
-                                    }
+                        resultDto.forEach((row: any) => {
+                            if (row.accion == 1) {
+                                if (row.tipo == 1 && !isSpecializationEnrollment(resultDB) && element.descuento_ext == '1') {
+                                    precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
+                                } else if (canApplyTuitionDiscount(resultDB, precios[index], row, FULL_TUITION_DISCOUNT_CONCEPT_IDS)) {
+                                    precios[index].descuento = sumDiscountRateWithCap(precios[index].descuento, row.porcentaje);
                                 }
-
-
-                            });
+                            } else if (canApplyIncrease(precios[index], row, [5, 6, 7, 1, 2, 52])) {
+                                precios[index].aumento = precios[index].aumento + row.porcentaje;
+                            }
+                        });
 
 
 
@@ -664,17 +693,6 @@ export const consultarpagoMatricula = async (id_matricula: any, profile: Profile
 
 
                             total_con_descuento = totaAPagar - (totaAPagar * porcentaje_descuento);
-
-                        } else {
-                            let totaAPagar = 0;
-                            totaAPagar = totaAPagar + (element.subtotal * element.cantidad);
-                            total_sin_descuento = totaAPagar;
-                        }
-
-
-
-
-
 
                         //calcula el total sin descuento
                         if (element.cantidad > 0) {

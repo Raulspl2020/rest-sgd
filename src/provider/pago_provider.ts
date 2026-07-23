@@ -539,10 +539,12 @@ export const getDescuento = async (
       "fin_porcentaje_soporte.observacion",
       "fin_porcentaje_soporte.tipo",
       "fin_porcentaje_soporte.json_file",
+      "fin_porcentaje_soporte.estudiante_id",
       "fin_porcentaje_soporte.matricula_id",
       "fin_porcentaje_soporte.periodo_id",
       "fin_porcentaje_soporte.categoria_pago_id",
       "fin_porcentaje_soporte.porcentaje_categoria_id",
+      "fin_porcentaje_soporte.porcentaje_estado_id",
       "fin_porcetaje_categoria.descripcion"
     )
     .from("fin_porcentaje_soporte")

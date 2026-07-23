@@ -1,4 +1,5 @@
 const MAX_DISCOUNT_RATE = 1;
+const RATE_DECIMAL_FACTOR = 1000000;
 const GRATUITY_DISCOUNT_CATEGORY_ID = 13;
 const GRATUITY_INELIGIBLE_LEVEL_CODES = new Set([11, 16]);
 
@@ -17,7 +18,8 @@ export const clampDiscountRate = (value: any): number => {
     return 0;
   }
 
-  return discountRate > MAX_DISCOUNT_RATE ? MAX_DISCOUNT_RATE : discountRate;
+  const clampedRate = discountRate > MAX_DISCOUNT_RATE ? MAX_DISCOUNT_RATE : discountRate;
+  return Math.round(clampedRate * RATE_DECIMAL_FACTOR) / RATE_DECIMAL_FACTOR;
 };
 
 export const sumDiscountRateWithCap = (currentRate: any, incomingRate: any): number => {
