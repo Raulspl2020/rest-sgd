@@ -149,6 +149,86 @@ export const insertArrayDescuento = async (dataInsert: any) => {
 
 }
 
+export const getDiscountImportReferences = async (filters: {
+    configIds: any[];
+    statusIds: any[];
+    studentIds: any[];
+    enrollmentIds: any[];
+    categoryIds: any[];
+    periodIds: any[];
+}) => {
+    const [configs, statuses, students, enrollments, categories, periods] = await Promise.all([
+        filters.configIds.length > 0 ? conDB("fin_config").select("_id").whereIn("_id", filters.configIds) : [],
+        filters.statusIds.length > 0 ? conDB("fin_porcentaje_estado").select("_id").whereIn("_id", filters.statusIds) : [],
+        filters.studentIds.length > 0
+            ? conDB("col_persona")
+                .select("ide_persona", "nom1_persona", "nom2_persona", "ape1_persona", "ape2_persona")
+                .whereIn("ide_persona", filters.studentIds)
+            : [],
+        filters.enrollmentIds.length > 0
+            ? conDB("col_matricula")
+                .select("cod_matricula", "ide_estudiante")
+                .whereIn("cod_matricula", filters.enrollmentIds)
+            : [],
+        filters.categoryIds.length > 0
+            ? conDB("fin_porcetaje_categoria").select("_id", "descripcion").whereIn("_id", filters.categoryIds)
+            : [],
+        filters.periodIds.length > 0 ? conDB("col_periodo").select("cod_periodo").whereIn("cod_periodo", filters.periodIds) : [],
+    ]);
+
+    return { configs, statuses, students, enrollments, categories, periods };
+};
+
+export const getExistingDiscountImportRows = async (filters: {
+    studentIds: any[];
+    periodIds: any[];
+    categoryIds: any[];
+}) => {
+    if (filters.studentIds.length === 0 || filters.periodIds.length === 0 || filters.categoryIds.length === 0) {
+        return [];
+    }
+
+    return await conDB("fin_porcentaje_soporte")
+        .select(
+            "_id",
+            "config_id",
+            "porcentaje_estado_id",
+            "estudiante_id",
+            "matricula_id",
+            "porcentaje_categoria_id",
+            "periodo_id",
+            "categoria_pago_id",
+            "porcentaje",
+            "codigo_cargue",
+        )
+        .whereIn("estudiante_id", filters.studentIds)
+        .whereIn("periodo_id", filters.periodIds)
+        .whereIn("porcentaje_categoria_id", filters.categoryIds);
+};
+
+export const insertDiscountImportRows = async (rows: any[]) => {
+    const trx = await conDB.transaction();
+    const inserted: any[] = [];
+    const failed: Array<{ row: any; error: any }> = [];
+
+    try {
+        for (const row of rows) {
+            try {
+                const result = await trx("fin_porcentaje_soporte").insert(row.data);
+                inserted.push({ row: row.row, id: result && result[0] });
+            } catch (error) {
+                failed.push({ row, error });
+            }
+        }
+
+        await trx.commit();
+        return { inserted, failed };
+    } catch (error) {
+        await trx.rollback();
+        throw error;
+    }
+};
+
 
 
 //lista los cargues realizados exitosamente
@@ -266,7 +346,6 @@ export const getProgramaByIdProPersona = async (id_programa_persona: string) => 
     }
 
 }
-
 
 
 

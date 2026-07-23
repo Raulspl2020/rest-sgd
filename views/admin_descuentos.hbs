@@ -50,7 +50,7 @@
                                     <button class="btn btn-primary " :disabled="desactivarBotonSoporte" type="submit">
                                         <span v-if="cargando" class="spinner-border spinner-border-sm" role="status"
                                             aria-hidden="true"></span>
-                                        Cargar documento</button>
+                                        {[cargando ? 'Procesando archivo...' : 'Cargar documento']}</button>
                                 </div>
                                 <div class="col-md-3 d-grid gap-2">
                                     <a href="{{BASE_URL}}/page/descargarplantilladesceunto" title="Clic para descargar">
@@ -79,6 +79,10 @@
                                                 Fecha: <span class="text-secondary">{[carg.fecha]} </span><br>
                                                 Cantidad: <small class="text-success"> {[carg.numero
                                                     ]}</small>
+                                                <br>
+                                                <small class="text-warning" v-if="Number(carg.total_rechazados || 0) > 0">
+                                                    Rechazados: {[carg.total_rechazados]} | Duplicados: {[carg.total_duplicados || 0]}
+                                                </small>
 
 
                                             </div>
@@ -100,6 +104,17 @@
                                                     </a>
                                                 </div>
 
+                                                <div class="col-12 mt-1">
+                                                    <a v-if="canDownloadRejected(carg)"
+                                                        :href="'{{BASE_URL}}/matricula/DescargarRechazadosDescuento/'+carg.codigo_cargue"
+                                                        title="Descargar registros rechazados">
+                                                        <span class="badge rounded-pill float-right bg-warning text-dark">
+                                                            <i class="fa fa-file-excel-o"></i> Descargar rechazados</span>
+                                                    </a>
+                                                    <span v-else class="badge rounded-pill float-right bg-secondary">
+                                                        <i class="fa fa-ban"></i> Sin rechazados</span>
+                                                </div>
+
                                             </div>
 
 
@@ -116,6 +131,71 @@
 
                             <div class="alert mt-3" :class="classalerta" role="alert" v-show="mostrarAlerta">
                                 <i class="fa fa-warning"></i> {[textoAlerta]}
+                            </div>
+
+                            <div class="card mt-3" v-if="uploadSummary">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-2">Resumen de carga</h6>
+                                    <p class="mb-2">
+                                        Proceso finalizado: {[uploadSummary.inserted]} descuentos cargados y
+                                        {[uploadSummary.skipped]} filas rechazadas.
+                                    </p>
+                                    <div class="row text-center">
+                                        <div class="col-3"><strong>{[uploadSummary.totalRows]}</strong><br><small>Total filas</small></div>
+                                        <div class="col-3 text-success"><strong>{[uploadSummary.inserted]}</strong><br><small>Cargadas</small></div>
+                                        <div class="col-3 text-warning"><strong>{[uploadSummary.skipped]}</strong><br><small>Rechazadas</small></div>
+                                        <div class="col-3 text-secondary"><strong>{[uploadSummary.duplicates]}</strong><br><small>Duplicadas</small></div>
+                                    </div>
+
+                                    <div class="mt-3" v-if="importErrors.length > 0">
+                                        <a v-if="rejectedReportUrl" class="btn btn-warning btn-sm text-dark" :href="rejectedReportUrl">
+                                            <i class="fa fa-file-excel-o"></i> Descargar Excel de rechazados
+                                        </a>
+
+                                        <div class="table-responsive mt-2" v-if="uploadSummary && uploadSummary.rejectionReasons && uploadSummary.rejectionReasons.length > 0">
+                                            <table class="table table-sm table-bordered">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Código</th>
+                                                        <th>Motivo</th>
+                                                        <th>Cantidad</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="reason in uploadSummary.rejectionReasons">
+                                                        <td>{[reason.code]}</td>
+                                                        <td>{[reason.reason]}</td>
+                                                        <td>{[reason.count]}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div class="table-responsive mt-2">
+                                            <table class="table table-sm table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Fila</th>
+                                                        <th>Identificación</th>
+                                                        <th>Nombre</th>
+                                                        <th>Motivo</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="errorItem in importErrors.slice(0, 20)">
+                                                        <td>{[errorItem.row]}</td>
+                                                        <td>{[errorItem.studentId]}</td>
+                                                        <td>{[errorItem.studentName || '']}</td>
+                                                        <td>{[errorItem.reason]}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <small class="text-muted" v-if="importErrors.length > 20">
+                                            Se muestran las primeras 20 filas rechazadas. Descargue el reporte para ver el detalle completo.
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
 
 
@@ -173,7 +253,12 @@
                     classalerta: 'alert-warning',
                     textoAlerta: "",
                     desactivarBotonSoporte: false,
-                    cargues: []
+                    cargues: [],
+                    file: null,
+                    uploadSummary: null,
+                    importErrors: [],
+                    uploadStatus: null,
+                    rejectedReportUrl: null
 
                 };
             },
@@ -228,43 +313,71 @@
                     this.desactivarBotonSoporte = false;
                 },
 
-                enviarArchivo() {
-                    this.cargando = true;
-                    console.log("Enviar archivo file");
+                async enviarArchivo() {
+                    this.mostrarAlerta = false;
+                    this.uploadSummary = null;
+                    this.importErrors = [];
+                    this.uploadStatus = null;
+                    this.rejectedReportUrl = null;
+
+                    if (!this.file) {
+                        this.classalerta = 'alert-warning';
+                        this.textoAlerta = 'Seleccione un archivo antes de cargar la plantilla.';
+                        this.mostrarAlerta = true;
+                        return;
+                    }
+
                     let formData = new FormData();
-                    this.desactivarBotonSoporte = true;
                     formData.append('archivo', this.file);
 
-                    fetch('{{BASE_URL}}/matricula/CargaPlantillaDescuento',
-                        {
+                    this.cargando = true;
+                    this.desactivarBotonSoporte = true;
+
+                    try {
+                        const response = await fetch('{{BASE_URL}}/matricula/CargaPlantillaDescuento', {
                             method: 'POST',
                             body: formData
-                        }
-                    ).then((response) => response.json())
-                        .then(function (data) {
-                            this.cargando = false;
-                            if (!data.error) {
-                                this.classalerta = 'alert-success';
-                                this.consultarCargue();
-                            } else {
-                                this.classalerta = 'alert-warning';
-                                this.desactivarBotonSoporte = false;
-
-                            }
-                            // 
-                            this.mostrarAlerta = true;
-                            this.textoAlerta = data.message;
-                            // this.desactivarBotonSoporte = false;
-
-
-                        }.bind(this))
-                        .catch(function () {
-                            console.log('FAILURE!!');
-                            this.desactivarBotonSoporte = false;
                         });
+                        const contentType = response.headers.get('content-type') || '';
+                        const data = contentType.includes('application/json')
+                            ? await response.json()
+                            : { error: true, status: 'failed', message: await response.text() };
 
+                        this.uploadStatus = data.status || (data.error ? 'failed' : 'success');
+                        this.uploadSummary = data.summary || null;
+                        this.importErrors = data.errors || [];
+                        this.rejectedReportUrl = data.data && data.data.rejectedReportUrl
+                            ? '{{BASE_URL}}' + data.data.rejectedReportUrl
+                            : null;
 
+                        if (this.uploadStatus === 'success') {
+                            this.classalerta = 'alert-success';
+                        } else if (this.uploadStatus === 'partial') {
+                            this.classalerta = 'alert-warning';
+                        } else {
+                            this.classalerta = 'alert-danger';
+                        }
 
+                        this.textoAlerta = data.message || 'No fue posible procesar la respuesta del servidor.';
+                        this.mostrarAlerta = true;
+
+                        if (this.uploadStatus === 'success' || this.uploadStatus === 'partial') {
+                            await this.consultarCargue();
+                            this.$refs.file.value = '';
+                            this.file = null;
+                        }
+                    } catch (error) {
+                        this.classalerta = 'alert-danger';
+                        this.textoAlerta = 'No fue posible cargar el archivo. Revise la conexión e intente nuevamente.';
+                        this.mostrarAlerta = true;
+                    } finally {
+                        this.cargando = false;
+                        this.desactivarBotonSoporte = false;
+                    }
+                },
+
+                canDownloadRejected(carg) {
+                    return Number(carg.total_rechazados || 0) > 0 && Boolean(carg.hasRejectedReport);
                 },
 
 

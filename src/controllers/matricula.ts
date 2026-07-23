@@ -1,4 +1,4 @@
-import { getInfoMatricula, getDetPeriodo, insertArrayDescuento, getDataDescuentosByCodigo, getCargaDescuentos, verificaCargueFacturado, eliminaDescuentosCargue } from "../provider/matricula_provider";
+import { getInfoMatricula, getDetPeriodo, getDataDescuentosByCodigo, getCargaDescuentos, verificaCargueFacturado, eliminaDescuentosCargue, getDiscountImportReferences, getExistingDiscountImportRows, insertDiscountImportRows } from "../provider/matricula_provider";
 import { getConfigPeriodo, getPaquete, getPaqueteByProgramName, getDescuento, getCategriaDescuento, getCategoriaPorcentajeByMatricula, existePago, getFactura, getPagoFactura, getFacturaByMatricula, getPagoFacturaByFacturaIds } from "../provider/pago_provider";
 import { parse, format } from 'date-format-parse';
 import * as moneda from 'currency-formatter';
@@ -90,6 +90,16 @@ const logProfileSummary = (profile: ProfileLogger, totalMs: number) => {
 
 class UploadValidationError extends Error { }
 
+class UploadRowsValidationError extends Error {
+    statusCode = 422;
+    payload: any;
+
+    constructor(message: string, payload: any) {
+        super(message);
+        this.payload = payload;
+    }
+}
+
 class PackageConfigurationError extends Error {
     statusCode = 422;
 }
@@ -180,6 +190,367 @@ const traceConceptDiscount = (concept: any) => {
         finalSubtotal: Math.max(originalSubtotal - discountAmount, 0),
         reason: discountRate > 0 ? 'DISCOUNT_APPLIED' : 'CONCEPT_NOT_DISCOUNTABLE_OR_NO_APPROVED_RATE',
     })}`);
+};
+
+const DISCOUNT_IMPORT_HEADERS = [
+    "CODIGO CARGUE",
+    "CONFIGURACION",
+    "ESTADO PORCENTAJE",
+    "NRO IDENTIFICACION",
+    "COD MATRICULA",
+    "CATEGORIA PORCENTAJE",
+    "VALOR PORCENTAJE",
+    "ID PERIODO",
+    "OBSERVACION",
+    "ACCION",
+    "TIPO",
+];
+
+const toCellText = (value: any): string => {
+    if (value === undefined || value === null) {
+        return "";
+    }
+
+    return String(value).trim();
+};
+
+const toIntegerCell = (value: any): number | null => {
+    const text = toCellText(value);
+    if (!/^\d+$/.test(text)) {
+        return null;
+    }
+
+    return Number(text);
+};
+
+const toOptionalIntegerCell = (value: any): number | null => {
+    const text = toCellText(value);
+    if (text.length === 0) {
+        return null;
+    }
+
+    return toIntegerCell(text);
+};
+
+const toDiscountRateCell = (value: any): number | null => {
+    const text = toCellText(value).replace(",", ".");
+    if (text.length === 0) {
+        return null;
+    }
+
+    const numberValue = Number(text);
+    if (!Number.isFinite(numberValue)) {
+        return null;
+    }
+
+    return numberValue;
+};
+
+const isEmptyExcelRow = (row: any[]): boolean => {
+    return !row || row.every((cell: any) => toCellText(cell).length === 0);
+};
+
+const buildImportKey = (row: {
+    estudiante_id: string;
+    matricula_id: number | null;
+    porcentaje_categoria_id: number;
+    periodo_id: number;
+}): string => {
+    return [
+        row.estudiante_id,
+        row.matricula_id === null ? "NULL" : row.matricula_id,
+        row.porcentaje_categoria_id,
+        row.periodo_id,
+    ].join("|");
+};
+
+const buildStudentName = (student: any): string => {
+    return [student?.ape1_persona, student?.ape2_persona, student?.nom1_persona, student?.nom2_persona]
+        .filter((part: any) => toCellText(part).length > 0)
+        .join(" ")
+        .trim();
+};
+
+const DISCOUNT_REJECTION_DIR = path.join(process.cwd(), "storage", "discount-import-rejections");
+const DISCOUNT_REJECTION_CODE_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const ensureDiscountRejectionDir = () => {
+    fs.mkdirSync(DISCOUNT_REJECTION_DIR, { recursive: true });
+};
+
+const extractImportErrorData = (data: any = {}) => ({
+    codigoCarga: toCellText(data.codigo_cargue),
+    enrollmentId: data.matricula_id === undefined || data.matricula_id === null ? "" : data.matricula_id,
+    categoryId: data.porcentaje_categoria_id === undefined || data.porcentaje_categoria_id === null ? "" : data.porcentaje_categoria_id,
+    percentage: data.porcentaje === undefined || data.porcentaje === null ? "" : data.porcentaje,
+    periodId: data.periodo_id === undefined || data.periodo_id === null ? "" : data.periodo_id,
+    processedAt: toCellText(data.fecha),
+});
+
+const createImportError = (row: number, studentId: string, code: string, reason: string, studentName: string = "", data: any = {}) => ({
+    row,
+    studentId,
+    studentName,
+    code,
+    reason,
+    ...extractImportErrorData(data),
+});
+
+export const buildRejectionReasonSummary = (errors: any[]) => {
+    const summary = new Map<string, { code: string; reason: string; count: number }>();
+
+    errors.forEach((errorItem: any) => {
+        const code = toCellText(errorItem.code) || "UNKNOWN_ERROR";
+        const reason = toCellText(errorItem.reason) || "Motivo no especificado.";
+        const key = `${code}|${reason}`;
+        const current = summary.get(key) || { code, reason, count: 0 };
+        current.count += 1;
+        summary.set(key, current);
+    });
+
+    return Array.from(summary.values()).sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
+};
+
+export const buildRejectionReportBuffer = (report: {
+    codigoCarga: string;
+    fechaProcesamiento: string;
+    totalRows: number;
+    inserted: number;
+    skipped: number;
+    duplicates: number;
+    errors: any[];
+}) => {
+    const reasonSummary = buildRejectionReasonSummary(report.errors);
+    const rejectedRows = [
+        [
+            "CODIGO CARGA",
+            "FILA ORIGINAL",
+            "NRO IDENTIFICACION",
+            "NOMBRE COMPLETO",
+            "COD MATRICULA",
+            "CATEGORIA DESCUENTO",
+            "PORCENTAJE",
+            "PERIODO",
+            "CODIGO ERROR",
+            "MOTIVO RECHAZO",
+            "FECHA PROCESAMIENTO",
+        ],
+        ...report.errors.map((errorItem: any) => [
+            errorItem.codigoCarga || report.codigoCarga,
+            errorItem.row,
+            errorItem.studentId,
+            errorItem.studentName || "",
+            errorItem.enrollmentId || "",
+            errorItem.categoryId || "",
+            errorItem.percentage === undefined ? "" : errorItem.percentage,
+            errorItem.periodId || "",
+            errorItem.code,
+            errorItem.reason,
+            errorItem.processedAt || report.fechaProcesamiento,
+        ]),
+    ];
+    const summaryRows = [
+        ["Campo", "Valor"],
+        ["Código de carga", report.codigoCarga],
+        ["Fecha de procesamiento", report.fechaProcesamiento],
+        ["Total procesados", report.totalRows],
+        ["Total cargados", report.inserted],
+        ["Total rechazados", report.skipped],
+        ["Total duplicados", report.duplicates],
+        [],
+        ["Código error", "Motivo de rechazo", "Cantidad"],
+        ...reasonSummary.map((item) => [item.code, item.reason, item.count]),
+    ];
+
+    return Buffer.from(xlsx.build([
+        { name: "Rechazados", data: rejectedRows },
+        { name: "Resumen", data: summaryRows },
+    ], {
+        "!cols": [
+            { wch: 38 },
+            { wch: 14 },
+            { wch: 18 },
+            { wch: 40 },
+            { wch: 16 },
+            { wch: 20 },
+            { wch: 12 },
+            { wch: 12 },
+            { wch: 26 },
+            { wch: 70 },
+            { wch: 22 },
+        ],
+    }) as any);
+};
+
+const getDiscountRejectionReportPaths = (codigoCarga: string) => {
+    if (!DISCOUNT_REJECTION_CODE_PATTERN.test(codigoCarga)) {
+        throw new UploadValidationError("Código de carga inválido.");
+    }
+
+    return {
+        xlsxPath: path.join(DISCOUNT_REJECTION_DIR, `${codigoCarga}.xlsx`),
+        metaPath: path.join(DISCOUNT_REJECTION_DIR, `${codigoCarga}.json`),
+    };
+};
+
+const saveDiscountRejectionReport = (report: {
+    codigoCarga: string;
+    fechaProcesamiento: string;
+    totalRows: number;
+    inserted: number;
+    skipped: number;
+    duplicates: number;
+    errors: any[];
+}) => {
+    if (report.errors.length === 0) {
+        return null;
+    }
+
+    ensureDiscountRejectionDir();
+    const reportPaths = getDiscountRejectionReportPaths(report.codigoCarga);
+    const reasonSummary = buildRejectionReasonSummary(report.errors);
+    fs.writeFileSync(reportPaths.xlsxPath, buildRejectionReportBuffer(report));
+    fs.writeFileSync(reportPaths.metaPath, JSON.stringify({
+        codigo_cargue: report.codigoCarga,
+        fecha: report.fechaProcesamiento,
+        totalRows: report.totalRows,
+        inserted: report.inserted,
+        skipped: report.skipped,
+        duplicates: report.duplicates,
+        rejectionReasons: reasonSummary,
+        reportFile: path.basename(reportPaths.xlsxPath),
+    }, null, 2));
+
+    return {
+        hasRejectedReport: true,
+        rejectedReportUrl: `/matricula/DescargarRechazadosDescuento/${report.codigoCarga}`,
+        rejectionReasons: reasonSummary,
+    };
+};
+
+const readDiscountRejectionMetadata = (codigoCarga: string) => {
+    try {
+        const reportPaths = getDiscountRejectionReportPaths(codigoCarga);
+        if (!fs.existsSync(reportPaths.metaPath) || !fs.existsSync(reportPaths.xlsxPath)) {
+            return null;
+        }
+
+        return JSON.parse(fs.readFileSync(reportPaths.metaPath, "utf8"));
+    } catch (error) {
+        return null;
+    }
+};
+
+const listDiscountRejectionMetadata = () => {
+    if (!fs.existsSync(DISCOUNT_REJECTION_DIR)) {
+        return [];
+    }
+
+    return fs.readdirSync(DISCOUNT_REJECTION_DIR)
+        .filter((fileName) => fileName.endsWith(".json"))
+        .map((fileName) => readDiscountRejectionMetadata(path.basename(fileName, ".json")))
+        .filter(Boolean);
+};
+
+const sanitizeDbErrorMessage = (error: any): string => {
+    if (error?.code === "ER_NO_REFERENCED_ROW_2") {
+        return "La fila referencia un registro relacionado que no existe.";
+    }
+
+    if (error?.code === "ER_DUP_ENTRY") {
+        return "La fila genera un registro duplicado.";
+    }
+
+    return "No fue posible insertar la fila por un error de base de datos.";
+};
+
+const normalizeDiscountImportRows = (worksheetRows: any[][], codigoCargue: string, fechaActual: string) => {
+    const headers = (worksheetRows[0] || []).slice(0, DISCOUNT_IMPORT_HEADERS.length).map((header: any) => toCellText(header));
+    const headersMatch = DISCOUNT_IMPORT_HEADERS.every((header, index) => headers[index] === header);
+    if (!headersMatch) {
+        throw new UploadValidationError(`Encabezados inválidos. La plantilla debe contener: ${DISCOUNT_IMPORT_HEADERS.join(", ")}`);
+    }
+
+    const validShapeRows: any[] = [];
+    const errors: any[] = [];
+
+    worksheetRows.slice(1).forEach((row: any[], index: number) => {
+        const excelRow = index + 2;
+        if (isEmptyExcelRow(row)) {
+            return;
+        }
+
+        const configId = toOptionalIntegerCell(row[1]);
+        const statusId = toIntegerCell(row[2]);
+        const studentId = toCellText(row[3]);
+        const enrollmentId = toOptionalIntegerCell(row[4]);
+        const categoryId = toIntegerCell(row[5]);
+        const discountRate = toDiscountRateCell(row[6]);
+        const periodId = toIntegerCell(row[7]);
+        const action = toCellText(row[9]);
+        const type = toCellText(row[10]);
+        const rowErrors: any[] = [];
+        const rawData = {
+            codigo_cargue: toCellText(row[0]) || codigoCargue,
+            config_id: configId,
+            porcentaje_estado_id: statusId,
+            estudiante_id: studentId,
+            matricula_id: enrollmentId,
+            porcentaje_categoria_id: categoryId,
+            porcentaje: discountRate,
+            periodo_id: periodId,
+            observacion: toCellText(row[8]) || null,
+            accion: action,
+            tipo: type,
+            fecha: fechaActual,
+        };
+
+        if (row[1] !== undefined && row[1] !== null && toCellText(row[1]).length > 0 && configId === null) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_CONFIG", "La configuración debe ser numérica.", "", rawData));
+        }
+        if (statusId === null) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_STATUS", "El estado de porcentaje es obligatorio y debe ser numérico.", "", rawData));
+        }
+        if (!/^\d+$/.test(studentId)) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_STUDENT_ID", "La identificación del estudiante es obligatoria y debe contener solo números.", "", rawData));
+        }
+        if (row[4] !== undefined && row[4] !== null && toCellText(row[4]).length > 0 && enrollmentId === null) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_ENROLLMENT", "La matrícula debe ser numérica cuando se diligencia.", "", rawData));
+        }
+        if (categoryId === null) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_CATEGORY", "La categoría de descuento es obligatoria y debe ser numérica.", "", rawData));
+        }
+        if (discountRate === null || discountRate < 0 || discountRate > 1) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_PERCENTAGE", "El porcentaje debe ser numérico y estar entre 0 y 1.", "", rawData));
+        }
+        if (periodId === null) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_PERIOD", "El periodo es obligatorio y debe ser numérico.", "", rawData));
+        }
+        if (!/^[01]$/.test(action)) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_ACTION", "La acción es obligatoria y debe ser 0 o 1.", "", rawData));
+        }
+        if (!/^[01]$/.test(type)) {
+            rowErrors.push(createImportError(excelRow, studentId, "INVALID_TYPE", "El tipo es obligatorio y debe ser 0 o 1.", "", rawData));
+        }
+
+        if (rowErrors.length > 0) {
+            errors.push(...rowErrors);
+            return;
+        }
+
+        validShapeRows.push({
+            row: excelRow,
+            data: {
+                ...rawData,
+                porcentaje_estado_id: statusId as number,
+                porcentaje_categoria_id: categoryId as number,
+                porcentaje: discountRate as number,
+                periodo_id: periodId as number,
+            },
+        });
+    });
+
+    return { validShapeRows, errors };
 };
 
 const normalizeLevelName = (value: any): string => {
@@ -1157,57 +1528,156 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
             throw new UploadValidationError("La plantilla no contiene hojas válidas para procesar.");
         }
 
-            const primeraHoja = workSheetsFromBuffer[0].data;
+        const primeraHoja = workSheetsFromBuffer[0].data;
+        const codigo_Cargue = uuidv4();
+        const fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss');
+        const { validShapeRows, errors } = normalizeDiscountImportRows(primeraHoja, codigo_Cargue, fechaActual);
+        const totalRows = primeraHoja.slice(1).filter((row: any[]) => !isEmptyExcelRow(row)).length;
 
-            let dataInsert: any = [];
+        if (totalRows === 0) {
+            throw new UploadValidationError("La plantilla no contiene filas para procesar.");
+        }
 
-            let codigo_Cargue = uuidv4();
-            let fechaActual = format(new Date(), 'YYYY-MM-DD HH:mm:ss');
+        const unique = (values: any[]) => Array.from(new Set(values.filter((value: any) => value !== undefined && value !== null && toCellText(value).length > 0)));
+        const references = await getDiscountImportReferences({
+            configIds: unique(validShapeRows.map((row: any) => row.data.config_id)),
+            statusIds: unique(validShapeRows.map((row: any) => row.data.porcentaje_estado_id)),
+            studentIds: unique(validShapeRows.map((row: any) => row.data.estudiante_id)),
+            enrollmentIds: unique(validShapeRows.map((row: any) => row.data.matricula_id)),
+            categoryIds: unique(validShapeRows.map((row: any) => row.data.porcentaje_categoria_id)),
+            periodIds: unique(validShapeRows.map((row: any) => row.data.periodo_id)),
+        });
 
-            primeraHoja.forEach((row: any, index: number) => {
-                // console.log(row);
+        const configIds = new Set(references.configs.map((item: any) => String(item._id)));
+        const statusIds = new Set(references.statuses.map((item: any) => String(item._id)));
+        const studentMap = new Map(references.students.map((item: any) => [String(item.ide_persona), item]));
+        const enrollmentMap = new Map(references.enrollments.map((item: any) => [String(item.cod_matricula), String(item.ide_estudiante)]));
+        const categoryIds = new Set(references.categories.map((item: any) => String(item._id)));
+        const periodIds = new Set(references.periods.map((item: any) => String(item.cod_periodo)));
+        const existingRows = await getExistingDiscountImportRows({
+            studentIds: unique(validShapeRows.map((row: any) => row.data.estudiante_id)),
+            periodIds: unique(validShapeRows.map((row: any) => row.data.periodo_id)),
+            categoryIds: unique(validShapeRows.map((row: any) => row.data.porcentaje_categoria_id)),
+        });
+        const existingKeys = new Set(existingRows.map((row: any) => buildImportKey({
+            estudiante_id: String(row.estudiante_id),
+            matricula_id: row.matricula_id === undefined ? null : row.matricula_id,
+            porcentaje_categoria_id: row.porcentaje_categoria_id,
+            periodo_id: row.periodo_id,
+        })));
+        const excelKeys = new Map<string, number>();
+        const rowsToInsert: any[] = [];
 
+        for (const row of validShapeRows) {
+            const student = studentMap.get(row.data.estudiante_id);
+            const studentName = buildStudentName(student);
+            const rowErrors: any[] = [];
 
-                let rowObject = {
-                    'codigo_cargue': (row[0] == undefined || row[0] == '') ? codigo_Cargue : row[0],
-                    'config_id': (row[1] == undefined || row[1] == '') ? null : row[1],
-                    'porcentaje_estado_id': row[2],
-                    'estudiante_id': row[3],
-                    'matricula_id': row[4],
-                    'porcentaje_categoria_id': row[5],
-                    'porcentaje': row[6],
-                    'periodo_id': row[7],
-                    // 'nom_periodo': row[8]
-                    'observacion': (row[8] == undefined || row[8] == '') ? null : row[8],
-                    'accion': row[9],
-                    'tipo': row[10],
-                    'fecha': fechaActual
-                };
-
-                if (index > 0) {
-                    dataInsert.push(rowObject);
-                }
-
-
-            });
-
-            let resultDB = await insertArrayDescuento(dataInsert);
-            if (resultDB[0]) {
-                return res.status(200).json({
-                    error: false,
-                    message: `Cargado exitosamente, se han afectado  ${resultDB[1]} registros`,
-                    data: {
-                        'codigo': codigo_Cargue,
-                        'fecha': fechaActual,
-                        'registros': resultDB[1]
-                    }
-                });
-            } else {
-                return res.status(200).json({
-                    error: true,
-                    message: `Archivo procesado con errores, ${resultDB[1].sqlMessage} `
-                });
+            if (row.data.config_id !== null && !configIds.has(String(row.data.config_id))) {
+                rowErrors.push(createImportError(row.row, row.data.estudiante_id, "CONFIG_NOT_FOUND", "La configuración indicada no existe.", studentName, row.data));
             }
+            if (!statusIds.has(String(row.data.porcentaje_estado_id))) {
+                rowErrors.push(createImportError(row.row, row.data.estudiante_id, "STATUS_NOT_FOUND", "El estado de porcentaje indicado no existe.", studentName, row.data));
+            }
+            if (!student) {
+                rowErrors.push(createImportError(row.row, row.data.estudiante_id, "STUDENT_NOT_FOUND", "El estudiante no existe en la base de datos.", "", row.data));
+            }
+            if (row.data.matricula_id !== null) {
+                const enrollmentOwner = enrollmentMap.get(String(row.data.matricula_id));
+                if (!enrollmentOwner) {
+                    rowErrors.push(createImportError(row.row, row.data.estudiante_id, "ENROLLMENT_NOT_FOUND", "La matrícula indicada no existe.", studentName, row.data));
+                } else if (enrollmentOwner !== row.data.estudiante_id) {
+                    rowErrors.push(createImportError(row.row, row.data.estudiante_id, "ENROLLMENT_STUDENT_MISMATCH", "La matrícula indicada no corresponde al estudiante.", studentName, row.data));
+                }
+            }
+            if (!categoryIds.has(String(row.data.porcentaje_categoria_id))) {
+                rowErrors.push(createImportError(row.row, row.data.estudiante_id, "CATEGORY_NOT_FOUND", "La categoría de descuento indicada no existe.", studentName, row.data));
+            }
+            if (!periodIds.has(String(row.data.periodo_id))) {
+                rowErrors.push(createImportError(row.row, row.data.estudiante_id, "PERIOD_NOT_FOUND", "El periodo indicado no existe.", studentName, row.data));
+            }
+
+            const importKey = buildImportKey(row.data);
+            if (excelKeys.has(importKey)) {
+                rowErrors.push(createImportError(row.row, row.data.estudiante_id, "DUPLICATE_IN_FILE", `La fila duplica la fila ${excelKeys.get(importKey)} del mismo archivo.`, studentName, row.data));
+            }
+            if (existingKeys.has(importKey)) {
+                rowErrors.push(createImportError(row.row, row.data.estudiante_id, "DUPLICATE_IN_DATABASE", "Ya existe un descuento equivalente registrado en la base de datos.", studentName, row.data));
+            }
+
+            if (rowErrors.length > 0) {
+                errors.push(...rowErrors);
+                continue;
+            }
+
+            excelKeys.set(importKey, row.row);
+            rowsToInsert.push(row);
+        }
+
+        const insertResult = rowsToInsert.length > 0 ? await insertDiscountImportRows(rowsToInsert) : { inserted: [], failed: [] };
+        const dbErrors = insertResult.failed.map((item: any) => {
+            console.error("[CargaPlantillaDescuento] error insertando fila", {
+                row: item.row.row,
+                code: item.error?.code,
+                constraint: item.error?.constraint,
+            });
+            return createImportError(
+                item.row.row,
+                item.row.data.estudiante_id,
+                item.error?.code || "DB_INSERT_ERROR",
+                sanitizeDbErrorMessage(item.error),
+                "",
+                item.row.data,
+            );
+        });
+        errors.push(...dbErrors);
+
+        const inserted = insertResult.inserted.length;
+        const duplicates = errors.filter((errorItem: any) => ["DUPLICATE_IN_FILE", "DUPLICATE_IN_DATABASE"].includes(errorItem.code)).length;
+        const skipped = totalRows - inserted;
+        const status = inserted === totalRows ? "success" : inserted > 0 ? "partial" : "failed";
+        const rejectionReasons = buildRejectionReasonSummary(errors);
+        const rejectedReport = saveDiscountRejectionReport({
+            codigoCarga: codigo_Cargue,
+            fechaProcesamiento: fechaActual,
+            totalRows,
+            inserted,
+            skipped,
+            duplicates,
+            errors,
+        });
+        const responsePayload = {
+            error: status === "failed",
+            status,
+            message: status === "success"
+                ? `Cargado exitosamente, se han afectado ${inserted} registros`
+                : status === "partial"
+                    ? `El archivo fue procesado parcialmente. Cargados: ${inserted} de ${totalRows}. Rechazados: ${skipped}.`
+                    : "No fue posible cargar descuentos de la plantilla. Revise el reporte de errores.",
+            summary: {
+                totalRows,
+                inserted,
+                skipped,
+                duplicates,
+                rejectionReasons,
+            },
+            errors,
+            data: {
+                codigo: codigo_Cargue,
+                fecha: fechaActual,
+                registros: inserted,
+                totalRows,
+                skipped,
+                hasRejectedReport: Boolean(rejectedReport),
+                rejectedReportUrl: rejectedReport?.rejectedReportUrl || null,
+            }
+        };
+
+        if (status === "failed") {
+            throw new UploadRowsValidationError(responsePayload.message, responsePayload);
+        }
+
+        return res.status(200).json(responsePayload);
 
 
     } catch (error) {
@@ -1219,8 +1689,13 @@ export const cargaPlantillaDescuento = async (req: any, res: any) => {
         if (error instanceof UploadValidationError) {
             return res.status(400).json({
                 error: true,
+                status: "failed",
                 message: error.message
             });
+        }
+
+        if (error instanceof UploadRowsValidationError) {
+            return res.status(error.statusCode).json(error.payload);
         }
 
         return res.status(500).json({
@@ -1239,6 +1714,39 @@ export const listaCargueDescuento = async (req: any, res: any) => {
     try {
 
         let resultDB = await getCargaDescuentos();
+        const reportMetadata = listDiscountRejectionMetadata();
+        const reportByCode = new Map(reportMetadata.map((item: any) => [item.codigo_cargue, item]));
+        const loadedCodes = new Set(resultDB.map((item: any) => item.codigo_cargue));
+
+        resultDB = resultDB.map((item: any) => {
+            const report = reportByCode.get(item.codigo_cargue) as any;
+            return {
+                ...item,
+                total_procesados: report?.totalRows || item.numero,
+                total_cargados: item.numero,
+                total_rechazados: report?.skipped || 0,
+                total_duplicados: report?.duplicates || 0,
+                rejectionReasons: report?.rejectionReasons || [],
+                hasRejectedReport: Boolean(report && report.skipped > 0),
+            };
+        });
+
+        reportMetadata.forEach((report: any) => {
+            if (!loadedCodes.has(report.codigo_cargue)) {
+                resultDB.push({
+                    codigo_cargue: report.codigo_cargue,
+                    fecha: report.fecha,
+                    numero: report.inserted || 0,
+                    total_procesados: report.totalRows || 0,
+                    total_cargados: report.inserted || 0,
+                    total_rechazados: report.skipped || 0,
+                    total_duplicados: report.duplicates || 0,
+                    rejectionReasons: report.rejectionReasons || [],
+                    hasRejectedReport: Boolean(report.skipped > 0),
+                });
+            }
+        });
+
         return res.status(200).json({
             error: false,
             data: resultDB
@@ -1276,6 +1784,13 @@ export const eliminarCargueDescuento = async (req: any, res: any) => {
             throw new Error("Error al eliminar el archivo");
         }
 
+        const reportPaths = getDiscountRejectionReportPaths(codigoFile);
+        [reportPaths.xlsxPath, reportPaths.metaPath].forEach((filePath) => {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        });
+
         return res.status(200).json({
             error: false,
             message: "Archivo eliminado "
@@ -1290,6 +1805,61 @@ export const eliminarCargueDescuento = async (req: any, res: any) => {
         });
     }
 
+}
+
+
+//====================
+//   /matricula/DescargarRechazadosDescuento/:codigo
+//=====================
+export const descargarRechazadosDescuento = async (req: any, res: any) => {
+    const codigoFile = toCellText(req.params.codigo);
+
+    try {
+        const reportPaths = getDiscountRejectionReportPaths(codigoFile);
+        const metadata = readDiscountRejectionMetadata(codigoFile);
+
+        if (!metadata) {
+            const cargaDB = await getDataDescuentosByCodigo(codigoFile);
+            if (cargaDB.length > 0) {
+                return res.status(404).json({
+                    error: true,
+                    message: "La carga no tiene registros rechazados para descargar."
+                });
+            }
+
+            return res.status(404).json({
+                error: true,
+                message: "No se encontró una carga asociada al código solicitado."
+            });
+        }
+
+        if (!fs.existsSync(reportPaths.xlsxPath)) {
+            return res.status(404).json({
+                error: true,
+                message: "La carga no tiene registros rechazados para descargar."
+            });
+        }
+
+        const fileName = `Rechazados_${codigoFile}.xlsx`;
+        res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+
+        return fs.createReadStream(reportPaths.xlsxPath).pipe(res);
+    } catch (error) {
+        if (error instanceof UploadValidationError) {
+            return res.status(400).json({
+                error: true,
+                message: error.message,
+            });
+        }
+
+        console.error("[DescargarRechazadosDescuento] error", { message: error.message });
+        return res.status(500).json({
+            error: true,
+            message: "No fue posible descargar el reporte de rechazados."
+        });
+    }
 }
 
 

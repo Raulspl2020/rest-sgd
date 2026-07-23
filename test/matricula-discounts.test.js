@@ -12,9 +12,12 @@ process.env.MSSQL_DEV_DATABASE = process.env.MSSQL_DEV_DATABASE || 'test';
 process.env.MONGO_URL = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/test';
 
 const {
+  buildRejectionReasonSummary,
+  buildRejectionReportBuffer,
   canApplyTuitionDiscount,
   filterDiscountsForCurrentEnrollment,
 } = require('../dist/controllers/matricula');
+const xlsx = require('node-xlsx');
 const {
   FULL_TUITION_DISCOUNT_CONCEPT_IDS,
   TUITION_DISCOUNT_CONCEPT_IDS,
@@ -148,4 +151,63 @@ test('pago por creditos conserva regla actual', () => {
     discount({ matricula_id: 900003, periodo_id: 202601, estudiante_id: 345678 }),
     TUITION_DISCOUNT_CONCEPT_IDS,
   ), true);
+});
+
+test('reporte de rechazados agrupa motivos y genera XLSX con resumen', () => {
+  const errors = [
+    {
+      codigoCarga: '11111111-1111-4111-8111-111111111111',
+      row: 2,
+      studentId: '123',
+      studentName: 'PRUEBA UNO',
+      enrollmentId: 900001,
+      categoryId: 2,
+      percentage: 0.1,
+      periodId: 202601,
+      code: 'DUPLICATE_IN_FILE',
+      reason: 'La fila duplica la fila 1 del mismo archivo.',
+      processedAt: '2026-07-23 10:00:00',
+    },
+    {
+      codigoCarga: '11111111-1111-4111-8111-111111111111',
+      row: 3,
+      studentId: '456',
+      code: 'DUPLICATE_IN_FILE',
+      reason: 'La fila duplica la fila 1 del mismo archivo.',
+      processedAt: '2026-07-23 10:00:00',
+    },
+    {
+      codigoCarga: '11111111-1111-4111-8111-111111111111',
+      row: 4,
+      studentId: '789',
+      code: 'STUDENT_NOT_FOUND',
+      reason: 'El estudiante no existe en la base de datos.',
+      processedAt: '2026-07-23 10:00:00',
+    },
+  ];
+
+  const summary = buildRejectionReasonSummary(errors);
+  assert.equal(summary.length, 2);
+  assert.equal(summary[0].code, 'DUPLICATE_IN_FILE');
+  assert.equal(summary[0].count, 2);
+
+  const buffer = buildRejectionReportBuffer({
+    codigoCarga: '11111111-1111-4111-8111-111111111111',
+    fechaProcesamiento: '2026-07-23 10:00:00',
+    totalRows: 3,
+    inserted: 0,
+    skipped: 3,
+    duplicates: 2,
+    errors,
+  });
+  const workbook = xlsx.parse(buffer);
+  const rejectedSheet = workbook.find((sheet) => sheet.name === 'Rechazados');
+  const summarySheet = workbook.find((sheet) => sheet.name === 'Resumen');
+
+  assert.ok(rejectedSheet);
+  assert.ok(summarySheet);
+  assert.equal(rejectedSheet.data.length, 4);
+  assert.deepEqual(summarySheet.data[3], ['Total procesados', 3]);
+  assert.deepEqual(summarySheet.data[5], ['Total rechazados', 3]);
+  assert.ok(summarySheet.data.some((row) => row[0] === 'DUPLICATE_IN_FILE' && row[2] === 2));
 });
